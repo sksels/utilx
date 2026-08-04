@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regex Cheat Sheet: Syntax You Actually Use | UtilX</title>
+<meta name="description" content="A practical regular expression cheat sheet covering character classes, quantifiers, anchors, groups, and lookaheads, with plain-English explanations.">
+<link rel="canonical" href="https://utilx.tools/guides/regex-cheatsheet.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="UtilX">
+<meta property="og:title" content="Regex Cheat Sheet: Syntax You Actually Use | UtilX">
+<meta property="og:description" content="A practical regular expression cheat sheet covering character classes, quantifiers, anchors, groups, and lookaheads, with plain-English explanations.">
+<meta property="og:url" content="https://utilx.tools/guides/regex-cheatsheet.html">
+<meta property="og:image" content="https://utilx.tools/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Regex Cheat Sheet: Syntax You Actually Use | UtilX">
+<meta name="twitter:description" content="A practical regular expression cheat sheet covering character classes, quantifiers, anchors, groups, and lookaheads, with plain-English explanations.">
+<meta name="twitter:image" content="https://utilx.tools/og-image.png">
+<!-- Privacy-friendly analytics: sign up at plausible.io (or similar), then uncomment/adjust the line below -->
+<!-- <script defer data-domain="utilx.tools" src="https://plausible.io/js/script.js"></script> -->
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/index.html">Util<span>X</span></a>
+    <nav class="site-nav">
+      <a href="/index.html">Tools</a>
+      <a href="/guides/what-is-json.html">Guides</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Guides</a> / Regex Cheat Sheet</div>
+    <h1>Regex Cheat Sheet: Syntax You Actually Use</h1>
+    <p class="lede">Regular expressions have a huge spec, but 90% of real-world usage comes from about 20 tokens. Here they are.</p>
+
+    <h2>Character classes</h2>
+    <table class="ref-table">
+      <tr><th>Token</th><th>Matches</th></tr>
+      <tr><td><code>.</code></td><td>Any character except newline</td></tr>
+      <tr><td><code>\d</code></td><td>Any digit (0-9)</td></tr>
+      <tr><td><code>\D</code></td><td>Any non-digit</td></tr>
+      <tr><td><code>\w</code></td><td>Word character (letters, digits, underscore)</td></tr>
+      <tr><td><code>\s</code></td><td>Whitespace (space, tab, newline)</td></tr>
+      <tr><td><code>[abc]</code></td><td>Any of a, b, or c</td></tr>
+      <tr><td><code>[^abc]</code></td><td>Anything except a, b, or c</td></tr>
+      <tr><td><code>[a-z]</code></td><td>Any lowercase letter, a through z</td></tr>
+    </table>
+
+    <h2>Quantifiers</h2>
+    <table class="ref-table">
+      <tr><th>Token</th><th>Meaning</th></tr>
+      <tr><td><code>*</code></td><td>Zero or more</td></tr>
+      <tr><td><code>+</code></td><td>One or more</td></tr>
+      <tr><td><code>?</code></td><td>Zero or one (optional)</td></tr>
+      <tr><td><code>{n}</code></td><td>Exactly n times</td></tr>
+      <tr><td><code>{n,m}</code></td><td>Between n and m times</td></tr>
+    </table>
+
+    <h2>Anchors and boundaries</h2>
+    <table class="ref-table">
+      <tr><th>Token</th><th>Meaning</th></tr>
+      <tr><td><code>^</code></td><td>Start of string (or line, with the <code>m</code> flag)</td></tr>
+      <tr><td><code>$</code></td><td>End of string (or line, with the <code>m</code> flag)</td></tr>
+      <tr><td><code>\b</code></td><td>Word boundary</td></tr>
+    </table>
+
+    <h2>Groups and lookarounds</h2>
+    <table class="ref-table">
+      <tr><th>Token</th><th>Meaning</th></tr>
+      <tr><td><code>(abc)</code></td><td>Capture group</td></tr>
+      <tr><td><code>(?:abc)</code></td><td>Non-capturing group</td></tr>
+      <tr><td><code>a|b</code></td><td>Match a or b</td></tr>
+      <tr><td><code>(?=abc)</code></td><td>Positive lookahead — must be followed by "abc"</td></tr>
+      <tr><td><code>(?!abc)</code></td><td>Negative lookahead — must not be followed by "abc"</td></tr>
+    </table>
+
+    <h2>Example: matching an email-like string</h2>
+    <pre><code>\b[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}\b</code></pre>
+    <p>This is fine for quick filtering, but note that a fully RFC-compliant email regex is notoriously complex — for real validation, send a confirmation email instead of relying purely on regex.</p>
+
+    <h2>Try it yourself</h2>
+    <p>Paste any pattern into the <a href="/tools/regex-tester.html">Regex Tester</a> to see live matches highlighted against your own sample text.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 UtilX</span>
+    <span><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

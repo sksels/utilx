@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Basics: Syntax, Common Errors, and How to Fix Them | UtilX</title>
+<meta name="description" content="A plain-English guide to JSON syntax, the most common validation errors (trailing commas, unquoted keys, single quotes), and how to fix them.">
+<link rel="canonical" href="https://utilx.tools/guides/what-is-json.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="UtilX">
+<meta property="og:title" content="JSON Basics: Syntax, Common Errors, and How to Fix Them | UtilX">
+<meta property="og:description" content="A plain-English guide to JSON syntax, the most common validation errors (trailing commas, unquoted keys, single quotes), and how to fix them.">
+<meta property="og:url" content="https://utilx.tools/guides/what-is-json.html">
+<meta property="og:image" content="https://utilx.tools/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JSON Basics: Syntax, Common Errors, and How to Fix Them | UtilX">
+<meta name="twitter:description" content="A plain-English guide to JSON syntax, the most common validation errors (trailing commas, unquoted keys, single quotes), and how to fix them.">
+<meta name="twitter:image" content="https://utilx.tools/og-image.png">
+<!-- Privacy-friendly analytics: sign up at plausible.io (or similar), then uncomment/adjust the line below -->
+<!-- <script defer data-domain="utilx.tools" src="https://plausible.io/js/script.js"></script> -->
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/index.html">Util<span>X</span></a>
+    <nav class="site-nav">
+      <a href="/index.html">Tools</a>
+      <a href="/guides/what-is-json.html">Guides</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Guides</a> / JSON Basics</div>
+    <h1>JSON Basics: Syntax, Common Errors, and How to Fix Them</h1>
+    <p class="lede">JSON (JavaScript Object Notation) is the most widely used format for exchanging data between servers, APIs, and applications. It's readable, lightweight, and supported natively by nearly every programming language. Here's what you need to know to write it correctly.</p>
+
+    <h2>The building blocks</h2>
+    <p>JSON has exactly six data types: strings, numbers, booleans (<code>true</code>/<code>false</code>), <code>null</code>, objects, and arrays. An object is a set of key-value pairs wrapped in curly braces; an array is an ordered list wrapped in square brackets.</p>
+    <pre><code>{
+  "name": "Ada Lovelace",
+  "born": 1815,
+  "isProgrammer": true,
+  "languages": ["Analytical Engine notation"],
+  "employer": null
+}</code></pre>
+
+    <h2>The five mistakes that break JSON</h2>
+    <table class="ref-table">
+      <tr><th>Mistake</th><th>Wrong</th><th>Right</th></tr>
+      <tr><td>Trailing comma</td><td><code>{"a":1,}</code></td><td><code>{"a":1}</code></td></tr>
+      <tr><td>Unquoted keys</td><td><code>{a:1}</code></td><td><code>{"a":1}</code></td></tr>
+      <tr><td>Single quotes</td><td><code>{'a':'b'}</code></td><td><code>{"a":"b"}</code></td></tr>
+      <tr><td>Comments</td><td><code>{"a":1 // note}</code></td><td>Not allowed in JSON at all</td></tr>
+      <tr><td>Undefined / functions</td><td><code>{"a":undefined}</code></td><td>Use <code>null</code> instead</td></tr>
+    </table>
+
+    <h2>Why validators give confusing error messages</h2>
+    <p>Most JSON parsers stop at the exact character where the structure stops making sense — which is often <em>after</em> the actual mistake. If you get an error at line 4, check line 3 first; a missing comma or unclosed brace on an earlier line is the usual culprit.</p>
+
+    <h2>Try it yourself</h2>
+    <p>Paste your JSON into the <a href="/tools/json-formatter.html">JSON Formatter &amp; Validator</a> to get an instant, precise error location and a cleanly indented result.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 UtilX</span>
+    <span><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

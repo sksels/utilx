@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Formatter &amp; Validator — Free Online Tool | UtilX</title>
+<meta name="description" content="Free online JSON formatter, beautifier, minifier, and validator. Paste JSON to instantly format it and see the exact line and character of any syntax error. Runs entirely in your browser.">
+<link rel="canonical" href="https://utilx.tools/tools/json-formatter.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="UtilX">
+<meta property="og:title" content="JSON Formatter &amp; Validator — Free Online Tool | UtilX">
+<meta property="og:description" content="Free online JSON formatter, beautifier, minifier, and validator. Paste JSON to instantly format it and see the exact line and character of any syntax error. Runs entirely in your browser.">
+<meta property="og:url" content="https://utilx.tools/tools/json-formatter.html">
+<meta property="og:image" content="https://utilx.tools/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="JSON Formatter &amp; Validator — Free Online Tool | UtilX">
+<meta name="twitter:description" content="Free online JSON formatter, beautifier, minifier, and validator. Paste JSON to instantly format it and see the exact line and character of any syntax error. Runs entirely in your browser.">
+<meta name="twitter:image" content="https://utilx.tools/og-image.png">
+<!-- Privacy-friendly analytics: sign up at plausible.io (or similar), then uncomment/adjust the line below -->
+<!-- <script defer data-domain="utilx.tools" src="https://plausible.io/js/script.js"></script> -->
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "JSON Formatter & Validator",
+  "url": "https://utilx.tools/tools/json-formatter.html",
+  "description": "Free online JSON formatter, beautifier, minifier, and validator. Paste JSON to instantly format it and see the exact line and character of any syntax error. Runs entirely in your browser.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any (runs in browser)",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "isAccessibleForFree": true,
+  "publisher": {
+    "@type": "Organization",
+    "name": "UtilX",
+    "url": "https://utilx.tools/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/index.html">Util<span>X</span></a>
+    <nav class="site-nav">
+      <a href="/index.html">Tools</a>
+      <a href="/guides/what-is-json.html">Guides</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Tools</a> / JSON Formatter</div>
+    <h1>JSON Formatter &amp; Validator</h1>
+    <p class="lede">Paste JSON below to beautify, minify, or validate it. Nothing is uploaded — everything runs in your browser.</p>
+
+    <div class="card">
+      <label for="input">Input JSON</label>
+      <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
+
+      <label for="indent">Indent size</label>
+      <select id="indent">
+        <option value="2">2 spaces</option>
+        <option value="4">4 spaces</option>
+        <option value="tab">Tab</option>
+      </select>
+
+      <div>
+        <button onclick="formatJson()">Format / Beautify</button>
+        <button class="secondary" onclick="minifyJson()">Minify</button>
+        <button class="secondary" onclick="copyOutput()">Copy Output</button>
+        <button class="secondary" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div id="msg"></div>
+
+      <div class="output-box">
+        <label for="output">Output</label>
+        <textarea id="output" rows="12" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="ad-slot">Ad placeholder — replace with your AdSense unit once approved</div>
+
+    <h2>How this works</h2>
+    <p>This tool parses your JSON with the browser's built-in <code>JSON.parse</code> and re-serializes it with <code>JSON.stringify</code>. If your JSON is invalid, it tells you exactly where the parser stopped, so you can fix syntax errors like trailing commas, missing quotes, or unescaped characters quickly. See the <a href="/guides/what-is-json.html">JSON basics guide</a> for common mistakes.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 UtilX</span>
+    <span><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></span>
+  </div>
+</footer>
+
+<script>
+function getIndent() {
+  const v = document.getElementById('indent').value;
+  return v === 'tab' ? '\t' : Number(v);
+}
+
+function showError(e) {
+  const msg = document.getElementById('msg');
+  msg.innerHTML = '<div class="error-msg">Invalid JSON: ' + e.message + '</div>';
+}
+
+function showSuccess(text) {
+  const msg = document.getElementById('msg');
+  msg.innerHTML = '<div class="success-msg">' + text + '</div>';
+}
+
+function formatJson() {
+  const input = document.getElementById('input').value;
+  try {
+    const parsed = JSON.parse(input);
+    document.getElementById('output').value = JSON.stringify(parsed, null, getIndent());
+    showSuccess('Valid JSON — formatted below.');
+  } catch (e) {
+    showError(e);
+    document.getElementById('output').value = '';
+  }
+}
+
+function minifyJson() {
+  const input = document.getElementById('input').value;
+  try {
+    const parsed = JSON.parse(input);
+    document.getElementById('output').value = JSON.stringify(parsed);
+    showSuccess('Valid JSON — minified below.');
+  } catch (e) {
+    showError(e);
+    document.getElementById('output').value = '';
+  }
+}
+
+function copyOutput() {
+  const out = document.getElementById('output');
+  if (!out.value) return;
+  out.select();
+  document.execCommand('copy');
+  showSuccess('Copied to clipboard.');
+}
+
+function clearAll() {
+  document.getElementById('input').value = '';
+  document.getElementById('output').value = '';
+  document.getElementById('msg').innerHTML = '';
+}
+</script>
+
+</body>
+</html>

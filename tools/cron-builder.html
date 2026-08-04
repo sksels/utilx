@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cron Expression Builder &amp; Decoder | UtilX</title>
+<meta name="description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<link rel="canonical" href="https://utilx.tools/tools/cron-builder.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="UtilX">
+<meta property="og:title" content="Cron Expression Builder &amp; Decoder | UtilX">
+<meta property="og:description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<meta property="og:url" content="https://utilx.tools/tools/cron-builder.html">
+<meta property="og:image" content="https://utilx.tools/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cron Expression Builder &amp; Decoder | UtilX">
+<meta name="twitter:description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<meta name="twitter:image" content="https://utilx.tools/og-image.png">
+<!-- Privacy-friendly analytics: sign up at plausible.io (or similar), then uncomment/adjust the line below -->
+<!-- <script defer data-domain="utilx.tools" src="https://plausible.io/js/script.js"></script> -->
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Cron Expression Builder & Decoder",
+  "url": "https://utilx.tools/tools/cron-builder.html",
+  "description": "Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any (runs in browser)",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "isAccessibleForFree": true,
+  "publisher": {
+    "@type": "Organization",
+    "name": "UtilX",
+    "url": "https://utilx.tools/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/index.html">Util<span>X</span></a>
+    <nav class="site-nav">
+      <a href="/index.html">Tools</a>
+      <a href="/guides/what-is-json.html">Guides</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Tools</a> / Cron Builder</div>
+    <h1>Cron Expression Builder &amp; Decoder</h1>
+    <p class="lede">Build a 5-field cron expression with dropdowns, or paste one in to see it explained in plain English.</p>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Build</h2>
+      <div class="two-col">
+        <div>
+          <label for="minute">Minute (0-59, * for every)</label>
+          <input type="text" id="minute" value="0">
+        </div>
+        <div>
+          <label for="hour">Hour (0-23, * for every)</label>
+          <input type="text" id="hour" value="*">
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label for="dom">Day of month (1-31, * for every)</label>
+          <input type="text" id="dom" value="*">
+        </div>
+        <div>
+          <label for="month">Month (1-12, * for every)</label>
+          <input type="text" id="month" value="*">
+        </div>
+      </div>
+      <label for="dow">Day of week (0-6, Sun=0, * for every)</label>
+      <input type="text" id="dow" value="*">
+      <div>
+        <button onclick="buildCron()">Build Expression</button>
+      </div>
+      <div class="output-box">
+        <label>Cron expression</label>
+        <input type="text" id="built" readonly>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Decode</h2>
+      <label for="decodeInput">Paste a cron expression</label>
+      <input type="text" id="decodeInput" placeholder="0 9 * * 1-5">
+      <div>
+        <button onclick="decodeCron()">Decode</button>
+      </div>
+      <div id="decodeMsg"></div>
+      <div class="output-box">
+        <label>Plain-English explanation</label>
+        <textarea id="decoded" rows="4" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="ad-slot">Ad placeholder — replace with your AdSense unit once approved</div>
+
+    <p>New to cron syntax? Read the full <a href="/guides/cron-syntax-guide.html">cron syntax guide</a>.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 UtilX</span>
+    <span><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></span>
+  </div>
+</footer>
+
+<script>
+function buildCron() {
+  const m = document.getElementById('minute').value.trim() || '*';
+  const h = document.getElementById('hour').value.trim() || '*';
+  const dom = document.getElementById('dom').value.trim() || '*';
+  const mon = document.getElementById('month').value.trim() || '*';
+  const dow = document.getElementById('dow').value.trim() || '*';
+  document.getElementById('built').value = [m, h, dom, mon, dow].join(' ');
+}
+
+const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function describeField(field, unit, names) {
+  if (field === '*') return 'every ' + unit;
+  if (field.includes('/')) {
+    const [base, step] = field.split('/');
+    return 'every ' + step + ' ' + unit + (base !== '*' ? ' starting at ' + base : 's');
+  }
+  if (field.includes('-')) {
+    const [a, b] = field.split('-');
+    if (names) return names[Number(a)] + ' through ' + names[Number(b)];
+    return unit + ' ' + a + ' through ' + b;
+  }
+  if (field.includes(',')) {
+    const parts = field.split(',');
+    if (names) return parts.map(p => names[Number(p)]).join(', ');
+    return unit + 's ' + parts.join(', ');
+  }
+  if (names) return names[Number(field)];
+  return unit + ' ' + field;
+}
+
+function decodeCron() {
+  const input = document.getElementById('decodeInput').value.trim();
+  const msg = document.getElementById('decodeMsg');
+  const out = document.getElementById('decoded');
+  const parts = input.split(/\s+/);
+
+  if (parts.length !== 5) {
+    msg.innerHTML = '<div class="error-msg">A cron expression needs exactly 5 fields: minute hour day-of-month month day-of-week.</div>';
+    out.value = '';
+    return;
+  }
+  msg.innerHTML = '<div class="success-msg">Parsed successfully.</div>';
+
+  const [m, h, dom, mon, dow] = parts;
+  const isPlainNumber = (f) => /^\d+$/.test(f);
+  let time;
+  if (m === '*' && h === '*') {
+    time = 'every minute';
+  } else if (h === '*') {
+    time = isPlainNumber(m)
+      ? 'at minute ' + m + ' of every hour'
+      : describeField(m, 'minute') + ' of every hour';
+  } else if (m === '*') {
+    time = 'every minute during ' + describeField(h, 'hour');
+  } else if (isPlainNumber(m) && isPlainNumber(h)) {
+    time = 'at ' + h.padStart(2,'0') + ':' + m.padStart(2,'0');
+  } else {
+    time = describeField(m, 'minute') + ' past ' + describeField(h, 'hour');
+  }
+
+  let domPart = dom === '*' ? '' : ' on ' + describeField(dom, 'day of the month');
+  let monPart = mon === '*' ? '' : ' in ' + describeField(mon, 'month', MONTH_NAMES);
+  let dowPart = dow === '*' ? '' : ' on ' + describeField(dow, 'day', DOW_NAMES);
+
+  out.value = 'Runs ' + time + domPart + monPart + dowPart + '.';
+}
+</script>
+
+</body>
+</html>

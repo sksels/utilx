@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cron Syntax Guide: How Cron Expressions Work | UtilX</title>
+<meta name="description" content="A field-by-field explanation of cron syntax, with common scheduling examples for cron jobs, crontab, and cron-based CI/CD schedules.">
+<link rel="canonical" href="https://utilx.tools/guides/cron-syntax-guide.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="UtilX">
+<meta property="og:title" content="Cron Syntax Guide: How Cron Expressions Work | UtilX">
+<meta property="og:description" content="A field-by-field explanation of cron syntax, with common scheduling examples for cron jobs, crontab, and cron-based CI/CD schedules.">
+<meta property="og:url" content="https://utilx.tools/guides/cron-syntax-guide.html">
+<meta property="og:image" content="https://utilx.tools/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cron Syntax Guide: How Cron Expressions Work | UtilX">
+<meta name="twitter:description" content="A field-by-field explanation of cron syntax, with common scheduling examples for cron jobs, crontab, and cron-based CI/CD schedules.">
+<meta name="twitter:image" content="https://utilx.tools/og-image.png">
+<!-- Privacy-friendly analytics: sign up at plausible.io (or similar), then uncomment/adjust the line below -->
+<!-- <script defer data-domain="utilx.tools" src="https://plausible.io/js/script.js"></script> -->
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/index.html">Util<span>X</span></a>
+    <nav class="site-nav">
+      <a href="/index.html">Tools</a>
+      <a href="/guides/what-is-json.html">Guides</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Guides</a> / Cron Syntax Guide</div>
+    <h1>Cron Syntax Guide: How Cron Expressions Work</h1>
+    <p class="lede">Cron expressions schedule recurring jobs on Unix systems, in CI/CD pipelines (GitHub Actions, GitLab CI), and in task schedulers like Kubernetes CronJobs. They look cryptic but follow a fixed, learnable pattern.</p>
+
+    <h2>The five fields</h2>
+    <table class="ref-table">
+      <tr><th>Field</th><th>Allowed values</th></tr>
+      <tr><td>Minute</td><td>0-59</td></tr>
+      <tr><td>Hour</td><td>0-23</td></tr>
+      <tr><td>Day of month</td><td>1-31</td></tr>
+      <tr><td>Month</td><td>1-12</td></tr>
+      <tr><td>Day of week</td><td>0-6 (0 = Sunday)</td></tr>
+    </table>
+    <p>Read left to right: <code>minute hour day-of-month month day-of-week</code>.</p>
+
+    <h2>Special characters</h2>
+    <table class="ref-table">
+      <tr><th>Symbol</th><th>Meaning</th></tr>
+      <tr><td><code>*</code></td><td>Every value (no restriction)</td></tr>
+      <tr><td><code>,</code></td><td>A list, e.g. <code>1,15</code> means the 1st and 15th</td></tr>
+      <tr><td><code>-</code></td><td>A range, e.g. <code>1-5</code> means Monday through Friday</td></tr>
+      <tr><td><code>/</code></td><td>A step, e.g. <code>*/15</code> means every 15 units</td></tr>
+    </table>
+
+    <h2>Common examples</h2>
+    <table class="ref-table">
+      <tr><th>Expression</th><th>Meaning</th></tr>
+      <tr><td><code>0 9 * * 1-5</code></td><td>9:00 AM, Monday through Friday</td></tr>
+      <tr><td><code>*/15 * * * *</code></td><td>Every 15 minutes</td></tr>
+      <tr><td><code>0 0 1 * *</code></td><td>Midnight on the 1st of every month</td></tr>
+      <tr><td><code>0 0 * * 0</code></td><td>Midnight every Sunday</td></tr>
+      <tr><td><code>0 */6 * * *</code></td><td>Every 6 hours, on the hour</td></tr>
+    </table>
+
+    <h2>Common gotcha: time zones</h2>
+    <p>Cron itself has no concept of time zones — it runs in whatever time zone the host system (or CI runner) is configured for. Always check your platform's docs; GitHub Actions, for example, runs scheduled workflows in UTC regardless of your repo's location.</p>
+
+    <h2>Try it yourself</h2>
+    <p>Use the <a href="/tools/cron-builder.html">Cron Expression Builder</a> to build a schedule with dropdowns, or paste in an existing expression to get a plain-English explanation.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 UtilX</span>
+    <span><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></span>
+  </div>
+</footer>
+
+</body>
+</html>

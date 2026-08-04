@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regex Tester — Test Regular Expressions Online | UtilX</title>
+<meta name="description" content="Free online regex tester. Test JavaScript regular expressions against sample text with live match highlighting, capture groups, and flag support (g, i, m, s).">
+<link rel="canonical" href="https://utilx.tools/tools/regex-tester.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="UtilX">
+<meta property="og:title" content="Regex Tester — Test Regular Expressions Online | UtilX">
+<meta property="og:description" content="Free online regex tester. Test JavaScript regular expressions against sample text with live match highlighting, capture groups, and flag support (g, i, m, s).">
+<meta property="og:url" content="https://utilx.tools/tools/regex-tester.html">
+<meta property="og:image" content="https://utilx.tools/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Regex Tester — Test Regular Expressions Online | UtilX">
+<meta name="twitter:description" content="Free online regex tester. Test JavaScript regular expressions against sample text with live match highlighting, capture groups, and flag support (g, i, m, s).">
+<meta name="twitter:image" content="https://utilx.tools/og-image.png">
+<!-- Privacy-friendly analytics: sign up at plausible.io (or similar), then uncomment/adjust the line below -->
+<!-- <script defer data-domain="utilx.tools" src="https://plausible.io/js/script.js"></script> -->
+<link rel="stylesheet" href="../style.css">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Regex Tester",
+  "url": "https://utilx.tools/tools/regex-tester.html",
+  "description": "Free online regex tester. Test JavaScript regular expressions against sample text with live match highlighting, capture groups, and flag support (g, i, m, s).",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Any (runs in browser)",
+  "offers": {
+    "@type": "Offer",
+    "price": "0",
+    "priceCurrency": "USD"
+  },
+  "isAccessibleForFree": true,
+  "publisher": {
+    "@type": "Organization",
+    "name": "UtilX",
+    "url": "https://utilx.tools/"
+  }
+}
+</script>
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/index.html">Util<span>X</span></a>
+    <nav class="site-nav">
+      <a href="/index.html">Tools</a>
+      <a href="/guides/what-is-json.html">Guides</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Tools</a> / Regex Tester</div>
+    <h1>Regex Tester</h1>
+    <p class="lede">Test a regular expression against sample text and see matches highlighted live. Uses JavaScript's regex engine.</p>
+
+    <div class="card">
+      <label for="pattern">Pattern</label>
+      <input type="text" id="pattern" placeholder="\b[A-Z][a-z]+\b">
+
+      <label for="flags">Flags</label>
+      <input type="text" id="flags" value="g" placeholder="g i m s">
+
+      <label for="testtext">Test string</label>
+      <textarea id="testtext" rows="8" placeholder="Paste sample text here to test your pattern against it."></textarea>
+
+      <div>
+        <button onclick="runRegex()">Test Regex</button>
+        <button class="secondary" onclick="clearAll()">Clear</button>
+      </div>
+
+      <div id="msg"></div>
+
+      <div class="output-box">
+        <label>Highlighted matches</label>
+        <div id="highlighted" class="card" style="white-space: pre-wrap; word-break: break-word; min-height: 60px;"></div>
+      </div>
+
+      <div class="output-box">
+        <label>Match details</label>
+        <textarea id="matches" rows="8" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="ad-slot">Ad placeholder — replace with your AdSense unit once approved</div>
+
+    <h2>Common flags</h2>
+    <table class="ref-table">
+      <tr><th>Flag</th><th>Meaning</th></tr>
+      <tr><td><code>g</code></td><td>Global — find all matches, not just the first</td></tr>
+      <tr><td><code>i</code></td><td>Case-insensitive</td></tr>
+      <tr><td><code>m</code></td><td>Multiline — <code>^</code> and <code>$</code> match line boundaries</td></tr>
+      <tr><td><code>s</code></td><td>Dot matches newline characters too</td></tr>
+    </table>
+    <p>Need a syntax refresher? See the <a href="/guides/regex-cheatsheet.html">regex cheat sheet</a>.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 UtilX</span>
+    <span><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></span>
+  </div>
+</footer>
+
+<script>
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function runRegex() {
+  const pattern = document.getElementById('pattern').value;
+  const flags = document.getElementById('flags').value;
+  const text = document.getElementById('testtext').value;
+  const msg = document.getElementById('msg');
+  const highlighted = document.getElementById('highlighted');
+  const matchesBox = document.getElementById('matches');
+  msg.innerHTML = '';
+
+  let re;
+  try {
+    re = new RegExp(pattern, flags.includes('g') ? flags : flags + 'g');
+  } catch (e) {
+    msg.innerHTML = '<div class="error-msg">Invalid pattern: ' + e.message + '</div>';
+    highlighted.innerHTML = '';
+    matchesBox.value = '';
+    return;
+  }
+
+  let match;
+  let lastIndex = 0;
+  let html = '';
+  let results = [];
+  let count = 0;
+  const safeRe = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
+
+  while ((match = safeRe.exec(text)) !== null) {
+    count++;
+    html += escapeHtml(text.slice(lastIndex, match.index));
+    html += '<mark style="background:#5b8cff;color:#0a0c12;border-radius:3px;padding:0 2px;">' + escapeHtml(match[0]) + '</mark>';
+    lastIndex = match.index + match[0].length;
+    results.push('Match ' + count + ': "' + match[0] + '" at index ' + match.index + (match.length > 1 ? '\n  Groups: ' + JSON.stringify(match.slice(1)) : ''));
+    if (match[0] === '') { safeRe.lastIndex++; }
+    if (count > 500) break;
+  }
+  html += escapeHtml(text.slice(lastIndex));
+
+  highlighted.innerHTML = html || '<span style="color:var(--text-dim)">No matches</span>';
+  matchesBox.value = results.length ? results.join('\n') : 'No matches found.';
+  msg.innerHTML = '<div class="success-msg">' + count + ' match' + (count === 1 ? '' : 'es') + ' found.</div>';
+}
+
+function clearAll() {
+  document.getElementById('pattern').value = '';
+  document.getElementById('testtext').value = '';
+  document.getElementById('highlighted').innerHTML = '';
+  document.getElementById('matches').value = '';
+  document.getElementById('msg').innerHTML = '';
+}
+</script>
+
+</body>
+</html>

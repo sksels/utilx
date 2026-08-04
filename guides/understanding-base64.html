@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Understanding Base64: What It Is and When to Use It | UtilX</title>
+<meta name="description" content="Base64 explained in plain English: why it exists, how it works, common use cases (data URIs, email attachments, JWTs), and why it is not encryption.">
+<link rel="canonical" href="https://utilx.tools/guides/understanding-base64.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="UtilX">
+<meta property="og:title" content="Understanding Base64: What It Is and When to Use It | UtilX">
+<meta property="og:description" content="Base64 explained in plain English: why it exists, how it works, common use cases (data URIs, email attachments, JWTs), and why it is not encryption.">
+<meta property="og:url" content="https://utilx.tools/guides/understanding-base64.html">
+<meta property="og:image" content="https://utilx.tools/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Understanding Base64: What It Is and When to Use It | UtilX">
+<meta name="twitter:description" content="Base64 explained in plain English: why it exists, how it works, common use cases (data URIs, email attachments, JWTs), and why it is not encryption.">
+<meta name="twitter:image" content="https://utilx.tools/og-image.png">
+<!-- Privacy-friendly analytics: sign up at plausible.io (or similar), then uncomment/adjust the line below -->
+<!-- <script defer data-domain="utilx.tools" src="https://plausible.io/js/script.js"></script> -->
+<link rel="stylesheet" href="../style.css">
+</head>
+<body>
+
+<header class="site">
+  <div class="wrap">
+    <a class="brand" href="/index.html">Util<span>X</span></a>
+    <nav class="site-nav">
+      <a href="/index.html">Tools</a>
+      <a href="/guides/what-is-json.html">Guides</a>
+      <a href="/about.html">About</a>
+      <a href="/contact.html">Contact</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Guides</a> / Understanding Base64</div>
+    <h1>Understanding Base64: What It Is and When to Use It</h1>
+    <p class="lede">Base64 shows up constantly in web development — in data URIs, email attachments, JWTs, and API payloads — but it's frequently misunderstood as a form of security. It isn't.</p>
+
+    <h2>Why Base64 exists</h2>
+    <p>Many older systems (email protocols, some text-based APIs) were only designed to safely transmit printable ASCII text. Binary data — images, files, arbitrary bytes — could get corrupted in transit. Base64 solves this by re-encoding any binary data into a set of 64 safe, printable characters (A-Z, a-z, 0-9, +, /), at the cost of making the data about 33% larger.</p>
+
+    <h2>Where you'll actually see it</h2>
+    <table class="ref-table">
+      <tr><th>Use case</th><th>Why</th></tr>
+      <tr><td>Data URIs (<code>data:image/png;base64,...</code>)</td><td>Embed small images directly in HTML/CSS without a separate file request</td></tr>
+      <tr><td>Email attachments (MIME)</td><td>Email transport was designed for text, not arbitrary binary files</td></tr>
+      <tr><td>JWTs (JSON Web Tokens)</td><td>The header and payload are Base64-encoded JSON, joined with dots</td></tr>
+      <tr><td>Basic Auth headers</td><td><code>Authorization: Basic base64(user:pass)</code></td></tr>
+    </table>
+
+    <h2>Base64 is not encryption</h2>
+    <p>This is the most common misconception. Base64 is an <strong>encoding</strong>, not a cipher — it uses no key and provides no confidentiality. Anyone can decode it instantly, including the "encoded" text in a JWT payload or an HTTP header. Never use Base64 alone to protect sensitive data; use actual encryption (e.g., AES) or don't expose the data client-side at all.</p>
+
+    <h2>Try it yourself</h2>
+    <p>Use the <a href="/tools/base64-tool.html">Base64 Encoder / Decoder</a> to convert text in either direction, with correct handling of UTF-8 characters.</p>
+  </div>
+</main>
+
+<footer class="site">
+  <div class="wrap">
+    <span>&copy; 2026 UtilX</span>
+    <span><a href="/about.html">About</a> · <a href="/privacy.html">Privacy</a> · <a href="/contact.html">Contact</a></span>
+  </div>
+</footer>
+
+</body>
+</html>
