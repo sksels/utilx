@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>JSON Formatter &amp; Validator — Free Online Tool | UtilX</title>
-<meta name="description" content="Free online JSON formatter, beautifier, minifier, and validator. Paste JSON to instantly format it and see the exact line and character of any syntax error. Runs entirely in your browser.">
+<title>JSON Formatter, Validator &amp; Diff Checker | UtilX</title>
+<meta name="description" content="Free online JSON formatter, validator, and diff checker. Pinpoints exact syntax error locations, beautifies or minifies JSON, and compares two JSON blobs to show exactly what changed — all in your browser.">
 <link rel="canonical" href="https://utilx.tools/tools/json-formatter.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UtilX">
-<meta property="og:title" content="JSON Formatter &amp; Validator — Free Online Tool | UtilX">
-<meta property="og:description" content="Free online JSON formatter, beautifier, minifier, and validator. Paste JSON to instantly format it and see the exact line and character of any syntax error. Runs entirely in your browser.">
+<meta property="og:title" content="JSON Formatter, Validator &amp; Diff Checker | UtilX">
+<meta property="og:description" content="Free online JSON formatter, validator, and diff checker. Pinpoints exact syntax error locations, beautifies or minifies JSON, and compares two JSON blobs to show exactly what changed — all in your browser.">
 <meta property="og:url" content="https://utilx.tools/tools/json-formatter.html">
 <meta property="og:image" content="https://utilx.tools/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="JSON Formatter &amp; Validator — Free Online Tool | UtilX">
-<meta name="twitter:description" content="Free online JSON formatter, beautifier, minifier, and validator. Paste JSON to instantly format it and see the exact line and character of any syntax error. Runs entirely in your browser.">
+<meta name="twitter:title" content="JSON Formatter, Validator &amp; Diff Checker | UtilX">
+<meta name="twitter:description" content="Free online JSON formatter, validator, and diff checker. Pinpoints exact syntax error locations, beautifies or minifies JSON, and compares two JSON blobs to show exactly what changed — all in your browser.">
 <meta name="twitter:image" content="https://utilx.tools/og-image.png">
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
@@ -22,9 +22,9 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "JSON Formatter & Validator",
+  "name": "JSON Formatter, Validator & Diff Checker",
   "url": "https://utilx.tools/tools/json-formatter.html",
-  "description": "Free online JSON formatter, beautifier, minifier, and validator. Paste JSON to instantly format it and see the exact line and character of any syntax error. Runs entirely in your browser.",
+  "description": "Free online JSON formatter, validator, and diff checker. Pinpoints exact syntax error locations, beautifies or minifies JSON, and compares two JSON blobs to show exactly what changed — all in your browser.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any (runs in browser)",
   "offers": {
@@ -84,6 +84,30 @@
       <div class="output-box">
         <label for="output">Output</label>
         <textarea id="output" rows="12" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Compare two JSON blobs</h2>
+      <p style="color:var(--text-dim); margin-top:-8px;">Paste two versions of a JSON document to see exactly what changed between them.</p>
+      <div class="two-col">
+        <div>
+          <label for="diffA">JSON A (before)</label>
+          <textarea id="diffA" rows="8" placeholder='{"name":"Ada","active":true}'></textarea>
+        </div>
+        <div>
+          <label for="diffB">JSON B (after)</label>
+          <textarea id="diffB" rows="8" placeholder='{"name":"Ada","active":false,"role":"admin"}'></textarea>
+        </div>
+      </div>
+      <div>
+        <button onclick="compareJson()">Compare</button>
+      </div>
+      <div id="diffMsg"></div>
+      <div class="output-box" id="diffResultBox" style="display:none;">
+        <table class="ref-table" id="diffTable">
+          <tr><th>Path</th><th>Change</th><th>Before</th><th>After</th></tr>
+        </table>
       </div>
     </div>
 
@@ -153,6 +177,90 @@ function clearAll() {
   document.getElementById('input').value = '';
   document.getElementById('output').value = '';
   document.getElementById('msg').innerHTML = '';
+}
+
+function shortVal(v) {
+  if (v === undefined) return '(none)';
+  const s = JSON.stringify(v);
+  return s.length > 60 ? s.slice(0, 57) + '...' : s;
+}
+
+function deepDiff(a, b, path, results) {
+  if (a === b) return results;
+
+  const aIsObj = a !== null && typeof a === 'object';
+  const bIsObj = b !== null && typeof b === 'object';
+
+  if (!aIsObj || !bIsObj || Array.isArray(a) !== Array.isArray(b)) {
+    if (JSON.stringify(a) !== JSON.stringify(b)) {
+      results.push({ path: path || '(root)', type: 'changed', from: a, to: b });
+    }
+    return results;
+  }
+
+  if (Array.isArray(a)) {
+    const maxLen = Math.max(a.length, b.length);
+    for (let i = 0; i < maxLen; i++) {
+      const p = path + '[' + i + ']';
+      if (i >= a.length) results.push({ path: p, type: 'added', from: undefined, to: b[i] });
+      else if (i >= b.length) results.push({ path: p, type: 'removed', from: a[i], to: undefined });
+      else deepDiff(a[i], b[i], p, results);
+    }
+    return results;
+  }
+
+  const keys = Array.from(new Set(Object.keys(a).concat(Object.keys(b))));
+  for (const key of keys) {
+    const p = path ? path + '.' + key : key;
+    if (!(key in a)) results.push({ path: p, type: 'added', from: undefined, to: b[key] });
+    else if (!(key in b)) results.push({ path: p, type: 'removed', from: a[key], to: undefined });
+    else deepDiff(a[key], b[key], p, results);
+  }
+  return results;
+}
+
+function compareJson() {
+  const msg = document.getElementById('diffMsg');
+  const box = document.getElementById('diffResultBox');
+  const table = document.getElementById('diffTable');
+  msg.innerHTML = '';
+
+  let a, b;
+  try {
+    a = JSON.parse(document.getElementById('diffA').value);
+  } catch (e) {
+    msg.innerHTML = '<div class="error-msg">JSON A is invalid: ' + e.message + '</div>';
+    box.style.display = 'none';
+    return;
+  }
+  try {
+    b = JSON.parse(document.getElementById('diffB').value);
+  } catch (e) {
+    msg.innerHTML = '<div class="error-msg">JSON B is invalid: ' + e.message + '</div>';
+    box.style.display = 'none';
+    return;
+  }
+
+  const diffs = deepDiff(a, b, '', []);
+  table.innerHTML = '<tr><th>Path</th><th>Change</th><th>Before</th><th>After</th></tr>';
+
+  if (diffs.length === 0) {
+    msg.innerHTML = '<div class="success-msg">No differences — both are equivalent.</div>';
+    box.style.display = 'block';
+    return;
+  }
+
+  msg.innerHTML = '<div class="success-msg">' + diffs.length + ' difference' + (diffs.length === 1 ? '' : 's') + ' found.</div>';
+  diffs.forEach(function (d) {
+    const tr = document.createElement('tr');
+    const color = d.type === 'added' ? '#4ade80' : d.type === 'removed' ? '#ff6b6b' : '#5b8cff';
+    tr.innerHTML = '<td><code>' + d.path + '</code></td>' +
+      '<td style="color:' + color + ';">' + d.type + '</td>' +
+      '<td>' + shortVal(d.from) + '</td>' +
+      '<td>' + shortVal(d.to) + '</td>';
+    table.appendChild(tr);
+  });
+  box.style.display = 'block';
 }
 </script>
 
