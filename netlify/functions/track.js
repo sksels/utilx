@@ -35,10 +35,18 @@ async function ensureTable(client) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       path TEXT NOT NULL,
       referrer TEXT,
+      source TEXT,
       visitor_hash TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+  // Migration for databases created before the "source" column existed.
+  // Fails harmlessly if the column is already there.
+  try {
+    await client.execute(`ALTER TABLE pageviews ADD COLUMN source TEXT`);
+  } catch (e) {
+    /* column already exists */
+  }
   tableReady = true;
 }
 
@@ -60,6 +68,7 @@ exports.handler = async (event) => {
     const body = JSON.parse(event.body || "{}");
     const path = String(body.path || "/").slice(0, 500);
     const referrer = String(body.referrer || "").slice(0, 500);
+    const source = String(body.source || "").slice(0, 100);
 
     const ip =
       event.headers["x-nf-client-connection-ip"] ||
@@ -71,8 +80,8 @@ exports.handler = async (event) => {
 
     await ensureTable(client);
     await client.execute({
-      sql: "INSERT INTO pageviews (path, referrer, visitor_hash) VALUES (?, ?, ?)",
-      args: [path, referrer, visitorHash],
+      sql: "INSERT INTO pageviews (path, referrer, source, visitor_hash) VALUES (?, ?, ?, ?)",
+      args: [path, referrer, source, visitorHash],
     });
 
     return { statusCode: 204, body: "" };

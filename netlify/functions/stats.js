@@ -31,10 +31,16 @@ async function ensureTable(client) {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       path TEXT NOT NULL,
       referrer TEXT,
+      source TEXT,
       visitor_hash TEXT NOT NULL,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     )
   `);
+  try {
+    await client.execute(`ALTER TABLE pageviews ADD COLUMN source TEXT`);
+  } catch (e) {
+    /* column already exists */
+  }
 }
 
 exports.handler = async (event) => {
@@ -63,6 +69,9 @@ exports.handler = async (event) => {
     const byReferrerRes = await client.execute(
       "SELECT CASE WHEN referrer = '' OR referrer IS NULL THEN '(direct)' ELSE referrer END as referrer, COUNT(*) as views FROM pageviews GROUP BY referrer ORDER BY views DESC LIMIT 20"
     );
+    const bySourceRes = await client.execute(
+      "SELECT source, COUNT(*) as views FROM pageviews WHERE source IS NOT NULL AND source != '' GROUP BY source ORDER BY views DESC LIMIT 20"
+    );
 
     return {
       statusCode: 200,
@@ -72,6 +81,7 @@ exports.handler = async (event) => {
         byPage: byPageRes.rows,
         byDay: byDayRes.rows,
         byReferrer: byReferrerRes.rows,
+        bySource: bySourceRes.rows,
       }),
     };
   } catch (err) {
