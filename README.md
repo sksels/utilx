@@ -1,4 +1,4 @@
-# UtilX ---— Launch Playbook --
+# UtilX ---— Launch Playbook ----
 
 A free static site with six client-side developer tools (JSON formatter, regex tester, cron builder, password/UUID generator, Base64 tool, color converter) plus four SEO guide pages and the About/Privacy/Contact pages AdSense requires. Everything runs in the browser — no backend, no database, no user data collected.
 
