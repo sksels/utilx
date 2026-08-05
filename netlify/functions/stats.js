@@ -7,6 +7,18 @@ const db = createClient({
   authToken: process.env.TURSO_AUTH_TOKEN,
 });
 
+async function ensureTable() {
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS pageviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      path TEXT NOT NULL,
+      referrer TEXT,
+      visitor_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    )
+  `);
+}
+
 exports.handler = async (event) => {
   const password = event.queryStringParameters && event.queryStringParameters.password;
   if (!process.env.STATS_PASSWORD || password !== process.env.STATS_PASSWORD) {
@@ -18,6 +30,7 @@ exports.handler = async (event) => {
   }
 
   try {
+    await ensureTable();
     const totalRes = await db.execute(
       "SELECT COUNT(*) as total, COUNT(DISTINCT visitor_hash) as unique_visitors FROM pageviews"
     );

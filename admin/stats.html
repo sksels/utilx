@@ -66,7 +66,9 @@ async function loadStats() {
       return;
     }
     if (!res.ok) {
-      msg.innerHTML = '<div class="error-msg">Something went wrong loading stats.</div>';
+      let detail = '';
+      try { detail = (await res.json()).error || ''; } catch (e) {}
+      msg.innerHTML = '<div class="error-msg">Something went wrong loading stats' + (detail ? ': ' + detail : '') + ' (status ' + res.status + ')</div>';
       return;
     }
     const data = await res.json();
