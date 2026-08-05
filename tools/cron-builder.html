@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cron Expression Builder &amp; Decoder | UtilX</title>
-<meta name="description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<title>Cron Expression Builder &amp; Decoder — Common Schedules | UtilX</title>
+<meta name="description" content="Build cron expressions with dropdowns or decode existing ones into plain English. Includes ready-made examples for every 15 minutes, every weekday at 9am, and other common schedules.">
 <link rel="canonical" href="https://utilx.tools/tools/cron-builder.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UtilX">
-<meta property="og:title" content="Cron Expression Builder &amp; Decoder | UtilX">
-<meta property="og:description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<meta property="og:title" content="Cron Expression Builder &amp; Decoder — Common Schedules | UtilX">
+<meta property="og:description" content="Build cron expressions with dropdowns or decode existing ones into plain English. Includes ready-made examples for every 15 minutes, every weekday at 9am, and other common schedules.">
 <meta property="og:url" content="https://utilx.tools/tools/cron-builder.html">
 <meta property="og:image" content="https://utilx.tools/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Cron Expression Builder &amp; Decoder | UtilX">
-<meta name="twitter:description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<meta name="twitter:title" content="Cron Expression Builder &amp; Decoder — Common Schedules | UtilX">
+<meta name="twitter:description" content="Build cron expressions with dropdowns or decode existing ones into plain English. Includes ready-made examples for every 15 minutes, every weekday at 9am, and other common schedules.">
 <meta name="twitter:image" content="https://utilx.tools/og-image.png">
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
@@ -22,9 +22,9 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Cron Expression Builder & Decoder",
+  "name": "Cron Expression Builder & Decoder — Common Schedules",
   "url": "https://utilx.tools/tools/cron-builder.html",
-  "description": "Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.",
+  "description": "Build cron expressions with dropdowns or decode existing ones into plain English. Includes ready-made examples for every 15 minutes, every weekday at 9am, and other common schedules.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any (runs in browser)",
   "offers": {
@@ -108,6 +108,21 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2 style="margin-top:0;">Common schedules</h2>
+      <p style="color:var(--text-dim); margin-top:-8px;">Click any example to load it into the decoder above.</p>
+      <table class="ref-table">
+        <tr><th>Schedule</th><th>Expression</th><th></th></tr>
+        <tr><td>Every 15 minutes</td><td><code>*/15 * * * *</code></td><td><button class="secondary" onclick="loadExample('*/15 * * * *')">Use</button></td></tr>
+        <tr><td>Every hour</td><td><code>0 * * * *</code></td><td><button class="secondary" onclick="loadExample('0 * * * *')">Use</button></td></tr>
+        <tr><td>Every day at midnight</td><td><code>0 0 * * *</code></td><td><button class="secondary" onclick="loadExample('0 0 * * *')">Use</button></td></tr>
+        <tr><td>Every weekday at 9am</td><td><code>0 9 * * 1-5</code></td><td><button class="secondary" onclick="loadExample('0 9 * * 1-5')">Use</button></td></tr>
+        <tr><td>Every Monday at 9am</td><td><code>0 9 * * 1</code></td><td><button class="secondary" onclick="loadExample('0 9 * * 1')">Use</button></td></tr>
+        <tr><td>Every 6 hours</td><td><code>0 */6 * * *</code></td><td><button class="secondary" onclick="loadExample('0 */6 * * *')">Use</button></td></tr>
+        <tr><td>First of every month</td><td><code>0 0 1 * *</code></td><td><button class="secondary" onclick="loadExample('0 0 1 * *')">Use</button></td></tr>
+      </table>
+    </div>
+
     <div class="ad-slot">Ad placeholder — replace with your AdSense unit once approved</div>
 
     <p>New to cron syntax? Read the full <a href="/guides/cron-syntax-guide.html">cron syntax guide</a>.</p>
@@ -122,6 +137,12 @@
 </footer>
 
 <script>
+function loadExample(expr) {
+  document.getElementById('decodeInput').value = expr;
+  decodeCron();
+  document.getElementById('decodeInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function buildCron() {
   const m = document.getElementById('minute').value.trim() || '*';
   const h = document.getElementById('hour').value.trim() || '*';

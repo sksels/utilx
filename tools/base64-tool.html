@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Base64 Encoder / Decoder — Free Online Tool | UtilX</title>
-<meta name="description" content="Encode text to Base64 or decode Base64 back to plain text, entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
+<title>Base64 Encoder &amp; Decoder — Text or Downloadable File | UtilX</title>
+<meta name="description" content="Encode text to Base64, or decode Base64 back to plain text or a downloadable file — entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
 <link rel="canonical" href="https://utilx.tools/tools/base64-tool.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UtilX">
-<meta property="og:title" content="Base64 Encoder / Decoder — Free Online Tool | UtilX">
-<meta property="og:description" content="Encode text to Base64 or decode Base64 back to plain text, entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
+<meta property="og:title" content="Base64 Encoder &amp; Decoder — Text or Downloadable File | UtilX">
+<meta property="og:description" content="Encode text to Base64, or decode Base64 back to plain text or a downloadable file — entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
 <meta property="og:url" content="https://utilx.tools/tools/base64-tool.html">
 <meta property="og:image" content="https://utilx.tools/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Base64 Encoder / Decoder — Free Online Tool | UtilX">
-<meta name="twitter:description" content="Encode text to Base64 or decode Base64 back to plain text, entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
+<meta name="twitter:title" content="Base64 Encoder &amp; Decoder — Text or Downloadable File | UtilX">
+<meta name="twitter:description" content="Encode text to Base64, or decode Base64 back to plain text or a downloadable file — entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
 <meta name="twitter:image" content="https://utilx.tools/og-image.png">
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
@@ -22,9 +22,9 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Base64 Encoder / Decoder",
+  "name": "Base64 Encoder & Decoder — Text or Downloadable File",
   "url": "https://utilx.tools/tools/base64-tool.html",
-  "description": "Encode text to Base64 or decode Base64 back to plain text, entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.",
+  "description": "Encode text to Base64, or decode Base64 back to plain text or a downloadable file — entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any (runs in browser)",
   "offers": {
@@ -77,6 +77,7 @@
       <div class="output-box">
         <label for="output">Output</label>
         <textarea id="output" rows="8"></textarea>
+        <button class="secondary" onclick="downloadOutput()">Download output as file</button>
       </div>
     </div>
 
@@ -119,6 +120,20 @@ function decode() {
   } catch (e) {
     msg.innerHTML = '<div class="error-msg">Invalid Base64 input.</div>';
   }
+}
+
+function downloadOutput() {
+  const output = document.getElementById('output').value;
+  if (!output) return;
+  const blob = new Blob([output], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'output.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function swap() {

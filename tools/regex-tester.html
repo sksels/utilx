@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Regex Tester — Test Regular Expressions Online | UtilX</title>
-<meta name="description" content="Free online regex tester. Test JavaScript regular expressions against sample text with live match highlighting, capture groups, and flag support (g, i, m, s).">
+<title>Regex Tester Online — Validate Email, Phone &amp; Custom Patterns | UtilX</title>
+<meta name="description" content="Free online regex tester for JavaScript. Try ready-made patterns for email and phone number validation, or test your own regex against sample text with live match highlighting and capture groups.">
 <link rel="canonical" href="https://utilx.tools/tools/regex-tester.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UtilX">
-<meta property="og:title" content="Regex Tester — Test Regular Expressions Online | UtilX">
-<meta property="og:description" content="Free online regex tester. Test JavaScript regular expressions against sample text with live match highlighting, capture groups, and flag support (g, i, m, s).">
+<meta property="og:title" content="Regex Tester Online — Validate Email, Phone &amp; Custom Patterns | UtilX">
+<meta property="og:description" content="Free online regex tester for JavaScript. Try ready-made patterns for email and phone number validation, or test your own regex against sample text with live match highlighting and capture groups.">
 <meta property="og:url" content="https://utilx.tools/tools/regex-tester.html">
 <meta property="og:image" content="https://utilx.tools/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Regex Tester — Test Regular Expressions Online | UtilX">
-<meta name="twitter:description" content="Free online regex tester. Test JavaScript regular expressions against sample text with live match highlighting, capture groups, and flag support (g, i, m, s).">
+<meta name="twitter:title" content="Regex Tester Online — Validate Email, Phone &amp; Custom Patterns | UtilX">
+<meta name="twitter:description" content="Free online regex tester for JavaScript. Try ready-made patterns for email and phone number validation, or test your own regex against sample text with live match highlighting and capture groups.">
 <meta name="twitter:image" content="https://utilx.tools/og-image.png">
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
@@ -22,9 +22,9 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Regex Tester",
+  "name": "Regex Tester Online — Validate Email, Phone & Custom Patterns",
   "url": "https://utilx.tools/tools/regex-tester.html",
-  "description": "Free online regex tester. Test JavaScript regular expressions against sample text with live match highlighting, capture groups, and flag support (g, i, m, s).",
+  "description": "Free online regex tester for JavaScript. Try ready-made patterns for email and phone number validation, or test your own regex against sample text with live match highlighting and capture groups.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any (runs in browser)",
   "offers": {
@@ -89,6 +89,17 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2 style="margin-top:0;">Common patterns</h2>
+      <p style="color:var(--text-dim); margin-top:-8px;">Click to load a ready-made pattern into the tester above.</p>
+      <div>
+        <button class="secondary" onclick="loadPattern('\\b[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}\\b', 'test@example.com\nnot-an-email\nfirst.last+tag@sub.example.co')">Email validation</button>
+        <button class="secondary" onclick="loadPattern('\\+?1?[-.\\s]?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}', '(555) 123-4567\n555-123-4567\n+1 555.123.4567\nnot a number')">Phone number (US)</button>
+        <button class="secondary" onclick="loadPattern('https?:\\/\\/[\\w.-]+\\.[a-zA-Z]{2,}(\\/\\S*)?', 'https://utilx.tools/tools\nhttp://example.com\nnot a url')">URL</button>
+        <button class="secondary" onclick="loadPattern('^\\d{5}(-\\d{4})?$', '90210\n90210-1234\nabcde')">US ZIP code</button>
+      </div>
+    </div>
+
     <div class="ad-slot">Ad placeholder — replace with your AdSense unit once approved</div>
 
     <h2>Common flags</h2>
@@ -111,6 +122,13 @@
 </footer>
 
 <script>
+function loadPattern(pattern, sample) {
+  document.getElementById('pattern').value = pattern;
+  document.getElementById('testtext').value = sample;
+  runRegex();
+  document.getElementById('pattern').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
 function escapeHtml(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
