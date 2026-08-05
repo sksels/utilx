@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Color Converter — HEX, RGB, HSL | UtilX</title>
-<meta name="description" content="Convert colors between HEX, RGB, and HSL formats instantly with a live preview swatch. Free, fast, browser-based color converter.">
+<title>Color Converter + Image Picker &amp; Contrast Checker | UtilX</title>
+<meta name="description" content="Convert HEX, RGB, and HSL instantly, sample any color directly from an uploaded image, and check WCAG contrast ratios for accessibility — all free and browser-based.">
 <link rel="canonical" href="https://utilx.tools/tools/color-converter.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UtilX">
-<meta property="og:title" content="Color Converter — HEX, RGB, HSL | UtilX">
-<meta property="og:description" content="Convert colors between HEX, RGB, and HSL formats instantly with a live preview swatch. Free, fast, browser-based color converter.">
+<meta property="og:title" content="Color Converter + Image Picker &amp; Contrast Checker | UtilX">
+<meta property="og:description" content="Convert HEX, RGB, and HSL instantly, sample any color directly from an uploaded image, and check WCAG contrast ratios for accessibility — all free and browser-based.">
 <meta property="og:url" content="https://utilx.tools/tools/color-converter.html">
 <meta property="og:image" content="https://utilx.tools/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Color Converter — HEX, RGB, HSL | UtilX">
-<meta name="twitter:description" content="Convert colors between HEX, RGB, and HSL formats instantly with a live preview swatch. Free, fast, browser-based color converter.">
+<meta name="twitter:title" content="Color Converter + Image Picker &amp; Contrast Checker | UtilX">
+<meta name="twitter:description" content="Convert HEX, RGB, and HSL instantly, sample any color directly from an uploaded image, and check WCAG contrast ratios for accessibility — all free and browser-based.">
 <meta name="twitter:image" content="https://utilx.tools/og-image.png">
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
@@ -22,9 +22,9 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Color Converter",
+  "name": "Color Converter + Image Picker & Contrast Checker",
   "url": "https://utilx.tools/tools/color-converter.html",
-  "description": "Convert colors between HEX, RGB, and HSL formats instantly with a live preview swatch. Free, fast, browser-based color converter.",
+  "description": "Convert HEX, RGB, and HSL instantly, sample any color directly from an uploaded image, and check WCAG contrast ratios for accessibility — all free and browser-based.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any (runs in browser)",
   "offers": {
@@ -74,6 +74,31 @@
       <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
 
       <div id="msg"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Sample a color from an image</h2>
+      <p style="color:var(--text-dim); margin-top:-8px;">Upload an image, then click anywhere on it to pick that pixel's color. Nothing is uploaded anywhere — the image stays in your browser.</p>
+      <input type="file" id="imageInput" accept="image/*">
+      <canvas id="imageCanvas" style="max-width:100%; margin-top:12px; border-radius:8px; border:1px solid var(--border); cursor:crosshair; display:none;"></canvas>
+      <div id="imageMsg"></div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">Contrast checker (WCAG)</h2>
+      <p style="color:var(--text-dim); margin-top:-8px;">Check whether a text/background color pair meets accessibility contrast requirements.</p>
+      <div class="two-col">
+        <div>
+          <label for="fgColor">Text color</label>
+          <input type="text" id="fgColor" value="#e6e8ef">
+        </div>
+        <div>
+          <label for="bgColor">Background color</label>
+          <input type="text" id="bgColor" value="#0f1117">
+        </div>
+      </div>
+      <div id="contrastPreview" style="padding:20px; border-radius:8px; margin-top:12px; font-size:1.1rem;">The quick brown fox jumps over the lazy dog</div>
+      <div id="contrastResult" style="margin-top:12px;"></div>
     </div>
 
     <div class="ad-slot">Ad placeholder — replace with your AdSense unit once approved</div>
@@ -179,6 +204,105 @@ function updateFrom(source) {
 hexEl.addEventListener('input', () => updateFrom('hex'));
 rgbEl.addEventListener('input', () => updateFrom('rgb'));
 hslEl.addEventListener('input', () => updateFrom('hsl'));
+
+// --- Image color sampling ---
+const imageInput = document.getElementById('imageInput');
+const imageCanvas = document.getElementById('imageCanvas');
+const imageMsg = document.getElementById('imageMsg');
+const imageCtx = imageCanvas.getContext('2d', { willReadFrequently: true });
+
+imageInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = (ev) => { img.src = ev.target.result; };
+  img.onload = () => {
+    const maxWidth = 600;
+    const scale = Math.min(1, maxWidth / img.width);
+    imageCanvas.width = img.width * scale;
+    imageCanvas.height = img.height * scale;
+    imageCtx.drawImage(img, 0, 0, imageCanvas.width, imageCanvas.height);
+    imageCanvas.style.display = 'block';
+    imageMsg.innerHTML = '<div class="success-msg">Image loaded — click anywhere on it to sample a color.</div>';
+  };
+  reader.readAsDataURL(file);
+});
+
+imageCanvas.addEventListener('click', (e) => {
+  const rect = imageCanvas.getBoundingClientRect();
+  const scaleX = imageCanvas.width / rect.width;
+  const scaleY = imageCanvas.height / rect.height;
+  const x = Math.floor((e.clientX - rect.left) * scaleX);
+  const y = Math.floor((e.clientY - rect.top) * scaleY);
+  const pixel = imageCtx.getImageData(x, y, 1, 1).data;
+  const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+  hexEl.value = hex;
+  updateFrom('hex');
+  imageMsg.innerHTML = '<div class="success-msg">Sampled ' + hex + ' — loaded into the converter above.</div>';
+});
+
+// --- WCAG contrast checker ---
+const fgColorEl = document.getElementById('fgColor');
+const bgColorEl = document.getElementById('bgColor');
+const contrastPreview = document.getElementById('contrastPreview');
+const contrastResult = document.getElementById('contrastResult');
+
+function relativeLuminance(r, g, b) {
+  const toLinear = (c) => {
+    c /= 255;
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+  const rl = toLinear(r), gl = toLinear(g), bl = toLinear(b);
+  return 0.2126 * rl + 0.7152 * gl + 0.0722 * bl;
+}
+
+function contrastRatio(rgb1, rgb2) {
+  const l1 = relativeLuminance(rgb1.r, rgb1.g, rgb1.b);
+  const l2 = relativeLuminance(rgb2.r, rgb2.g, rgb2.b);
+  const lighter = Math.max(l1, l2), darker = Math.min(l1, l2);
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function parseAnyColor(value) {
+  let rgb = hexToRgb(value);
+  if (rgb) return rgb;
+  let m = value.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/);
+  if (m) return { r: +m[1], g: +m[2], b: +m[3] };
+  return null;
+}
+
+function updateContrast() {
+  const fg = parseAnyColor(fgColorEl.value);
+  const bg = parseAnyColor(bgColorEl.value);
+  if (!fg || !bg) {
+    contrastResult.innerHTML = '<div class="error-msg">Enter valid colors (hex or rgb) for both fields.</div>';
+    return;
+  }
+  contrastPreview.style.color = rgbToHex(fg.r, fg.g, fg.b);
+  contrastPreview.style.background = rgbToHex(bg.r, bg.g, bg.b);
+
+  const ratio = contrastRatio(fg, bg);
+  const passAANormal = ratio >= 4.5;
+  const passAALarge = ratio >= 3;
+  const passAAANormal = ratio >= 7;
+  const passAAALarge = ratio >= 4.5;
+
+  const badge = (pass) => '<span class="' + (pass ? 'success-msg' : 'error-msg') + '" style="margin:0;">' + (pass ? 'Pass' : 'Fail') + '</span>';
+
+  contrastResult.innerHTML =
+    '<table class="ref-table">' +
+    '<tr><th>Ratio</th><td>' + ratio.toFixed(2) + ':1</td></tr>' +
+    '<tr><th>AA — normal text</th><td>' + badge(passAANormal) + ' (needs 4.5:1)</td></tr>' +
+    '<tr><th>AA — large text</th><td>' + badge(passAALarge) + ' (needs 3:1)</td></tr>' +
+    '<tr><th>AAA — normal text</th><td>' + badge(passAAANormal) + ' (needs 7:1)</td></tr>' +
+    '<tr><th>AAA — large text</th><td>' + badge(passAAALarge) + ' (needs 4.5:1)</td></tr>' +
+    '</table>';
+}
+
+fgColorEl.addEventListener('input', updateContrast);
+bgColorEl.addEventListener('input', updateContrast);
+updateContrast();
 </script>
 
 </body>

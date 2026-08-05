@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Base64 Encoder / Decoder — Free Online Tool | UtilX</title>
-<meta name="description" content="Encode text to Base64 or decode Base64 back to plain text, entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
+<title>Base64 Encoder &amp; Decoder + JWT Decoder | UtilX</title>
+<meta name="description" content="Encode text to Base64, decode Base64 to text or a downloadable file, or decode a JWT to inspect its header and payload — entirely in your browser. Supports UTF-8 correctly, unlike plain btoa/atob.">
 <link rel="canonical" href="https://utilx.tools/tools/base64-tool.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UtilX">
-<meta property="og:title" content="Base64 Encoder / Decoder — Free Online Tool | UtilX">
-<meta property="og:description" content="Encode text to Base64 or decode Base64 back to plain text, entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
+<meta property="og:title" content="Base64 Encoder &amp; Decoder + JWT Decoder | UtilX">
+<meta property="og:description" content="Encode text to Base64, decode Base64 to text or a downloadable file, or decode a JWT to inspect its header and payload — entirely in your browser. Supports UTF-8 correctly, unlike plain btoa/atob.">
 <meta property="og:url" content="https://utilx.tools/tools/base64-tool.html">
 <meta property="og:image" content="https://utilx.tools/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Base64 Encoder / Decoder — Free Online Tool | UtilX">
-<meta name="twitter:description" content="Encode text to Base64 or decode Base64 back to plain text, entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.">
+<meta name="twitter:title" content="Base64 Encoder &amp; Decoder + JWT Decoder | UtilX">
+<meta name="twitter:description" content="Encode text to Base64, decode Base64 to text or a downloadable file, or decode a JWT to inspect its header and payload — entirely in your browser. Supports UTF-8 correctly, unlike plain btoa/atob.">
 <meta name="twitter:image" content="https://utilx.tools/og-image.png">
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
@@ -22,9 +22,9 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Base64 Encoder / Decoder",
+  "name": "Base64 Encoder & Decoder + JWT Decoder",
   "url": "https://utilx.tools/tools/base64-tool.html",
-  "description": "Encode text to Base64 or decode Base64 back to plain text, entirely in your browser. Supports UTF-8 text correctly, unlike the plain btoa/atob functions.",
+  "description": "Encode text to Base64, decode Base64 to text or a downloadable file, or decode a JWT to inspect its header and payload — entirely in your browser. Supports UTF-8 correctly, unlike plain btoa/atob.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any (runs in browser)",
   "offers": {
@@ -77,6 +77,30 @@
       <div class="output-box">
         <label for="output">Output</label>
         <textarea id="output" rows="8"></textarea>
+        <button class="secondary" onclick="downloadOutput()">Download output as file</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 style="margin-top:0;">JWT Decoder</h2>
+      <p style="color:var(--text-dim); margin-top:-8px;">JWTs are just Base64url-encoded JSON under the hood — paste one below to see the header and payload decoded. This does not verify the signature (that requires the secret key), it just decodes the readable parts.</p>
+      <label for="jwtInput">JWT</label>
+      <textarea id="jwtInput" rows="4" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
+      <div>
+        <button onclick="decodeJwt()">Decode JWT</button>
+      </div>
+      <div id="jwtMsg"></div>
+      <div class="output-box">
+        <label>Header</label>
+        <textarea id="jwtHeader" rows="4" readonly></textarea>
+      </div>
+      <div class="output-box">
+        <label>Payload</label>
+        <textarea id="jwtPayload" rows="6" readonly></textarea>
+      </div>
+      <div class="output-box">
+        <label>Signature (raw, unverified)</label>
+        <input type="text" id="jwtSignature" readonly>
       </div>
     </div>
 
@@ -118,6 +142,60 @@ function decode() {
     msg.innerHTML = '<div class="success-msg">Decoded.</div>';
   } catch (e) {
     msg.innerHTML = '<div class="error-msg">Invalid Base64 input.</div>';
+  }
+}
+
+function downloadOutput() {
+  const output = document.getElementById('output').value;
+  if (!output) return;
+  const blob = new Blob([output], { type: 'application/octet-stream' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'output.txt';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function base64UrlDecode(str) {
+  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (base64.length % 4) { base64 += '='; }
+  const binary = atob(base64);
+  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+  return new TextDecoder().decode(bytes);
+}
+
+function decodeJwt() {
+  const input = document.getElementById('jwtInput').value.trim();
+  const msg = document.getElementById('jwtMsg');
+  const headerOut = document.getElementById('jwtHeader');
+  const payloadOut = document.getElementById('jwtPayload');
+  const sigOut = document.getElementById('jwtSignature');
+  msg.innerHTML = '';
+
+  const parts = input.split('.');
+  if (parts.length !== 3) {
+    msg.innerHTML = '<div class="error-msg">A JWT needs exactly 3 dot-separated parts: header.payload.signature.</div>';
+    headerOut.value = '';
+    payloadOut.value = '';
+    sigOut.value = '';
+    return;
+  }
+
+  try {
+    const header = JSON.parse(base64UrlDecode(parts[0]));
+    const payload = JSON.parse(base64UrlDecode(parts[1]));
+    headerOut.value = JSON.stringify(header, null, 2);
+    payloadOut.value = JSON.stringify(payload, null, 2);
+    sigOut.value = parts[2];
+    msg.innerHTML = '<div class="success-msg">Decoded. Signature shown as-is — not verified.</div>';
+  } catch (e) {
+    msg.innerHTML = '<div class="error-msg">Could not decode: ' + e.message + '</div>';
+    headerOut.value = '';
+    payloadOut.value = '';
+    sigOut.value = '';
   }
 }
 

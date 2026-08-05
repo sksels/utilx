@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cron Expression Builder &amp; Decoder | UtilX</title>
-<meta name="description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<title>Cron Expression Builder — Standard, Quartz &amp; Kubernetes | UtilX</title>
+<meta name="description" content="Build and decode cron expressions with dropdowns. Auto-detects standard cron (Linux/Kubernetes CronJob), Quartz syntax (Java/Spring, with seconds and named days/months), and exports a ready-to-use Kubernetes CronJob YAML manifest.">
 <link rel="canonical" href="https://utilx.tools/tools/cron-builder.html">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="UtilX">
-<meta property="og:title" content="Cron Expression Builder &amp; Decoder | UtilX">
-<meta property="og:description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<meta property="og:title" content="Cron Expression Builder — Standard, Quartz &amp; Kubernetes | UtilX">
+<meta property="og:description" content="Build and decode cron expressions with dropdowns. Auto-detects standard cron (Linux/Kubernetes CronJob), Quartz syntax (Java/Spring, with seconds and named days/months), and exports a ready-to-use Kubernetes CronJob YAML manifest.">
 <meta property="og:url" content="https://utilx.tools/tools/cron-builder.html">
 <meta property="og:image" content="https://utilx.tools/og-image.png">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Cron Expression Builder &amp; Decoder | UtilX">
-<meta name="twitter:description" content="Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.">
+<meta name="twitter:title" content="Cron Expression Builder — Standard, Quartz &amp; Kubernetes | UtilX">
+<meta name="twitter:description" content="Build and decode cron expressions with dropdowns. Auto-detects standard cron (Linux/Kubernetes CronJob), Quartz syntax (Java/Spring, with seconds and named days/months), and exports a ready-to-use Kubernetes CronJob YAML manifest.">
 <meta name="twitter:image" content="https://utilx.tools/og-image.png">
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
@@ -22,9 +22,9 @@
 {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
-  "name": "Cron Expression Builder & Decoder",
+  "name": "Cron Expression Builder — Standard, Quartz & Kubernetes",
   "url": "https://utilx.tools/tools/cron-builder.html",
-  "description": "Build cron expressions with simple dropdowns, or paste an existing cron expression to see it decoded into plain English with the next run times.",
+  "description": "Build and decode cron expressions with dropdowns. Auto-detects standard cron (Linux/Kubernetes CronJob), Quartz syntax (Java/Spring, with seconds and named days/months), and exports a ready-to-use Kubernetes CronJob YAML manifest.",
   "applicationCategory": "DeveloperApplication",
   "operatingSystem": "Any (runs in browser)",
   "offers": {
@@ -59,7 +59,7 @@
   <div class="wrap">
     <div class="breadcrumb"><a href="/index.html">Tools</a> / Cron Builder</div>
     <h1>Cron Expression Builder &amp; Decoder</h1>
-    <p class="lede">Build a 5-field cron expression with dropdowns, or paste one in to see it explained in plain English.</p>
+    <p class="lede">Build a 5-field cron expression with dropdowns, or paste one in — the decoder auto-detects standard cron (Linux/Kubernetes CronJob), or Quartz syntax (6-7 fields with seconds, used by Java/Spring schedulers).</p>
 
     <div class="card">
       <h2 style="margin-top:0;">Build</h2>
@@ -87,10 +87,16 @@
       <input type="text" id="dow" value="*">
       <div>
         <button onclick="buildCron()">Build Expression</button>
+        <button class="secondary" onclick="copyField('built')">Copy expression</button>
+        <button class="secondary" onclick="copyField('k8sYaml')">Copy as Kubernetes YAML</button>
       </div>
       <div class="output-box">
         <label>Cron expression</label>
         <input type="text" id="built" readonly>
+      </div>
+      <div class="output-box">
+        <label>As a Kubernetes CronJob snippet</label>
+        <textarea id="k8sYaml" rows="4" readonly style="font-family:'SF Mono',Menlo,Consolas,monospace;"></textarea>
       </div>
     </div>
 
@@ -108,6 +114,21 @@
       </div>
     </div>
 
+    <div class="card">
+      <h2 style="margin-top:0;">Common schedules</h2>
+      <p style="color:var(--text-dim); margin-top:-8px;">Click any example to load it into the decoder above.</p>
+      <table class="ref-table">
+        <tr><th>Schedule</th><th>Expression</th><th></th></tr>
+        <tr><td>Every 15 minutes</td><td><code>*/15 * * * *</code></td><td><button class="secondary" onclick="loadExample('*/15 * * * *')">Use</button></td></tr>
+        <tr><td>Every hour</td><td><code>0 * * * *</code></td><td><button class="secondary" onclick="loadExample('0 * * * *')">Use</button></td></tr>
+        <tr><td>Every day at midnight</td><td><code>0 0 * * *</code></td><td><button class="secondary" onclick="loadExample('0 0 * * *')">Use</button></td></tr>
+        <tr><td>Every weekday at 9am</td><td><code>0 9 * * 1-5</code></td><td><button class="secondary" onclick="loadExample('0 9 * * 1-5')">Use</button></td></tr>
+        <tr><td>Every Monday at 9am</td><td><code>0 9 * * 1</code></td><td><button class="secondary" onclick="loadExample('0 9 * * 1')">Use</button></td></tr>
+        <tr><td>Every 6 hours</td><td><code>0 */6 * * *</code></td><td><button class="secondary" onclick="loadExample('0 */6 * * *')">Use</button></td></tr>
+        <tr><td>First of every month</td><td><code>0 0 1 * *</code></td><td><button class="secondary" onclick="loadExample('0 0 1 * *')">Use</button></td></tr>
+      </table>
+    </div>
+
     <div class="ad-slot">Ad placeholder — replace with your AdSense unit once approved</div>
 
     <p>New to cron syntax? Read the full <a href="/guides/cron-syntax-guide.html">cron syntax guide</a>.</p>
@@ -122,50 +143,101 @@
 </footer>
 
 <script>
+function loadExample(expr) {
+  document.getElementById('decodeInput').value = expr;
+  decodeCron();
+  document.getElementById('decodeInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function copyField(id) {
+  const el = document.getElementById(id);
+  if (!el.value) return;
+  el.select();
+  document.execCommand('copy');
+}
+
 function buildCron() {
   const m = document.getElementById('minute').value.trim() || '*';
   const h = document.getElementById('hour').value.trim() || '*';
   const dom = document.getElementById('dom').value.trim() || '*';
   const mon = document.getElementById('month').value.trim() || '*';
   const dow = document.getElementById('dow').value.trim() || '*';
-  document.getElementById('built').value = [m, h, dom, mon, dow].join(' ');
+  const expr = [m, h, dom, mon, dow].join(' ');
+  document.getElementById('built').value = expr;
+  document.getElementById('k8sYaml').value =
+    'apiVersion: batch/v1\n' +
+    'kind: CronJob\n' +
+    'metadata:\n' +
+    '  name: my-cronjob\n' +
+    'spec:\n' +
+    '  schedule: "' + expr + '"\n' +
+    '  jobTemplate:\n' +
+    '    spec:\n' +
+    '      template:\n' +
+    '        spec:\n' +
+    '          containers:\n' +
+    '          - name: my-job\n' +
+    '            image: my-image\n' +
+    '          restartPolicy: OnFailure';
 }
 
 const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const QUARTZ_DOW_NAMES = [null, 'Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']; // Quartz: 1=Sunday...7=Saturday, index matches value directly
 const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
 
-function describeField(field, unit, names) {
-  if (field === '*') return 'every ' + unit;
+// Abbreviation lookups so named values (MON, JAN, etc.) work in ranges/lists, not just single values.
+const DOW_ABBR = { SUN:0, MON:1, TUE:2, WED:3, THU:4, FRI:5, SAT:6 };
+const QUARTZ_DOW_ABBR = { SUN:1, MON:2, TUE:3, WED:4, THU:5, FRI:6, SAT:7 };
+const MONTH_ABBR = { JAN:1, FEB:2, MAR:3, APR:4, MAY:5, JUN:6, JUL:7, AUG:8, SEP:9, OCT:10, NOV:11, DEC:12 };
+
+function normalizeToken(token, abbrMap) {
+  if (!abbrMap) return token;
+  const upper = token.toUpperCase();
+  return abbrMap.hasOwnProperty(upper) ? String(abbrMap[upper]) : token;
+}
+
+function describeField(field, unit, names, nameOffset, abbrMap) {
+  nameOffset = nameOffset || 0;
+  if (field === '*' || field === '?') return 'every ' + unit;
   if (field.includes('/')) {
     const [base, step] = field.split('/');
-    return 'every ' + step + ' ' + unit + (base !== '*' ? ' starting at ' + base : 's');
+    return 'every ' + step + ' ' + unit + (base !== '*' ? ' starting at ' + normalizeToken(base, abbrMap) : 's');
   }
   if (field.includes('-')) {
-    const [a, b] = field.split('-');
-    if (names) return names[Number(a)] + ' through ' + names[Number(b)];
+    let [a, b] = field.split('-');
+    a = normalizeToken(a, abbrMap);
+    b = normalizeToken(b, abbrMap);
+    if (names) return names[Number(a) - nameOffset] + ' through ' + names[Number(b) - nameOffset];
     return unit + ' ' + a + ' through ' + b;
   }
   if (field.includes(',')) {
-    const parts = field.split(',');
-    if (names) return parts.map(p => names[Number(p)]).join(', ');
+    const parts = field.split(',').map(p => normalizeToken(p, abbrMap));
+    if (names) return parts.map(p => names[Number(p) - nameOffset]).join(', ');
     return unit + 's ' + parts.join(', ');
   }
-  if (names) return names[Number(field)];
-  return unit + ' ' + field;
+  const norm = normalizeToken(field, abbrMap);
+  if (names && /^\d+$/.test(norm)) return names[Number(norm) - nameOffset];
+  return unit + ' ' + norm;
 }
 
 function decodeCron() {
   const input = document.getElementById('decodeInput').value.trim();
   const msg = document.getElementById('decodeMsg');
   const out = document.getElementById('decoded');
-  const parts = input.split(/\s+/);
+  const parts = input.split(/\s+/).filter(Boolean);
 
-  if (parts.length !== 5) {
-    msg.innerHTML = '<div class="error-msg">A cron expression needs exactly 5 fields: minute hour day-of-month month day-of-week.</div>';
+  if (parts.length === 5) {
+    decodeStandardCron(parts, msg, out);
+  } else if (parts.length === 6 || parts.length === 7) {
+    decodeQuartzCron(parts, msg, out);
+  } else {
+    msg.innerHTML = '<div class="error-msg">Expected 5 fields (standard cron / Kubernetes CronJob: minute hour day-of-month month day-of-week), or 6-7 fields (Quartz: seconds minute hour day-of-month month day-of-week [year]).</div>';
     out.value = '';
-    return;
   }
-  msg.innerHTML = '<div class="success-msg">Parsed successfully.</div>';
+}
+
+function decodeStandardCron(parts, msg, out) {
+  msg.innerHTML = '<div class="success-msg">Parsed as standard cron (Linux / Kubernetes CronJob syntax).</div>';
 
   const [m, h, dom, mon, dow] = parts;
   const isPlainNumber = (f) => /^\d+$/.test(f);
@@ -185,10 +257,34 @@ function decodeCron() {
   }
 
   let domPart = dom === '*' ? '' : ' on ' + describeField(dom, 'day of the month');
-  let monPart = mon === '*' ? '' : ' in ' + describeField(mon, 'month', MONTH_NAMES);
-  let dowPart = dow === '*' ? '' : ' on ' + describeField(dow, 'day', DOW_NAMES);
+  let monPart = mon === '*' ? '' : ' in ' + describeField(mon, 'month', MONTH_NAMES, 0, MONTH_ABBR);
+  let dowPart = dow === '*' ? '' : ' on ' + describeField(dow, 'day', DOW_NAMES, 0, DOW_ABBR);
 
   out.value = 'Runs ' + time + domPart + monPart + dowPart + '.';
+}
+
+function decodeQuartzCron(parts, msg, out) {
+  const hasYear = parts.length === 7;
+  msg.innerHTML = '<div class="success-msg">Parsed as Quartz cron (' + parts.length + ' fields, Java/Spring syntax).</div>';
+
+  const [sec, m, h, dom, mon, dow] = parts;
+  const year = hasYear ? parts[6] : null;
+  const isPlainNumber = (f) => /^\d+$/.test(f);
+
+  let time;
+  if (isPlainNumber(sec) && isPlainNumber(m) && isPlainNumber(h)) {
+    time = 'at ' + h.padStart(2,'0') + ':' + m.padStart(2,'0') + ':' + sec.padStart(2,'0');
+  } else {
+    time = describeField(sec, 'second') + ', ' + describeField(m, 'minute') + ', ' + describeField(h, 'hour');
+  }
+
+  let domPart = (dom === '*' || dom === '?') ? '' : ' on ' + describeField(dom, 'day of the month');
+  let monPart = mon === '*' ? '' : ' in ' + describeField(mon, 'month', MONTH_NAMES, 0, MONTH_ABBR);
+  let dowPart = (dow === '*' || dow === '?') ? '' : ' on ' + describeField(dow, 'day', QUARTZ_DOW_NAMES, 0, QUARTZ_DOW_ABBR);
+  let yearPart = (year && year !== '*') ? ' in ' + year : '';
+
+  out.value = 'Runs ' + time + domPart + monPart + dowPart + yearPart +
+    '. Note: Quartz requires exactly one of day-of-month/day-of-week to be "?" — this decoder shows both fields as given without enforcing that rule.';
 }
 </script>
 
