@@ -50,6 +50,10 @@
 
       <h2>Top referrers</h2>
       <table class="stats-table" id="by-referrer-table"><thead><tr><th>Referrer</th><th>Views</th></tr></thead><tbody></tbody></table>
+
+      <h2>Top sources (tracked links)</h2>
+      <p style="color:var(--text-dim); margin-top:-8px;">Views with a <code>?src=</code> or <code>?utm_source=</code> parameter — use this to tag links you share (e.g. <code>utilx.tools/?src=hn</code>).</p>
+      <table class="stats-table" id="by-source-table"><thead><tr><th>Source</th><th>Views</th></tr></thead><tbody></tbody></table>
     </div>
   </div>
 </main>
@@ -79,6 +83,7 @@ async function loadStats() {
     fillTable('by-page-table', data.byPage, ['path', 'views']);
     fillTable('by-day-table', data.byDay, ['day', 'views', 'unique_visitors']);
     fillTable('by-referrer-table', data.byReferrer, ['referrer', 'views']);
+    fillTable('by-source-table', data.bySource, ['source', 'views']);
 
     document.getElementById('results').style.display = 'block';
   } catch (e) {
