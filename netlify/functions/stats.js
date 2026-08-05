@@ -1,14 +1,32 @@
 // Returns aggregated analytics. Protected by a password check against the
 // STATS_PASSWORD environment variable — never exposed publicly or indexed.
-const { createClient } = require("@libsql/client");
+let createClient;
+try {
+  ({ createClient } = require("@libsql/client"));
+} catch (e) {
+  createClient = null;
+}
 
-const db = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
+let db = null;
 
-async function ensureTable() {
-  await db.execute(`
+function getDb() {
+  if (!createClient) {
+    throw new Error("@libsql/client module failed to load — check build dependencies");
+  }
+  if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+    throw new Error("Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variable");
+  }
+  if (!db) {
+    db = createClient({
+      url: process.env.TURSO_DATABASE_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+  }
+  return db;
+}
+
+async function ensureTable(client) {
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS pageviews (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       path TEXT NOT NULL,
@@ -30,17 +48,19 @@ exports.handler = async (event) => {
   }
 
   try {
-    await ensureTable();
-    const totalRes = await db.execute(
+    const client = getDb();
+    await ensureTable(client);
+
+    const totalRes = await client.execute(
       "SELECT COUNT(*) as total, COUNT(DISTINCT visitor_hash) as unique_visitors FROM pageviews"
     );
-    const byPageRes = await db.execute(
+    const byPageRes = await client.execute(
       "SELECT path, COUNT(*) as views FROM pageviews GROUP BY path ORDER BY views DESC LIMIT 20"
     );
-    const byDayRes = await db.execute(
+    const byDayRes = await client.execute(
       "SELECT substr(created_at,1,10) as day, COUNT(*) as views, COUNT(DISTINCT visitor_hash) as unique_visitors FROM pageviews GROUP BY day ORDER BY day DESC LIMIT 30"
     );
-    const byReferrerRes = await db.execute(
+    const byReferrerRes = await client.execute(
       "SELECT CASE WHEN referrer = '' OR referrer IS NULL THEN '(direct)' ELSE referrer END as referrer, COUNT(*) as views FROM pageviews GROUP BY referrer ORDER BY views DESC LIMIT 20"
     );
 
@@ -59,7 +79,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Failed to load stats" }),
+      body: JSON.stringify({ error: "Failed to load stats: " + err.message }),
     };
   }
 };

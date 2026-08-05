@@ -1,0 +1,7 @@
+{
+  "name": "utilx",
+  "private": true,
+  "dependencies": {
+    "@libsql/client": "^0.14.0"
+  }
+}

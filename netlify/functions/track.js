@@ -1,18 +1,36 @@
 // Records one pageview. No cookies, no raw IP storage — the visitor's IP + user-agent
 // + today's date are hashed together into a one-way identifier used only to distinguish
 // a "unique visitor" from a page refresh. The raw IP itself is never written to the database.
-const { createClient } = require("@libsql/client");
+let createClient;
+try {
+  ({ createClient } = require("@libsql/client"));
+} catch (e) {
+  createClient = null;
+}
 const crypto = require("crypto");
 
-const db = createClient({
-  url: process.env.TURSO_DATABASE_URL,
-  authToken: process.env.TURSO_AUTH_TOKEN,
-});
-
+let db = null;
 let tableReady = false;
-async function ensureTable() {
+
+function getDb() {
+  if (!createClient) {
+    throw new Error("@libsql/client module failed to load — check build dependencies");
+  }
+  if (!process.env.TURSO_DATABASE_URL || !process.env.TURSO_AUTH_TOKEN) {
+    throw new Error("Missing TURSO_DATABASE_URL or TURSO_AUTH_TOKEN environment variable");
+  }
+  if (!db) {
+    db = createClient({
+      url: process.env.TURSO_DATABASE_URL,
+      authToken: process.env.TURSO_AUTH_TOKEN,
+    });
+  }
+  return db;
+}
+
+async function ensureTable(client) {
   if (tableReady) return;
-  await db.execute(`
+  await client.execute(`
     CREATE TABLE IF NOT EXISTS pageviews (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       path TEXT NOT NULL,
@@ -38,6 +56,7 @@ exports.handler = async (event) => {
   }
 
   try {
+    const client = getDb();
     const body = JSON.parse(event.body || "{}");
     const path = String(body.path || "/").slice(0, 500);
     const referrer = String(body.referrer || "").slice(0, 500);
@@ -50,8 +69,8 @@ exports.handler = async (event) => {
     const today = new Date().toISOString().slice(0, 10);
     const visitorHash = hashVisitor(ip, ua, today);
 
-    await ensureTable();
-    await db.execute({
+    await ensureTable(client);
+    await client.execute({
       sql: "INSERT INTO pageviews (path, referrer, visitor_hash) VALUES (?, ?, ?)",
       args: [path, referrer, visitorHash],
     });
@@ -59,6 +78,6 @@ exports.handler = async (event) => {
     return { statusCode: 204, body: "" };
   } catch (err) {
     console.error(err);
-    return { statusCode: 500, body: "Error recording pageview" };
+    return { statusCode: 500, body: "Error recording pageview: " + err.message };
   }
 };
