@@ -29,14 +29,9 @@
     <h1>Analytics</h1>
     <p class="lede">Private dashboard — not linked from the site, blocked from search indexing.</p>
 
-    <div class="card" id="login-card">
-      <label for="password">Password</label>
-      <input type="password" id="password" placeholder="Enter dashboard password">
-      <button onclick="loadStats()">View stats</button>
-      <div id="msg"></div>
-    </div>
+    <div id="msg"></div>
 
-    <div id="results" style="display:none;">
+    <div id="results">
       <div class="stat-cards">
         <div class="stat-card"><div class="num" id="total-views">—</div><div class="label">Total pageviews</div></div>
         <div class="stat-card"><div class="num" id="unique-visitors">—</div><div class="label">Unique visitors</div></div>
@@ -60,15 +55,10 @@
 
 <script>
 async function loadStats() {
-  const password = document.getElementById('password').value;
   const msg = document.getElementById('msg');
   msg.innerHTML = '';
   try {
-    const res = await fetch('/.netlify/functions/stats?password=' + encodeURIComponent(password));
-    if (res.status === 401) {
-      msg.innerHTML = '<div class="error-msg">Wrong password.</div>';
-      return;
-    }
+    const res = await fetch('/.netlify/functions/stats');
     if (!res.ok) {
       let detail = '';
       try { detail = (await res.json()).error || ''; } catch (e) {}
@@ -84,12 +74,12 @@ async function loadStats() {
     fillTable('by-day-table', data.byDay, ['day', 'views', 'unique_visitors']);
     fillTable('by-referrer-table', data.byReferrer, ['referrer', 'views']);
     fillTable('by-source-table', data.bySource, ['source', 'views']);
-
-    document.getElementById('results').style.display = 'block';
   } catch (e) {
     msg.innerHTML = '<div class="error-msg">Network error: ' + e.message + '</div>';
   }
 }
+
+loadStats();
 
 function fillTable(tableId, rows, cols) {
   const tbody = document.querySelector('#' + tableId + ' tbody');
