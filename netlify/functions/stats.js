@@ -1,5 +1,5 @@
-// Returns aggregated analytics. Protected by a password check against the
-// STATS_PASSWORD environment variable — never exposed publicly or indexed.
+// Returns aggregated analytics. No password gate — kept out of search engines
+// via robots.txt and a noindex meta tag on the dashboard page instead.
 let createClient;
 try {
   ({ createClient } = require("@libsql/client"));
@@ -44,15 +44,6 @@ async function ensureTable(client) {
 }
 
 exports.handler = async (event) => {
-  const password = event.queryStringParameters && event.queryStringParameters.password;
-  if (!process.env.STATS_PASSWORD || password !== process.env.STATS_PASSWORD) {
-    return {
-      statusCode: 401,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ error: "Unauthorized" }),
-    };
-  }
-
   try {
     const client = getDb();
     await ensureTable(client);
