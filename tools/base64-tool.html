@@ -20,6 +20,7 @@
 <meta name="twitter:image" content="https://utilx.tools/og-image.png">
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
+<script src="lib/base64.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -123,10 +124,7 @@ function encode() {
   const input = document.getElementById('input').value;
   const msg = document.getElementById('msg');
   try {
-    const bytes = new TextEncoder().encode(input);
-    let binary = '';
-    bytes.forEach(b => binary += String.fromCharCode(b));
-    document.getElementById('output').value = btoa(binary);
+    document.getElementById('output').value = Base64Lib.encodeUtf8ToBase64(input);
     msg.innerHTML = '<div class="success-msg">Encoded.</div>';
   } catch (e) {
     msg.innerHTML = '<div class="error-msg">' + e.message + '</div>';
@@ -137,9 +135,7 @@ function decode() {
   const input = document.getElementById('input').value;
   const msg = document.getElementById('msg');
   try {
-    const binary = atob(input.trim());
-    const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-    document.getElementById('output').value = new TextDecoder().decode(bytes);
+    document.getElementById('output').value = Base64Lib.decodeBase64ToUtf8(input);
     msg.innerHTML = '<div class="success-msg">Decoded.</div>';
   } catch (e) {
     msg.innerHTML = '<div class="error-msg">Invalid Base64 input.</div>';
@@ -160,14 +156,6 @@ function downloadOutput() {
   URL.revokeObjectURL(url);
 }
 
-function base64UrlDecode(str) {
-  let base64 = str.replace(/-/g, '+').replace(/_/g, '/');
-  while (base64.length % 4) { base64 += '='; }
-  const binary = atob(base64);
-  const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
-  return new TextDecoder().decode(bytes);
-}
-
 function decodeJwt() {
   const input = document.getElementById('jwtInput').value.trim();
   const msg = document.getElementById('jwtMsg');
@@ -176,24 +164,14 @@ function decodeJwt() {
   const sigOut = document.getElementById('jwtSignature');
   msg.innerHTML = '';
 
-  const parts = input.split('.');
-  if (parts.length !== 3) {
-    msg.innerHTML = '<div class="error-msg">A JWT needs exactly 3 dot-separated parts: header.payload.signature.</div>';
-    headerOut.value = '';
-    payloadOut.value = '';
-    sigOut.value = '';
-    return;
-  }
-
   try {
-    const header = JSON.parse(base64UrlDecode(parts[0]));
-    const payload = JSON.parse(base64UrlDecode(parts[1]));
+    const { header, payload, signature } = Base64Lib.decodeJwt(input);
     headerOut.value = JSON.stringify(header, null, 2);
     payloadOut.value = JSON.stringify(payload, null, 2);
-    sigOut.value = parts[2];
+    sigOut.value = signature;
     msg.innerHTML = '<div class="success-msg">Decoded. Signature shown as-is — not verified.</div>';
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">Could not decode: ' + e.message + '</div>';
+    msg.innerHTML = '<div class="error-msg">' + e.message + '</div>';
     headerOut.value = '';
     payloadOut.value = '';
     sigOut.value = '';
