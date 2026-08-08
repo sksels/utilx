@@ -1,0 +1,10 @@
+{
+  "name": "utilx",
+  "private": true,
+  "scripts": {
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0"
+  }
+}
