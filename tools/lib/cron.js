@@ -105,6 +105,52 @@
       '. Note: Quartz requires exactly one of day-of-month/day-of-week to be "?" — this decoder shows both fields as given without enforcing that rule.';
   }
 
+  // Checks a single normalized (post-abbreviation) token is an integer within [min, max].
+  function inRange(token, min, max, abbrMap) {
+    const norm = normalizeToken(token, abbrMap);
+    if (!/^\d+$/.test(norm)) return false;
+    const n = Number(norm);
+    return n >= min && n <= max;
+  }
+
+  // Validates one cron field (e.g. "5", "*/15", "1-5", "MON-FRI", "1,15,30") against the
+  // field's valid numeric range. Used both to block building an out-of-range expression
+  // (minute 99, hour 25, day-of-month 45, month 13, day-of-week 9 were previously accepted
+  // silently) and to flag semantically-invalid-but-syntactically-parseable decode input.
+  function validateCronField(field, min, max, abbrMap) {
+    if (field === '*' || field === '?') return true;
+    if (field === '') return false;
+    return field.split(',').every((part) => {
+      let base = part;
+      if (part.includes('/')) {
+        const [b, step] = part.split('/');
+        if (!/^\d+$/.test(step) || Number(step) < 1) return false;
+        if (b === '*') return true;
+        base = b;
+      }
+      if (base.includes('-')) {
+        const [a, z] = base.split('-');
+        return inRange(a, min, max, abbrMap) && inRange(z, min, max, abbrMap);
+      }
+      return inRange(base, min, max, abbrMap);
+    });
+  }
+
+  // Validates all 5 standard-cron fields at once, returning a list of plain-English error
+  // messages (empty array = valid). Shared by the Build card (blocks building an invalid
+  // expression) and the Decode card (shown as a non-blocking warning alongside the
+  // explanation, since decode still succeeds -- it just describes an expression that isn't
+  // actually valid cron).
+  function validateBuildFields(m, h, dom, mon, dow) {
+    const errors = [];
+    if (!validateCronField(m, 0, 59)) errors.push('Minute must be 0-59 (or *, a list, range, or step).');
+    if (!validateCronField(h, 0, 23)) errors.push('Hour must be 0-23 (or *, a list, range, or step).');
+    if (!validateCronField(dom, 1, 31)) errors.push('Day of month must be 1-31 (or *, a list, range, or step).');
+    if (!validateCronField(mon, 1, 12, MONTH_ABBR)) errors.push('Month must be 1-12 or JAN-DEC (or *, a list, range, or step).');
+    if (!validateCronField(dow, 0, 6, DOW_ABBR)) errors.push('Day of week must be 0-6 (Sun=0) or SUN-SAT (or *, a list, range, or step).');
+    return errors;
+  }
+
   function buildCronExpression(m, h, dom, mon, dow) {
     return [m || '*', h || '*', dom || '*', mon || '*', dow || '*'].join(' ');
   }
@@ -132,5 +178,6 @@
     normalizeToken, describeField,
     explainStandardCron, explainQuartzCron,
     buildCronExpression, buildK8sCronJobYaml,
+    validateCronField, validateBuildFields,
   };
 });
