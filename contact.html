@@ -1,20 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-(function(){
-  try {
-    var saved = localStorage.getItem('utilx-theme');
-    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    document.documentElement.setAttribute('data-theme', theme);
-  } catch (e) {}
-  window.toggleTheme = function () {
-    var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('utilx-theme', next); } catch (e) {}
-  };
-})();
-</script>
+<script src="/theme.js"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745"
      crossorigin="anonymous"></script>
 <meta charset="UTF-8">

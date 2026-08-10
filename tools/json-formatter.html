@@ -1,20 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-(function(){
-  try {
-    var saved = localStorage.getItem('utilx-theme');
-    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    document.documentElement.setAttribute('data-theme', theme);
-  } catch (e) {}
-  window.toggleTheme = function () {
-    var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('utilx-theme', next); } catch (e) {}
-  };
-})();
-</script>
+<script src="/theme.js"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745"
      crossorigin="anonymous"></script>
 <meta charset="UTF-8">
@@ -35,6 +22,8 @@
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
 <script src="lib/json-tools.js"></script>
+<script src="lib/shortcuts.js"></script>
+<script src="lib/url-state.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -100,8 +89,10 @@
         <button onclick="formatJson()">Format / Beautify</button>
         <button class="secondary" onclick="minifyJson()">Minify</button>
         <button class="secondary" onclick="copyOutput()">Copy Output</button>
+        <button class="secondary" onclick="copyShareLink()">Copy shareable link</button>
         <button class="secondary" onclick="clearAll()">Clear</button>
       </div>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format.</p>
 
       <div id="msg"></div>
 
@@ -138,6 +129,7 @@
 
     <h2>How this works</h2>
     <p>This tool parses your JSON with the browser's built-in <code>JSON.parse</code> and re-serializes it with <code>JSON.stringify</code>. If your JSON is invalid, it tells you exactly where the parser stopped, so you can fix syntax errors like trailing commas, missing quotes, or unescaped characters quickly. See the <a href="/guides/what-is-json.html">JSON basics guide</a> for common mistakes.</p>
+    <p>Related tool: decoding a JWT? Its payload is Base64-encoded JSON — decode it with the <a href="/tools/base64-tool.html">Base64 Encoder / Decoder</a>, then format the result here.</p>
   </div>
 </main>
 
@@ -201,6 +193,35 @@ function clearAll() {
   document.getElementById('output').value = '';
   document.getElementById('msg').innerHTML = '';
 }
+
+function copyShareLink() {
+  const url = UrlStateLib.buildShareUrl(location.origin, location.pathname, {
+    input: document.getElementById('input').value,
+    indent: document.getElementById('indent').value,
+  });
+  const temp = document.createElement('input');
+  temp.value = url;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  showSuccess('Shareable link copied to clipboard.');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (ShortcutsLib.isRunShortcut(e)) {
+    e.preventDefault();
+    formatJson();
+  }
+});
+
+(function restoreFromUrl() {
+  const state = UrlStateLib.decodeState(location.search);
+  if (!state) return;
+  if (typeof state.input === 'string') document.getElementById('input').value = state.input;
+  if (typeof state.indent === 'string') document.getElementById('indent').value = state.indent;
+  if (state.input) formatJson();
+})();
 
 const shortVal = JsonToolsLib.shortVal;
 const deepDiff = JsonToolsLib.deepDiff;
