@@ -1,20 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-(function(){
-  try {
-    var saved = localStorage.getItem('utilx-theme');
-    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    document.documentElement.setAttribute('data-theme', theme);
-  } catch (e) {}
-  window.toggleTheme = function () {
-    var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('utilx-theme', next); } catch (e) {}
-  };
-})();
-</script>
+<script src="/theme.js"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745"
      crossorigin="anonymous"></script>
 <meta charset="UTF-8">
@@ -35,6 +22,7 @@
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
 <script src="lib/color.js"></script>
+<script src="lib/url-state.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -97,6 +85,10 @@
       <label for="hsl">HSL</label>
       <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
 
+      <div>
+        <button class="secondary" onclick="copyShareLink()">Copy shareable link</button>
+      </div>
+
       <div id="msg"></div>
     </div>
 
@@ -125,6 +117,7 @@
       <div id="contrastResult" style="margin-top:12px;"></div>
     </div>
 
+    <p>Related tool: embedding this color or an image as a Data URI? The <a href="/tools/base64-tool.html">Base64 Encoder / Decoder</a> can help encode it.</p>
   </div>
 </main>
 
@@ -258,6 +251,26 @@ function updateContrast() {
 fgColorEl.addEventListener('input', updateContrast);
 bgColorEl.addEventListener('input', updateContrast);
 updateContrast();
+
+function copyShareLink() {
+  const url = UrlStateLib.buildShareUrl(location.origin, location.pathname, {
+    hex: hexEl.value,
+  });
+  const temp = document.createElement('input');
+  temp.value = url;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  msg.innerHTML = '<div class="success-msg">Shareable link copied to clipboard.</div>';
+}
+
+(function restoreFromUrl() {
+  const state = UrlStateLib.decodeState(location.search);
+  if (!state || typeof state.hex !== 'string') return;
+  hexEl.value = state.hex;
+  updateFrom('hex');
+})();
 </script>
 
 </body>

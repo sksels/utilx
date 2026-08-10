@@ -1,20 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>
-(function(){
-  try {
-    var saved = localStorage.getItem('utilx-theme');
-    var theme = saved || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
-    document.documentElement.setAttribute('data-theme', theme);
-  } catch (e) {}
-  window.toggleTheme = function () {
-    var next = document.documentElement.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
-    document.documentElement.setAttribute('data-theme', next);
-    try { localStorage.setItem('utilx-theme', next); } catch (e) {}
-  };
-})();
-</script>
+<script src="/theme.js"></script>
 <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745"
      crossorigin="anonymous"></script>
 <meta charset="UTF-8">
@@ -35,6 +22,8 @@
 <script defer src="/analytics.js"></script>
 <link rel="stylesheet" href="../style.css">
 <script src="lib/regex-explain.js"></script>
+<script src="lib/shortcuts.js"></script>
+<script src="lib/url-state.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -98,8 +87,10 @@
       <div>
         <button onclick="runRegex()">Test Regex</button>
         <button class="secondary" onclick="explainPattern()">Explain pattern</button>
+        <button class="secondary" onclick="copyShareLink()">Copy shareable link</button>
         <button class="secondary" onclick="clearAll()">Clear</button>
       </div>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to test.</p>
 
       <div id="msg"></div>
 
@@ -140,6 +131,7 @@
       <tr><td><code>s</code></td><td>Dot matches newline characters too</td></tr>
     </table>
     <p>Need a syntax refresher? See the <a href="/guides/regex-cheatsheet.html">regex cheat sheet</a>.</p>
+    <p>Related tool: validating or extracting structured data with your pattern? Check the result with the <a href="/tools/json-formatter.html">JSON Formatter &amp; Validator</a>.</p>
   </div>
 </main>
 
@@ -231,6 +223,37 @@ function clearAll() {
   document.getElementById('matches').value = '';
   document.getElementById('msg').innerHTML = '';
 }
+
+function copyShareLink() {
+  const url = UrlStateLib.buildShareUrl(location.origin, location.pathname, {
+    pattern: document.getElementById('pattern').value,
+    flags: document.getElementById('flags').value,
+    text: document.getElementById('testtext').value,
+  });
+  const temp = document.createElement('input');
+  temp.value = url;
+  document.body.appendChild(temp);
+  temp.select();
+  document.execCommand('copy');
+  document.body.removeChild(temp);
+  document.getElementById('msg').innerHTML = '<div class="success-msg">Shareable link copied to clipboard.</div>';
+}
+
+document.addEventListener('keydown', (e) => {
+  if (ShortcutsLib.isRunShortcut(e)) {
+    e.preventDefault();
+    runRegex();
+  }
+});
+
+(function restoreFromUrl() {
+  const state = UrlStateLib.decodeState(location.search);
+  if (!state) return;
+  if (typeof state.pattern === 'string') document.getElementById('pattern').value = state.pattern;
+  if (typeof state.flags === 'string') document.getElementById('flags').value = state.flags;
+  if (typeof state.text === 'string') document.getElementById('testtext').value = state.text;
+  if (state.pattern) { runRegex(); explainPattern(); }
+})();
 </script>
 
 </body>

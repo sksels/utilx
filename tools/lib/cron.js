@@ -25,6 +25,15 @@
     return abbrMap.hasOwnProperty(upper) ? String(abbrMap[upper]) : token;
   }
 
+  // Looks up a name by numeric index, falling back to "<unit> <number>" instead of
+  // "undefined" when the value is out of range (e.g. a day-of-week of 15, which isn't a
+  // valid cron value but shouldn't produce nonsense output either).
+  function nameOrRaw(numStr, names, nameOffset, unit) {
+    const idx = Number(numStr) - nameOffset;
+    const name = names[idx];
+    return name !== undefined ? name : unit + ' ' + numStr;
+  }
+
   function describeField(field, unit, names, nameOffset, abbrMap) {
     nameOffset = nameOffset || 0;
     if (field === '*' || field === '?') return 'every ' + unit;
@@ -36,16 +45,16 @@
       let [a, b] = field.split('-');
       a = normalizeToken(a, abbrMap);
       b = normalizeToken(b, abbrMap);
-      if (names) return names[Number(a) - nameOffset] + ' through ' + names[Number(b) - nameOffset];
+      if (names) return nameOrRaw(a, names, nameOffset, unit) + ' through ' + nameOrRaw(b, names, nameOffset, unit);
       return unit + ' ' + a + ' through ' + b;
     }
     if (field.includes(',')) {
       const parts = field.split(',').map(p => normalizeToken(p, abbrMap));
-      if (names) return parts.map(p => names[Number(p) - nameOffset]).join(', ');
+      if (names) return parts.map(p => nameOrRaw(p, names, nameOffset, unit)).join(', ');
       return unit + 's ' + parts.join(', ');
     }
     const norm = normalizeToken(field, abbrMap);
-    if (names && /^\d+$/.test(norm)) return names[Number(norm) - nameOffset];
+    if (names && /^\d+$/.test(norm)) return nameOrRaw(norm, names, nameOffset, unit);
     return unit + ' ' + norm;
   }
 
