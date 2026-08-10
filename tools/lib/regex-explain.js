@@ -137,5 +137,28 @@
     return lines;
   }
 
-  return { readQuantifier, describeCharClass, pushWithQuantifier, explainRegex };
+  // Strips incidental whitespace from a flags string before it reaches the RegExp
+  // constructor. The "Common flags" reference table lists flags space-separated
+  // ("g i m s"), which a user could easily (mis)read as literal syntax for the flags
+  // field itself -- without this, typing "g i" throws a flags error rather than the
+  // combination silently working as probably intended.
+  function normalizeFlags(flags) {
+    return String(flags).replace(/\s+/g, '');
+  }
+
+  // Returns null if `flags` is valid on its own (independent of any particular pattern),
+  // or a clear "Invalid flags: ..." message if not. Checked with an empty pattern so a
+  // flags mistake (duplicate flag, unknown flag character, stray whitespace that survived
+  // normalization) is reported distinctly, instead of being folded into a generic
+  // "Invalid pattern" message that sends the user hunting through the wrong field.
+  function validateFlags(flags) {
+    try {
+      new RegExp('', flags);
+      return null;
+    } catch (e) {
+      return 'Invalid flags: ' + e.message;
+    }
+  }
+
+  return { readQuantifier, describeCharClass, pushWithQuantifier, explainRegex, normalizeFlags, validateFlags };
 });

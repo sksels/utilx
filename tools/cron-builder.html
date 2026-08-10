@@ -103,6 +103,7 @@
         <button class="secondary" onclick="copyField('built')">Copy expression</button>
         <button class="secondary" onclick="copyField('k8sYaml')">Copy as Kubernetes YAML</button>
       </div>
+      <div id="buildMsg"></div>
       <div class="output-box">
         <label>Cron expression</label>
         <input type="text" id="built" readonly>
@@ -177,6 +178,17 @@ function buildCron() {
   const dom = document.getElementById('dom').value.trim() || '*';
   const mon = document.getElementById('month').value.trim() || '*';
   const dow = document.getElementById('dow').value.trim() || '*';
+  const buildMsg = document.getElementById('buildMsg');
+
+  const errors = CronLib.validateBuildFields(m, h, dom, mon, dow);
+  if (errors.length) {
+    buildMsg.innerHTML = '<div class="error-msg">' + errors.join('<br>') + '</div>';
+    document.getElementById('built').value = '';
+    document.getElementById('k8sYaml').value = '';
+    return;
+  }
+
+  buildMsg.innerHTML = '';
   const expr = CronLib.buildCronExpression(m, h, dom, mon, dow);
   document.getElementById('built').value = expr;
   document.getElementById('k8sYaml').value = CronLib.buildK8sCronJobYaml(expr);
@@ -189,7 +201,11 @@ function decodeCron() {
   const parts = input.split(/\s+/).filter(Boolean);
 
   if (parts.length === 5) {
-    msg.innerHTML = '<div class="success-msg">Parsed as standard cron (Linux / Kubernetes CronJob syntax).</div>';
+    const fieldErrors = CronLib.validateBuildFields(parts[0], parts[1], parts[2], parts[3], parts[4]);
+    const warning = fieldErrors.length
+      ? '<div class="error-msg" style="margin-top:6px;">Heads up -- this isn\'t a fully valid standard cron expression: ' + fieldErrors.join(' ') + '</div>'
+      : '';
+    msg.innerHTML = '<div class="success-msg">Parsed as standard cron (Linux / Kubernetes CronJob syntax).</div>' + warning;
     out.value = CronLib.explainStandardCron(parts);
   } else if (parts.length === 6 || parts.length === 7) {
     msg.innerHTML = '<div class="success-msg">Parsed as Quartz cron (' + parts.length + ' fields, Java/Spring syntax).</div>';

@@ -28,6 +28,31 @@ test('explainRegex: escape sequences', () => {
   assert.match(RegexExplainLib.explainRegex('\\b')[0], /word boundary/);
 });
 
+test('normalizeFlags: strips whitespace so "g i m s"-style input still works (regression)', () => {
+  // The "Common flags" reference table lists flags space-separated ("g i m s"), which a
+  // user could easily read as literal syntax for the flags field -- without stripping,
+  // "g i" throws "Invalid flags supplied to RegExp constructor 'g i'" instead of the
+  // combination working as intended.
+  assert.equal(RegexExplainLib.normalizeFlags('g i'), 'gi');
+  assert.equal(RegexExplainLib.normalizeFlags(' gim s '), 'gims');
+  assert.equal(RegexExplainLib.normalizeFlags('gi'), 'gi');
+});
+
+test('validateFlags: accepts valid flag combinations', () => {
+  assert.equal(RegexExplainLib.validateFlags('g'), null);
+  assert.equal(RegexExplainLib.validateFlags('gi'), null);
+  assert.equal(RegexExplainLib.validateFlags('gims'), null);
+  assert.equal(RegexExplainLib.validateFlags(''), null);
+});
+
+test('validateFlags: rejects invalid flags with a message naming flags, not the pattern (regression)', () => {
+  // Previously a flags mistake was folded into runRegex()'s single generic
+  // "Invalid pattern: ..." message, misdirecting the user to the wrong field.
+  assert.match(RegexExplainLib.validateFlags('gg'), /^Invalid flags:/); // duplicate flag
+  assert.match(RegexExplainLib.validateFlags('zz'), /^Invalid flags:/); // unknown flag chars
+  assert.match(RegexExplainLib.validateFlags('g i'), /^Invalid flags:/); // un-normalized whitespace
+});
+
 test('explainRegex: literal run splits quantifier onto last char only (regression)', () => {
   // "abc*" means "ab" literal followed by zero-or-more "c" — a known tricky case
   // that was fixed to split the run rather than misapply the quantifier to the whole run.
