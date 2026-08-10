@@ -66,6 +66,30 @@ test('normalizeToken: passes through unknown tokens unchanged', () => {
   assert.equal(CronLib.normalizeToken('15', CronLib.DOW_ABBR), '15');
 });
 
+test('describeField: out-of-range numeric day-of-week falls back to raw value, not "undefined" (regression)', () => {
+  // Day-of-week 15 is not a valid cron value (valid range is 0-6), but the decoder must
+  // never silently produce "undefined" -- it should fall back to showing the raw number.
+  assert.equal(CronLib.describeField('15', 'day', CronLib.DOW_NAMES, 0, CronLib.DOW_ABBR), 'day 15');
+});
+
+test('explainStandardCron: out-of-range day-of-week does not produce "undefined" (regression)', () => {
+  const out = CronLib.explainStandardCron(['0', '9', '*', '*', '15']);
+  assert.doesNotMatch(out, /undefined/);
+  assert.match(out, /on day 15/);
+});
+
+test('describeField: out-of-range value in a range falls back to raw values on both ends', () => {
+  const out = CronLib.describeField('10-15', 'day', CronLib.DOW_NAMES, 0, CronLib.DOW_ABBR);
+  assert.doesNotMatch(out, /undefined/);
+  assert.equal(out, 'day 10 through day 15');
+});
+
+test('describeField: out-of-range value in a list falls back to raw value for just that entry', () => {
+  const out = CronLib.describeField('1,15', 'day', CronLib.DOW_NAMES, 0, CronLib.DOW_ABBR);
+  assert.doesNotMatch(out, /undefined/);
+  assert.equal(out, 'Monday, day 15');
+});
+
 test('buildCronExpression + buildK8sCronJobYaml', () => {
   const expr = CronLib.buildCronExpression('0', '9', '*', '*', '1-5');
   assert.equal(expr, '0 9 * * 1-5');
