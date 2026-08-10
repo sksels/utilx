@@ -12,6 +12,12 @@
 # This only pushes to development/staging/main directly. Promoting staging -> main should
 # still go through a GitHub pull request (that's what triggers the CI check) -- this script
 # is for getting your local edits onto a branch, not for the promotion step itself.
+#
+# Note: this script deliberately does NOT set $ErrorActionPreference = "Stop". git writes a
+# lot of normal, non-error status text to stderr (branch switches, push progress, etc.), and
+# under "Stop" that text can get treated as a fatal error, silently killing the script partway
+# through -- which is exactly what happened the first time this script was used. Instead, every
+# git command below is checked explicitly via $LASTEXITCODE.
 
 param(
     [Parameter(Mandatory = $true)]
@@ -22,7 +28,18 @@ param(
     [string]$Message
 )
 
-$ErrorActionPreference = "Stop"
+function Invoke-GitStep {
+    param(
+        [string]$Description,
+        [scriptblock]$Command
+    )
+    Write-Host $Description -ForegroundColor Cyan
+    & $Command
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "FAILED: $Description (exit code $LASTEXITCODE)" -ForegroundColor Red
+        exit $LASTEXITCODE
+    }
+}
 
 Set-Location $PSScriptRoot
 
@@ -33,12 +50,18 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-Write-Host "Fetching latest from origin..." -ForegroundColor Cyan
-git fetch origin
+# One-time identity check, since git refuses to commit without this.
+$hasEmail = git config user.email
+if (-not $hasEmail) {
+    Write-Host "Git doesn't know who you are yet. Run these once, then re-run this script:" -ForegroundColor Red
+    Write-Host '  git config --global user.email "you@example.com"' -ForegroundColor Yellow
+    Write-Host '  git config --global user.name "Your Name"' -ForegroundColor Yellow
+    exit 1
+}
 
-Write-Host "Switching to '$Branch' and syncing with origin..." -ForegroundColor Cyan
-git checkout $Branch
-git pull origin $Branch
+Invoke-GitStep "Fetching latest from origin..." { git fetch origin }
+Invoke-GitStep "Switching to '$Branch'..." { git checkout $Branch }
+Invoke-GitStep "Syncing '$Branch' with origin..." { git pull origin $Branch }
 
 Write-Host "`n--- Changed files ---" -ForegroundColor Cyan
 git status --short
@@ -55,11 +78,19 @@ if ($confirm -ne 'y') {
     exit 0
 }
 
-git add -A
-git commit -m $Message
-git push origin $Branch
+Invoke-GitStep "Staging changes..." { git add -A }
+Invoke-GitStep "Committing..." { git commit -m $Message }
+Invoke-GitStep "Pushing to origin/$Branch..." { git push origin $Branch }
 
-Write-Host "`nPushed to '$Branch'." -ForegroundColor Green
+# Confirm the push actually moved the remote branch, not just "everything up to date".
+$remoteHead = git rev-parse "origin/$Branch"
+$localHead = git rev-parse HEAD
+if ($remoteHead -ne $localHead) {
+    Write-Host "`nWarning: origin/$Branch ($remoteHead) does not match local HEAD ($localHead) after push. Something's off -- check 'git status' and 'git log' manually." -ForegroundColor Red
+    exit 1
+}
+
+Write-Host "`nPushed to '$Branch' -- origin/$Branch is now at $localHead." -ForegroundColor Green
 if ($Branch -eq 'staging' -or $Branch -eq 'main') {
     Write-Host "Check the Actions tab on GitHub to watch the CI run." -ForegroundColor Green
 }
