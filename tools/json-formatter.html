@@ -248,7 +248,18 @@ function compareJson() {
     return;
   }
 
-  const diffs = deepDiff(a, b, '', []);
+  let diffs;
+  try {
+    diffs = deepDiff(a, b, '', []);
+  } catch (e) {
+    // deepDiff recurses per nesting level and can hit the call-stack limit on very deeply
+    // nested (but perfectly valid) JSON -- confirmed around ~5,000 levels deep, versus
+    // JSON.parse itself, which handles 100,000+ levels fine. Previously this exception
+    // was uncaught here, so Compare would silently do nothing with no error shown at all.
+    msg.innerHTML = '<div class="error-msg">These JSON documents are too deeply nested to compare (' + e.message + ').</div>';
+    box.style.display = 'none';
+    return;
+  }
   table.innerHTML = '<tr><th>Path</th><th>Change</th><th>Before</th><th>After</th></tr>';
 
   if (diffs.length === 0) {

@@ -151,7 +151,7 @@ function decode() {
     document.getElementById('output').value = Base64Lib.decodeBase64ToUtf8(input);
     msg.innerHTML = '<div class="success-msg">Decoded.</div>';
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">Invalid Base64 input.</div>';
+    msg.innerHTML = '<div class="error-msg">' + e.message + '</div>';
   }
 }
 

@@ -47,6 +47,20 @@ test('deepDiff: array vs object type change is a "changed" at root', () => {
   assert.equal(diffs[0].type, 'changed');
 });
 
+test('deepDiff: throws (rather than hanging or silently returning wrong results) on extremely deep nesting', () => {
+  // Documents a real, confirmed boundary: JSON.parse itself comfortably handles 100,000+
+  // levels of nesting, but deepDiff recurses once per nesting level and hits the call-stack
+  // limit around ~5,000 levels -- a depth realistic for real-world deeply nested API
+  // responses or tree structures. This is not fixed here (that would mean rewriting
+  // deepDiff to use an explicit stack instead of recursion); the fix in json-formatter.html
+  // is to catch this specific failure and show a clear "too deeply nested to compare"
+  // message instead of the call silently doing nothing, which is what happened before.
+  const depth = 5000;
+  const a = JSON.parse('['.repeat(depth) + '1' + ']'.repeat(depth));
+  const b = JSON.parse('['.repeat(depth) + '2' + ']'.repeat(depth));
+  assert.throws(() => JsonToolsLib.deepDiff(a, b, '', []), /Maximum call stack/);
+});
+
 test('shortVal: truncates long values and labels undefined', () => {
   assert.equal(JsonToolsLib.shortVal(undefined), '(none)');
   const long = 'x'.repeat(100);

@@ -25,6 +25,29 @@ test('pickFromCharset: deterministic given fixed randomValues', () => {
   assert.equal(PasswordLib.pickFromCharset(charset, 4, randomValues), 'ABCA');
 });
 
+test('pickFromCharset: throws instead of producing "undefined" repeated for an empty charset (regression)', () => {
+  // charset[x % 0] evaluates to charset[NaN], i.e. undefined -- previously this silently
+  // produced a "password" that was literally the text "undefined" repeated `length` times.
+  assert.throws(() => PasswordLib.pickFromCharset('', 8, [1, 2, 3, 4, 5, 6, 7, 8]), /empty character set/);
+});
+
+test('pickFromCharset: throws instead of silently degrading into "undefined" when randomValues runs short (regression)', () => {
+  // Same underlying failure as the empty-charset case, triggered once the loop reads past
+  // the end of a randomValues array shorter than the requested length.
+  assert.throws(() => PasswordLib.pickFromCharset('ABC', 8, [0, 1]), /Not enough random values/);
+});
+
+test('pickFromCharset: throws on a non-positive or non-integer length', () => {
+  assert.throws(() => PasswordLib.pickFromCharset('ABC', 0, []), /positive integer/);
+  assert.throws(() => PasswordLib.pickFromCharset('ABC', -5, []), /positive integer/);
+  assert.throws(() => PasswordLib.pickFromCharset('ABC', 2.5, [1, 2]), /positive integer/);
+});
+
+test('buildCharset: does not throw when called with no options object', () => {
+  assert.equal(PasswordLib.buildCharset(), '');
+  assert.equal(PasswordLib.buildCharset(undefined), '');
+});
+
 test('computeEntropy + strengthLabel bands', () => {
   assert.equal(PasswordLib.strengthLabel(PasswordLib.computeEntropy(2, 200)), 'Very strong'); // way over 80
   assert.equal(PasswordLib.strengthLabel(10), 'Weak');
@@ -51,4 +74,13 @@ test('generateUuidV7: is deterministic for identical inputs', () => {
   const a = PasswordLib.generateUuidV7(1234567890123, rand);
   const b = PasswordLib.generateUuidV7(1234567890123, rand);
   assert.equal(a, b);
+});
+
+test('generateUuidV7: throws instead of silently zero-filling missing random bytes (regression)', () => {
+  // Uint8Array coerces non-numeric (e.g. undefined) writes to 0 rather than throwing, so
+  // under-supplying random bytes previously produced a validly-shaped but partly
+  // zero-filled, less-random UUID with no indication anything was wrong -- a real weakened-
+  // randomness bug, just not one that "looks broken" the way undefined-in-a-string does.
+  assert.throws(() => PasswordLib.generateUuidV7(Date.now(), [1, 2, 3]), /requires at least 10 random bytes/);
+  assert.throws(() => PasswordLib.generateUuidV7(Date.now(), []), /requires at least 10 random bytes/);
 });

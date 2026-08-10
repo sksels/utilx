@@ -142,21 +142,30 @@ const hslToRgb = ColorLib.hslToRgb;
 
 function updateFrom(source) {
   let rgb;
+  let errorMsg = 'Could not parse that value.';
   try {
     if (source === 'hex') {
       rgb = hexToRgb(hexEl.value);
-      if (!rgb) throw new Error('bad hex');
+      if (!rgb) {
+        errorMsg = 'Enter a valid 3- or 6-digit hex color, e.g. #5b8cff.';
+        throw new Error('bad hex');
+      }
     } else if (source === 'rgb') {
-      const m = rgbEl.value.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/);
-      if (!m) throw new Error('bad rgb');
-      rgb = { r: +m[1], g: +m[2], b: +m[3] };
+      rgb = ColorLib.parseRgbString(rgbEl.value);
+      if (!rgb) {
+        errorMsg = 'Enter RGB as three numbers 0-255, e.g. rgb(91, 140, 255).';
+        throw new Error('bad rgb');
+      }
     } else if (source === 'hsl') {
-      const m = hslEl.value.match(/(\d+)[,\s]+(\d+)%?[,\s]+(\d+)%?/);
-      if (!m) throw new Error('bad hsl');
-      rgb = hslToRgb(+m[1], +m[2], +m[3]);
+      const parsed = ColorLib.parseHslString(hslEl.value);
+      if (!parsed) {
+        errorMsg = 'Enter HSL as a hue 0-360 and saturation/lightness 0-100%, e.g. hsl(222, 100%, 68%).';
+        throw new Error('bad hsl');
+      }
+      rgb = hslToRgb(parsed.h, parsed.s, parsed.l);
     }
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">Could not parse that value.</div>';
+    msg.innerHTML = '<div class="error-msg">' + errorMsg + '</div>';
     return;
   }
 
@@ -224,7 +233,7 @@ function updateContrast() {
   const fg = parseAnyColor(fgColorEl.value);
   const bg = parseAnyColor(bgColorEl.value);
   if (!fg || !bg) {
-    contrastResult.innerHTML = '<div class="error-msg">Enter valid colors (hex or rgb) for both fields.</div>';
+    contrastResult.innerHTML = '<div class="error-msg">Enter valid colors for both fields -- hex (#5b8cff) or RGB with each channel 0-255.</div>';
     return;
   }
   contrastPreview.style.color = rgbToHex(fg.r, fg.g, fg.b);

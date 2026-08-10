@@ -76,16 +76,46 @@
     return (lighter + 0.05) / (darker + 0.05);
   }
 
+  // Parses an "r, g, b" or "rgb(r, g, b)" string. The whole (unwrapped) string must be
+  // *just* three integers, 0-255 each -- anchored matching, not a loose search, so this
+  // correctly rejects negative numbers ("-5, 100, 100"), decimals ("91.5, 140, 255"),
+  // extra components like an alpha channel ("91, 140, 255, 0.5"), and non-color text
+  // that merely happens to contain a valid-looking substring ("foo91, 140, 255bar").
+  // Un-anchored matching previously let all of these silently through.
+  function parseRgbString(value) {
+    const str = String(value).trim();
+    const wrapped = str.match(/^rgba?\(([\s\S]*)\)$/i);
+    const body = (wrapped ? wrapped[1] : str).trim();
+    const m = body.match(/^(\d+)[,\s]+(\d+)[,\s]+(\d+)$/);
+    if (!m) return null;
+    const r = Number(m[1]), g = Number(m[2]), b = Number(m[3]);
+    if (r > 255 || g > 255 || b > 255) return null;
+    return { r, g, b };
+  }
+
+  // Parses an "h, s%, l%" or "hsl(h, s%, l%)" string. Same anchored-match discipline as
+  // parseRgbString: hue must be 0-360 and saturation/lightness 0-100, with no negative
+  // numbers, decimals, extra components, or surrounding garbage silently accepted.
+  function parseHslString(value) {
+    const str = String(value).trim();
+    const wrapped = str.match(/^hsla?\(([\s\S]*)\)$/i);
+    const body = (wrapped ? wrapped[1] : str).trim();
+    const m = body.match(/^(\d+)[,\s]+(\d+)%?[,\s]+(\d+)%?$/);
+    if (!m) return null;
+    const h = Number(m[1]), s = Number(m[2]), l = Number(m[3]);
+    if (h > 360 || s > 100 || l > 100) return null;
+    return { h, s, l };
+  }
+
   function parseAnyColor(value) {
     let rgb = hexToRgb(value);
     if (rgb) return rgb;
-    let m = value.match(/(\d+)[,\s]+(\d+)[,\s]+(\d+)/);
-    if (m) return { r: +m[1], g: +m[2], b: +m[3] };
-    return null;
+    return parseRgbString(value);
   }
 
   return {
     hexToRgb, rgbToHex, rgbToHsl, hslToRgb,
     relativeLuminance, contrastRatio, parseAnyColor,
+    parseRgbString, parseHslString,
   };
 });

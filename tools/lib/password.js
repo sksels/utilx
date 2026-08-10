@@ -10,6 +10,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
 
   function buildCharset(opts) {
+    opts = opts || {};
     let charset = '';
     if (opts.upper) charset += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     if (opts.lower) charset += 'abcdefghijklmnopqrstuvwxyz';
@@ -21,7 +22,25 @@
 
   // randomValues must be an array-like of length >= length, e.g. from
   // crypto.getRandomValues(new Uint32Array(length)).
+  //
+  // Both guards below close the same bug class as the cron decoder's "undefined" bug:
+  // an empty charset previously made `charset[x % 0]` evaluate to `charset[NaN]`, i.e.
+  // `undefined`, silently producing a password that was the literal text "undefined"
+  // repeated `length` times. A `randomValues` array shorter than `length` hit the exact
+  // same failure once it ran past the end of the array. The current HTML always guards
+  // against an empty charset before calling this, and always sizes the random-values
+  // array to match `length` -- but this is the actual "generate the password" function
+  // and a caller mistake (or future reuse) should get a clear error, not silent garbage.
   function pickFromCharset(charset, length, randomValues) {
+    if (!charset || charset.length === 0) {
+      throw new Error('Cannot generate a password with an empty character set.');
+    }
+    if (!Number.isInteger(length) || length < 1) {
+      throw new Error('Password length must be a positive integer.');
+    }
+    if (!randomValues || randomValues.length < length) {
+      throw new Error('Not enough random values supplied for the requested length.');
+    }
     let result = '';
     for (let i = 0; i < length; i++) {
       result += charset[randomValues[i] % charset.length];
@@ -42,7 +61,16 @@
 
   // timestamp: integer ms since epoch (Number or BigInt).
   // randBytes: array-like of at least 10 random bytes (0-255 each).
+  //
+  // Missing bytes previously fell through to Uint8Array's silent "coerce to 0" behavior
+  // for non-numeric values, rather than an error -- so a caller mistake that under-supplies
+  // random bytes doesn't crash or produce visible garbage, it just quietly zero-fills part
+  // of the UUID, weakening the very randomness this function exists to provide, with no
+  // indication to the caller that anything is wrong.
   function generateUuidV7(timestamp, randBytes) {
+    if (!randBytes || randBytes.length < 10) {
+      throw new Error('generateUuidV7 requires at least 10 random bytes.');
+    }
     const ts = BigInt(timestamp);
     const bytes = new Uint8Array(16);
     bytes[0] = Number((ts >> 40n) & 0xffn);
