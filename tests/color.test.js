@@ -84,10 +84,20 @@ test('parseRgbString: rejects a valid-looking substring embedded in other text (
   assert.equal(ColorLib.parseRgbString('foo91, 140, 255bar'), null);
 });
 
-test('parseRgbString: rejects extra components such as an alpha channel (regression)', () => {
-  // rgba() alpha was previously silently ignored rather than rejected or handled.
-  assert.equal(ColorLib.parseRgbString('91, 140, 255, 0.5'), null);
-  assert.equal(ColorLib.parseRgbString('rgba(91, 140, 255, 0.5)'), null);
+test('parseRgbString: accepts a valid alpha component as a 4th value (feature)', () => {
+  // Alpha support was added deliberately after the Tech Debt hardening pass -- this
+  // supersedes the old "reject any 4th component" regression test now that a 4th
+  // component can legitimately be a validated alpha value.
+  assert.deepEqual(ColorLib.parseRgbString('91, 140, 255, 0.5'), { r: 91, g: 140, b: 255, a: 0.5 });
+  assert.deepEqual(ColorLib.parseRgbString('rgba(91, 140, 255, 0.5)'), { r: 91, g: 140, b: 255, a: 0.5 });
+  assert.deepEqual(ColorLib.parseRgbString('rgba(0, 0, 0, 1)'), { r: 0, g: 0, b: 0, a: 1 });
+  assert.deepEqual(ColorLib.parseRgbString('rgba(0, 0, 0, 0)'), { r: 0, g: 0, b: 0, a: 0 });
+});
+
+test('parseRgbString: rejects an out-of-range or malformed alpha', () => {
+  assert.equal(ColorLib.parseRgbString('rgba(91, 140, 255, 1.5)'), null);
+  assert.equal(ColorLib.parseRgbString('rgba(91, 140, 255, -0.2)'), null);
+  assert.equal(ColorLib.parseRgbString('rgba(91, 140, 255, banana)'), null);
 });
 
 test('parseHslString: accepts in-range values with or without "hsl()" wrapper and % signs', () => {
@@ -122,6 +132,56 @@ test('parseHslString: rejects a valid-looking substring embedded in other text (
   assert.equal(ColorLib.parseHslString('hue is 222, 100%, 68% roughly'), null);
 });
 
+test('parseHslString: accepts a valid alpha component as a 4th value (feature)', () => {
+  assert.deepEqual(ColorLib.parseHslString('222, 100%, 68%, 0.5'), { h: 222, s: 100, l: 68, a: 0.5 });
+  assert.deepEqual(ColorLib.parseHslString('hsla(222, 100%, 68%, 0.5)'), { h: 222, s: 100, l: 68, a: 0.5 });
+  assert.deepEqual(ColorLib.parseHslString('hsla(0, 0%, 0%, 1)'), { h: 0, s: 0, l: 0, a: 1 });
+  assert.deepEqual(ColorLib.parseHslString('hsla(0, 0%, 0%, 0)'), { h: 0, s: 0, l: 0, a: 0 });
+});
+
+test('parseHslString: rejects an out-of-range or malformed alpha', () => {
+  assert.equal(ColorLib.parseHslString('hsla(222, 100%, 68%, 1.5)'), null);
+  assert.equal(ColorLib.parseHslString('hsla(222, 100%, 68%, -0.2)'), null);
+  assert.equal(ColorLib.parseHslString('hsla(222, 100%, 68%, banana)'), null);
+});
+
 test('parseAnyColor: rejects out-of-range rgb triplets (regression, feeds the contrast checker)', () => {
   assert.equal(ColorLib.parseAnyColor('999, 999, 999'), null);
+});
+
+test('hexToRgb: 4-digit and 8-digit forms carry alpha', () => {
+  assert.deepEqual(ColorLib.hexToRgb('#5b8cff80'), { r: 91, g: 140, b: 255, a: 0.5 });
+  assert.deepEqual(ColorLib.hexToRgb('#5b8cffff'), { r: 91, g: 140, b: 255, a: 1 });
+  assert.deepEqual(ColorLib.hexToRgb('#5b8cff00'), { r: 91, g: 140, b: 255, a: 0 });
+  // 4-digit shorthand #rgba, each nibble doubled
+  assert.deepEqual(ColorLib.hexToRgb('#f008'), { r: 255, g: 0, b: 0, a: 0.53 });
+});
+
+test('hexToRgb: 6-digit and 3-digit forms still return no alpha key (regression)', () => {
+  const six = ColorLib.hexToRgb('#5b8cff');
+  const three = ColorLib.hexToRgb('#fff');
+  assert.equal('a' in six, false);
+  assert.equal('a' in three, false);
+});
+
+test('hexToRgb: rejects malformed 4/8-digit hex', () => {
+  assert.equal(ColorLib.hexToRgb('#5b8cffg0'), null);
+  assert.equal(ColorLib.hexToRgb('#gggg'), null);
+});
+
+test('rgbToHex: optional alpha argument appends a 2-digit alpha byte', () => {
+  assert.equal(ColorLib.rgbToHex(91, 140, 255), '#5b8cff');
+  assert.equal(ColorLib.rgbToHex(91, 140, 255, 0.5), '#5b8cff80');
+  assert.equal(ColorLib.rgbToHex(91, 140, 255, 1), '#5b8cffff');
+  assert.equal(ColorLib.rgbToHex(91, 140, 255, 0), '#5b8cff00');
+});
+
+test('compositeOverWhite: opaque and alpha-less colors pass through unchanged', () => {
+  assert.deepEqual(ColorLib.compositeOverWhite({ r: 91, g: 140, b: 255 }), { r: 91, g: 140, b: 255 });
+  assert.deepEqual(ColorLib.compositeOverWhite({ r: 91, g: 140, b: 255, a: 1 }), { r: 91, g: 140, b: 255 });
+});
+
+test('compositeOverWhite: blends translucent colors toward white by alpha', () => {
+  assert.deepEqual(ColorLib.compositeOverWhite({ r: 0, g: 0, b: 0, a: 0.5 }), { r: 128, g: 128, b: 128 });
+  assert.deepEqual(ColorLib.compositeOverWhite({ r: 0, g: 0, b: 0, a: 0 }), { r: 255, g: 255, b: 255 });
 });
