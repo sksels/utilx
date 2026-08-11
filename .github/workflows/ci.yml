@@ -1,13 +1,27 @@
 name: CI
 
+# Gives each run in the Actions list a title that actually says what shipped, instead of
+# a generic duplicate of the workflow name -- pulls the CR#/commit message that's already
+# in every release.ps1 commit, plus which branch triggered it.
+run-name: >-
+  CI: ${{ github.event.pull_request.title || github.event.head_commit.message }} (${{ github.ref_name }})
+
 on:
   push:
     branches: [staging]
   pull_request:
-    branches: [main]
+    # main: the hard gate before production -- this check is required via branch
+    # protection on main, so a failing run blocks the merge/push button outright.
+    # staging: gives the same pre-merge visibility + blockability for
+    # development->staging PRs (paired with a required-status-check rule on staging),
+    # rather than only finding out after the merge already landed.
+    branches: [main, staging]
 
 jobs:
   test:
+    # Shows as "CI / Regression test pack" in the PR checks widget and branch protection's
+    # required-status-check picker, instead of the generic "CI / test".
+    name: Regression test pack
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
