@@ -142,27 +142,31 @@ const hslToRgb = ColorLib.hslToRgb;
 
 function updateFrom(source) {
   let rgb;
+  let alpha; // undefined when the input carried no alpha channel
   let errorMsg = 'Could not parse that value.';
   try {
     if (source === 'hex') {
       rgb = hexToRgb(hexEl.value);
       if (!rgb) {
-        errorMsg = 'Enter a valid 3- or 6-digit hex color, e.g. #5b8cff.';
+        errorMsg = 'Enter a valid hex color: 3, 4, 6, or 8 digits, e.g. #5b8cff or #5b8cff80 (last 2 digits = optional alpha).';
         throw new Error('bad hex');
       }
+      alpha = rgb.a;
     } else if (source === 'rgb') {
       rgb = ColorLib.parseRgbString(rgbEl.value);
       if (!rgb) {
-        errorMsg = 'Enter RGB as three numbers 0-255, e.g. rgb(91, 140, 255).';
+        errorMsg = 'Enter RGB as three numbers 0-255, e.g. rgb(91, 140, 255) -- optionally add a 4th alpha value 0-1, e.g. rgba(91, 140, 255, 0.5).';
         throw new Error('bad rgb');
       }
+      alpha = rgb.a;
     } else if (source === 'hsl') {
       const parsed = ColorLib.parseHslString(hslEl.value);
       if (!parsed) {
-        errorMsg = 'Enter HSL as a hue 0-360 and saturation/lightness 0-100%, e.g. hsl(222, 100%, 68%).';
+        errorMsg = 'Enter HSL as a hue 0-360 and saturation/lightness 0-100%, e.g. hsl(222, 100%, 68%) -- optionally add a 4th alpha value 0-1, e.g. hsla(222, 100%, 68%, 0.5).';
         throw new Error('bad hsl');
       }
       rgb = hslToRgb(parsed.h, parsed.s, parsed.l);
+      alpha = parsed.a;
     }
   } catch (e) {
     msg.innerHTML = '<div class="error-msg">' + errorMsg + '</div>';
@@ -170,13 +174,23 @@ function updateFrom(source) {
   }
 
   msg.innerHTML = '<div class="success-msg">Converted.</div>';
-  const hex = rgbToHex(rgb.r, rgb.g, rgb.b);
+  const hex = rgbToHex(rgb.r, rgb.g, rgb.b, alpha);
   const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
 
   if (source !== 'hex') hexEl.value = hex;
-  if (source !== 'rgb') rgbEl.value = 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')';
-  if (source !== 'hsl') hslEl.value = 'hsl(' + hsl.h + ', ' + hsl.s + '%, ' + hsl.l + '%)';
-  swatch.style.background = hex;
+  if (source !== 'rgb') {
+    rgbEl.value = alpha === undefined
+      ? 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')'
+      : 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+  }
+  if (source !== 'hsl') {
+    hslEl.value = alpha === undefined
+      ? 'hsl(' + hsl.h + ', ' + hsl.s + '%, ' + hsl.l + '%)'
+      : 'hsla(' + hsl.h + ', ' + hsl.s + '%, ' + hsl.l + '%, ' + alpha + ')';
+  }
+  swatch.style.background = alpha === undefined
+    ? 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')'
+    : 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
 }
 
 hexEl.addEventListener('input', () => updateFrom('hex'));
@@ -214,7 +228,8 @@ imageCanvas.addEventListener('click', (e) => {
   const x = Math.floor((e.clientX - rect.left) * scaleX);
   const y = Math.floor((e.clientY - rect.top) * scaleY);
   const pixel = imageCtx.getImageData(x, y, 1, 1).data;
-  const hex = rgbToHex(pixel[0], pixel[1], pixel[2]);
+  const pixelAlpha = pixel[3] < 255 ? Math.round((pixel[3] / 255) * 100) / 100 : undefined;
+  const hex = rgbToHex(pixel[0], pixel[1], pixel[2], pixelAlpha);
   hexEl.value = hex;
   updateFrom('hex');
   imageMsg.innerHTML = '<div class="success-msg">Sampled ' + hex + ' — loaded into the converter above.</div>';
@@ -230,12 +245,19 @@ const contrastRatio = ColorLib.contrastRatio;
 const parseAnyColor = ColorLib.parseAnyColor;
 
 function updateContrast() {
-  const fg = parseAnyColor(fgColorEl.value);
-  const bg = parseAnyColor(bgColorEl.value);
-  if (!fg || !bg) {
-    contrastResult.innerHTML = '<div class="error-msg">Enter valid colors for both fields -- hex (#5b8cff) or RGB with each channel 0-255.</div>';
+  const fgRaw = parseAnyColor(fgColorEl.value);
+  const bgRaw = parseAnyColor(bgColorEl.value);
+  if (!fgRaw || !bgRaw) {
+    contrastResult.innerHTML = '<div class="error-msg">Enter valid colors for both fields -- hex (#5b8cff, or #5b8cff80 with alpha) or RGB with each channel 0-255.</div>';
     return;
   }
+
+  // Contrast is only rigorously defined for opaque colors, so translucent inputs are
+  // composited over a white backdrop first (see ColorLib.compositeOverWhite).
+  const hasAlpha = (fgRaw.a !== undefined && fgRaw.a < 1) || (bgRaw.a !== undefined && bgRaw.a < 1);
+  const fg = ColorLib.compositeOverWhite(fgRaw);
+  const bg = ColorLib.compositeOverWhite(bgRaw);
+
   contrastPreview.style.color = rgbToHex(fg.r, fg.g, fg.b);
   contrastPreview.style.background = rgbToHex(bg.r, bg.g, bg.b);
 
@@ -247,6 +269,10 @@ function updateContrast() {
 
   const badge = (pass) => '<span class="' + (pass ? 'success-msg' : 'error-msg') + '" style="margin:0;">' + (pass ? 'Pass' : 'Fail') + '</span>';
 
+  const alphaNote = hasAlpha
+    ? '<p style="color:var(--text-dim); font-size:0.85rem; margin:10px 0 0;">One or both colors are translucent, so contrast is calculated as if composited over a white background.</p>'
+    : '';
+
   contrastResult.innerHTML =
     '<table class="ref-table">' +
     '<tr><th>Ratio</th><td>' + ratio.toFixed(2) + ':1</td></tr>' +
@@ -254,7 +280,7 @@ function updateContrast() {
     '<tr><th>AA — large text</th><td>' + badge(passAALarge) + ' (needs 3:1)</td></tr>' +
     '<tr><th>AAA — normal text</th><td>' + badge(passAAANormal) + ' (needs 7:1)</td></tr>' +
     '<tr><th>AAA — large text</th><td>' + badge(passAAALarge) + ' (needs 4.5:1)</td></tr>' +
-    '</table>';
+    '</table>' + alphaNote;
 }
 
 fgColorEl.addEventListener('input', updateContrast);
