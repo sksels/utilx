@@ -76,9 +76,6 @@ header.site .wrap {
 }
 
 .brand {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   font-weight: 700;
   font-size: 1.25rem;
   color: var(--text);
@@ -87,7 +84,16 @@ header.site .wrap {
 }
 .brand:hover { opacity: 0.85; text-decoration: none; }
 .brand span { color: var(--accent); }
-.brand-icon { flex-shrink: 0; border-radius: 7px; display: block; }
+/* Sized/spaced on the image itself, not via flex on .brand -- flex would turn the "Util"
+   text node and the <span>X</span> into separate flex items and force a gap between them,
+   splitting "UtilX" apart (regression caught in review). */
+.brand-icon {
+  width: 44px;
+  height: 44px;
+  vertical-align: middle;
+  margin-right: 10px;
+  border-radius: 9px;
+}
 
 nav.site-nav { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
 nav.site-nav a { color: var(--text-dim); font-size: 0.95rem; position: relative; }
@@ -372,7 +378,6 @@ footer.site a:hover { color: var(--text); }
   padding: 12px 14px;
   font-family: inherit;
   font-size: 0.88rem;
-  line-height: 1.3;
   color: var(--text);
 }
 /* If the update toast is already showing, stack the install prompt above it instead of
@@ -380,19 +385,25 @@ footer.site a:hover { color: var(--text); }
 #utilx-update-toast ~ #utilx-install-prompt {
   bottom: 76px;
 }
-/* Buttons don't inherit font-family/line-height from the page by default in most browsers
-   (regression: caused the label text and button text to look vertically misaligned when
-   sitting in the same flex row -- see review comments). Reset explicitly so both match. */
+.utilx-toast-label { line-height: 1; }
+/* Buttons don't inherit font-family/line-height from the page by default, and native button
+   chrome (-webkit-appearance) can add invisible vertical padding that CSS padding doesn't
+   fully override -- both caused the label and button text to look vertically misaligned in
+   the same flex row (regression: still visibly off after the first line-height-only fix, so
+   this round also matches font-size exactly and strips native appearance). See review comments. */
 #utilx-update-toast button,
 #utilx-install-prompt button {
+  -webkit-appearance: none;
+  appearance: none;
   display: inline-flex;
   align-items: center;
   border: none;
   border-radius: 6px;
   padding: 6px 12px;
+  margin: 0;
   font-family: inherit;
-  font-size: 0.85rem;
-  line-height: 1.3;
+  font-size: 0.88rem;
+  line-height: 1;
   cursor: pointer;
   background: var(--accent);
   color: #fff;

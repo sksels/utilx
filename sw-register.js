@@ -16,6 +16,7 @@
     toast.setAttribute('role', 'status');
 
     var label = document.createElement('span');
+    label.className = 'utilx-toast-label';
     label.textContent = 'A new version of UtilX is available.';
 
     var refreshBtn = document.createElement('button');
@@ -66,6 +67,7 @@
     bar.setAttribute('role', 'status');
 
     var label = document.createElement('span');
+    label.className = 'utilx-toast-label';
     label.textContent = 'Install UtilX for quicker access to your tools.';
 
     var installBtn = document.createElement('button');
