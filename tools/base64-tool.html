@@ -31,6 +31,7 @@
 <script src="lib/base64.js"></script>
 <script src="lib/shortcuts.js"></script>
 <script src="lib/url-state.js"></script>
+<script src="lib/html-escape.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -140,6 +141,12 @@
 </footer>
 
 <script>
+// Security note: never insert an Error's .message into innerHTML unescaped. JS engine and
+// library error messages can embed raw, attacker-controllable input verbatim, and this page
+// auto-runs on load from a URL-encoded state (see restoreFromUrl below) -- an unescaped
+// assignment here would be a reflected-XSS vector triggerable by just clicking a crafted link.
+const escapeHtml = HtmlEscapeLib.escapeHtml;
+
 function encode() {
   const input = document.getElementById('input').value;
   const msg = document.getElementById('msg');
@@ -147,7 +154,7 @@ function encode() {
     document.getElementById('output').value = Base64Lib.encodeUtf8ToBase64(input);
     msg.innerHTML = '<div class="success-msg">Encoded.</div>';
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">' + e.message + '</div>';
+    msg.innerHTML = '<div class="error-msg">' + escapeHtml(e.message) + '</div>';
   }
 }
 
@@ -158,7 +165,7 @@ function decode() {
     document.getElementById('output').value = Base64Lib.decodeBase64ToUtf8(input);
     msg.innerHTML = '<div class="success-msg">Decoded.</div>';
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">' + e.message + '</div>';
+    msg.innerHTML = '<div class="error-msg">' + escapeHtml(e.message) + '</div>';
   }
 }
 
@@ -191,7 +198,7 @@ function decodeJwt() {
     sigOut.value = signature;
     msg.innerHTML = '<div class="success-msg">Decoded. Signature shown as-is — not verified.</div>';
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">' + e.message + '</div>';
+    msg.innerHTML = '<div class="error-msg">' + escapeHtml(e.message) + '</div>';
     headerOut.value = '';
     payloadOut.value = '';
     sigOut.value = '';

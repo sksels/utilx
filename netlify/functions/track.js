@@ -50,11 +50,30 @@ async function ensureTable(client) {
   tableReady = true;
 }
 
+let warnedAboutDefaultSalt = false;
+
 function hashVisitor(ip, ua, dateStr) {
-  const salt = process.env.HASH_SALT || "utilx-analytics-salt";
+  const salt = process.env.HASH_SALT;
+  if (!salt && !warnedAboutDefaultSalt) {
+    // Security note (security release): HASH_SALT isn't just an internal detail -- it's
+    // published in this file's source (this repo is not currently public, but "not public
+    // yet" isn't the same guarantee as "secret"). Falling back to a hardcoded, guessable
+    // salt makes the visitor hash crackable (an attacker who can also see/guess IP+UA+date
+    // could brute-force it), which defeats the point of hashing it in the first place. This
+    // doesn't block tracking -- a pageview counter isn't worth breaking over -- but it logs
+    // loudly, once per cold start, so a missing HASH_SALT doesn't go unnoticed silently.
+    // Action needed: set HASH_SALT to a long random value in Netlify env vars for all three
+    // environments (production, staging, development).
+    console.warn(
+      "SECURITY: HASH_SALT is not set -- falling back to a hardcoded default salt. " +
+      "Set HASH_SALT in Netlify environment variables (production, staging, and development) " +
+      "to a long random value so visitor hashes can't be brute-forced."
+    );
+    warnedAboutDefaultSalt = true;
+  }
   return crypto
     .createHash("sha256")
-    .update(`${ip}|${ua}|${dateStr}|${salt}`)
+    .update(`${ip}|${ua}|${dateStr}|${salt || "utilx-analytics-salt"}`)
     .digest("hex");
 }
 

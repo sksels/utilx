@@ -31,6 +31,7 @@
 <script src="lib/json-tools.js"></script>
 <script src="lib/shortcuts.js"></script>
 <script src="lib/url-state.js"></script>
+<script src="lib/html-escape.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -153,9 +154,16 @@ function getIndent() {
   return v === 'tab' ? '\t' : Number(v);
 }
 
+// Security note: JS engine error messages (JSON.parse SyntaxError, RegExp errors, etc.) can
+// embed a snippet of the raw, attacker-controllable input verbatim -- this page auto-runs on
+// load from a URL-encoded state (see restoreFromUrl below), so an unescaped innerHTML
+// assignment here would be a reflected-XSS vector triggerable by just clicking a crafted
+// link. Always escape before inserting into innerHTML, never trust "just an error message."
+const escapeHtml = HtmlEscapeLib.escapeHtml;
+
 function showError(e) {
   const msg = document.getElementById('msg');
-  msg.innerHTML = '<div class="error-msg">Invalid JSON: ' + e.message + '</div>';
+  msg.innerHTML = '<div class="error-msg">Invalid JSON: ' + escapeHtml(e.message) + '</div>';
 }
 
 function showSuccess(text) {
@@ -243,14 +251,14 @@ function compareJson() {
   try {
     a = JSON.parse(document.getElementById('diffA').value);
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">JSON A is invalid: ' + e.message + '</div>';
+    msg.innerHTML = '<div class="error-msg">JSON A is invalid: ' + escapeHtml(e.message) + '</div>';
     box.style.display = 'none';
     return;
   }
   try {
     b = JSON.parse(document.getElementById('diffB').value);
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">JSON B is invalid: ' + e.message + '</div>';
+    msg.innerHTML = '<div class="error-msg">JSON B is invalid: ' + escapeHtml(e.message) + '</div>';
     box.style.display = 'none';
     return;
   }
@@ -263,7 +271,7 @@ function compareJson() {
     // nested (but perfectly valid) JSON -- confirmed around ~5,000 levels deep, versus
     // JSON.parse itself, which handles 100,000+ levels fine. Previously this exception
     // was uncaught here, so Compare would silently do nothing with no error shown at all.
-    msg.innerHTML = '<div class="error-msg">These JSON documents are too deeply nested to compare (' + e.message + ').</div>';
+    msg.innerHTML = '<div class="error-msg">These JSON documents are too deeply nested to compare (' + escapeHtml(e.message) + ').</div>';
     box.style.display = 'none';
     return;
   }
