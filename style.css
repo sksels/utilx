@@ -346,3 +346,53 @@ footer.site a:hover { color: var(--text); }
 
 .breadcrumb { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 14px; }
 .breadcrumb a { color: var(--text-dim); }
+
+/* PWA toasts -- shown by sw-register.js. #utilx-update-toast for "new version available",
+   #utilx-install-prompt for the "Add to Home Screen" prompt. Both share the same base
+   layout/button styling; only the vertical stacking order differs when both are visible. */
+#utilx-update-toast,
+#utilx-install-prompt {
+  position: fixed;
+  left: 50%;
+  bottom: 20px;
+  transform: translateX(-50%);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: calc(100vw - 32px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  padding: 12px 14px;
+  font-size: 0.88rem;
+  color: var(--text);
+}
+/* If the update toast is already showing, stack the install prompt above it instead of
+   overlapping -- update toast takes priority at the default bottom position. */
+#utilx-update-toast ~ #utilx-install-prompt {
+  bottom: 76px;
+}
+#utilx-update-toast button,
+#utilx-install-prompt button {
+  border: none;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  background: var(--accent);
+  color: #fff;
+  white-space: nowrap;
+}
+#utilx-update-toast button:hover,
+#utilx-install-prompt button:hover { background: var(--accent-hover); }
+#utilx-update-toast button:disabled { opacity: 0.6; cursor: default; }
+.utilx-toast-dismiss {
+  background: transparent !important;
+  color: var(--text-dim);
+  padding: 0 4px !important;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+.utilx-toast-dismiss:hover { background: transparent !important; color: var(--text); }

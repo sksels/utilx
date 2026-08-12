@@ -1,0 +1,14 @@
+{
+  "name": "UtilX — Free Developer Tools",
+  "short_name": "UtilX",
+  "description": "Free, fast, browser-based developer tools: JSON formatter, regex tester, cron builder, password/UUID generator, Base64/JWT tool, and color converter. No sign-up, nothing leaves your browser.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0f1117",
+  "theme_color": "#0f1117",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/utilx-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
