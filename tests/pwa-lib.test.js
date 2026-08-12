@@ -74,8 +74,7 @@ test('regression: PRECACHE_URLS in service-worker.js lists every file referenced
 
   const mustInclude = [
     '/', '/index.html', '/style.css', '/theme.js', '/popup-nav.js', '/pwa-lib.js',
-    '/manifest.json', '/favicon.ico', '/favicon-16.png', '/favicon-32.png',
-    '/apple-touch-icon.png', '/icon-192.png', '/utilx-icon-512.png',
+    '/manifest.json',
     '/tools/json-formatter.html', '/tools/regex-tester.html', '/tools/cron-builder.html',
     '/tools/password-generator.html', '/tools/base64-tool.html', '/tools/color-converter.html'
   ];
@@ -90,8 +89,7 @@ test('manifest.json: parses as valid JSON and has the required PWA fields', () =
   assert.equal(manifest.short_name, 'UtilX');
   assert.equal(manifest.display, 'standalone');
   assert.equal(manifest.start_url, '/');
-  assert.ok(Array.isArray(manifest.icons) && manifest.icons.length >= 2, 'expected at least 2 icon sizes');
-  const sizes = manifest.icons.map((i) => i.sizes);
-  assert.ok(sizes.includes('192x192'));
-  assert.ok(sizes.includes('512x512'));
+  // No app icons yet -- comet-mark branding was pulled from CR#4 (see backlog #18/#22);
+  // the octopus mascot logo will populate this once it's ready (CR#5).
+  assert.ok(Array.isArray(manifest.icons));
 });
