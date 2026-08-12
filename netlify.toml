@@ -4,3 +4,26 @@
   # every deploy that touches a cached file gets a fresh cache name automatically -- no
   # manual version bump to remember. $COMMIT_REF is provided by Netlify at build time.
   command = "sed -i \"s/__CACHE_VERSION__/$COMMIT_REF/\" service-worker.js"
+
+# Baseline security headers (security release). Honest caveat on script-src/style-src:
+# every tool page wires up its buttons with inline onclick="..." handlers and inline
+# style="..." attributes throughout the whole site, so 'unsafe-inline' is required on both
+# or the entire site breaks -- that is a real, separate refactor (100+ handlers across 15
+# pages) that shouldn't be rushed through as part of a headers change. This CSP does NOT
+# block inline-script-based XSS on its own; the actual XSS fix is the escaping fix shipped
+# alongside this. What it DOES meaningfully add: no framing (clickjacking protection via
+# frame-ancestors, backed by X-Frame-Options for older browsers), no plugins/objects, no
+# arbitrary form submission targets, and script/connect/frame sources locked to this site
+# plus the one Google AdSense domain actually in use (pagead2.googlesyndication.com -- the
+# loader is present sitewide but no ad units are live yet per the backlog; turning on real
+# ad units later will likely require widening this list, e.g. adding
+# googleads.g.doubleclick.net).
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self' 'unsafe-inline' https://pagead2.googlesyndication.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-src https://pagead2.googlesyndication.com; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
+    Strict-Transport-Security = "max-age=31536000; includeSubDomains"

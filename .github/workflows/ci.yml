@@ -17,6 +17,14 @@ on:
     # rather than only finding out after the merge already landed.
     branches: [main, staging]
 
+# Security release: explicit least-privilege token scope. Without this, the default
+# GITHUB_TOKEN for this workflow gets broad read/write permissions to the repo (contents,
+# issues, PRs, etc.) even though this job only ever checks out code and runs tests -- it
+# never needs to write anything. Pinning to read-only limits the blast radius if the
+# workflow or an action it depends on is ever compromised.
+permissions:
+  contents: read
+
 jobs:
   test:
     # Shows as "CI / Regression test pack" in the PR checks widget and branch protection's

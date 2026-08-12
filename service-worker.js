@@ -40,7 +40,8 @@ var PRECACHE_URLS = [
   '/tools/lib/base64.js',
   '/tools/lib/color.js',
   '/tools/lib/shortcuts.js',
-  '/tools/lib/url-state.js'
+  '/tools/lib/url-state.js',
+  '/tools/lib/html-escape.js'
 ];
 
 self.addEventListener('install', function (event) {
