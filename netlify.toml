@@ -1,2 +1,6 @@
 [build]
   functions = "netlify/functions"
+  # Stamps the deploy's commit SHA into the service worker's cache-version placeholder so
+  # every deploy that touches a cached file gets a fresh cache name automatically -- no
+  # manual version bump to remember. $COMMIT_REF is provided by Netlify at build time.
+  command = "sed -i \"s/__CACHE_VERSION__/$COMMIT_REF/\" service-worker.js"
