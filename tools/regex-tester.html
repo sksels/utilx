@@ -31,6 +31,7 @@
 <script src="lib/regex-explain.js"></script>
 <script src="lib/shortcuts.js"></script>
 <script src="lib/url-state.js"></script>
+<script src="lib/html-escape.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -177,9 +178,7 @@ function explainPattern() {
   }
 }
 
-function escapeHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
+const escapeHtml = HtmlEscapeLib.escapeHtml;
 
 function runRegex() {
   const pattern = document.getElementById('pattern').value;
@@ -197,7 +196,13 @@ function runRegex() {
   // a generic "invalid pattern" message that sends the user looking at the wrong field.
   const flagsError = RegexExplainLib.validateFlags(effectiveFlags);
   if (flagsError) {
-    msg.innerHTML = '<div class="error-msg">' + flagsError + '</div>';
+    // Security note: RegExp constructor error messages embed the raw, attacker-controllable
+    // pattern/flags text verbatim (confirmed: invalid flags containing HTML/script tags come
+    // back inside e.message unescaped). This page auto-runs on load from a URL-encoded state
+    // (see restoreFromUrl below), so an unescaped innerHTML assignment here would be a
+    // reflected XSS triggerable by just clicking a crafted link -- always escape before
+    // inserting into innerHTML, never trust "just an error message" as safe.
+    msg.innerHTML = '<div class="error-msg">' + escapeHtml(flagsError) + '</div>';
     highlighted.innerHTML = '';
     matchesBox.value = '';
     return;
@@ -207,7 +212,7 @@ function runRegex() {
   try {
     re = new RegExp(pattern, effectiveFlags);
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">Invalid pattern: ' + e.message + '</div>';
+    msg.innerHTML = '<div class="error-msg">Invalid pattern: ' + escapeHtml(e.message) + '</div>';
     highlighted.innerHTML = '';
     matchesBox.value = '';
     return;

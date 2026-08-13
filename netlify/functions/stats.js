@@ -1,5 +1,15 @@
-// Returns aggregated analytics. No password gate — kept out of search engines
-// via robots.txt and a noindex meta tag on the dashboard page instead.
+// Returns aggregated analytics.
+//
+// Security note (fixed in the security release): this endpoint previously had NO auth at
+// all -- it relied solely on robots.txt/noindex keeping the dashboard URL out of search
+// engines, which is not real access control (the URL can still leak via browser history
+// sync, referrer headers, a misdirected link, etc.). It now requires a shared-secret token,
+// checked with a constant-time comparison to avoid leaking the correct value via response
+// timing. Fails CLOSED: if STATS_ACCESS_TOKEN isn't configured in the environment, every
+// request is rejected rather than silently falling back to "open to everyone" -- an admin
+// misconfiguration should never mean "public by default."
+const crypto = require("crypto");
+
 let createClient;
 try {
   ({ createClient } = require("@libsql/client"));
@@ -8,6 +18,17 @@ try {
 }
 
 let db = null;
+
+function isAuthorized(event) {
+  const expected = process.env.STATS_ACCESS_TOKEN;
+  if (!expected) return false;
+  const provided =
+    event.headers["x-stats-token"] || event.headers["X-Stats-Token"] || "";
+  const expectedBuf = Buffer.from(expected);
+  const providedBuf = Buffer.from(provided);
+  if (expectedBuf.length !== providedBuf.length) return false;
+  return crypto.timingSafeEqual(expectedBuf, providedBuf);
+}
 
 function getDb() {
   if (!createClient) {
@@ -43,7 +64,23 @@ async function ensureTable(client) {
   }
 }
 
+// Exported for unit testing (see tests/stats-auth.test.js). Netlify only ever calls
+// exports.handler; this extra export is inert in production.
+exports.isAuthorized = isAuthorized;
+
 exports.handler = async (event) => {
+  if (!isAuthorized(event)) {
+    return {
+      statusCode: 401,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        error: process.env.STATS_ACCESS_TOKEN
+          ? "Unauthorized -- missing or incorrect X-Stats-Token header."
+          : "STATS_ACCESS_TOKEN is not configured in the environment -- this endpoint is locked until it is set.",
+      }),
+    };
+  }
+
   try {
     const client = getDb();
     await ensureTable(client);
