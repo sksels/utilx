@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const PwaLib = require('../pwa-lib.js');
+const PwaLib = require('../public/pwa-lib.js');
 
 test('buildShellCacheName: prefixes the version with utilx-shell-', () => {
   assert.equal(PwaLib.buildShellCacheName('abc123'), 'utilx-shell-abc123');
@@ -67,7 +67,7 @@ test('shouldShowInstallPrompt: hidden once the user has dismissed it', () => {
 });
 
 test('regression: PRECACHE_URLS in service-worker.js lists every file referenced in the <head> PWA tags across all 7 pages', () => {
-  const swSource = fs.readFileSync(path.join(__dirname, '../service-worker.js'), 'utf8');
+  const swSource = fs.readFileSync(path.join(__dirname, '../public/service-worker.js'), 'utf8');
   const match = swSource.match(/var PRECACHE_URLS = \[([\s\S]*?)\];/);
   assert.ok(match, 'PRECACHE_URLS array not found in service-worker.js');
   const urls = match[1].match(/'([^']+)'/g).map((s) => s.slice(1, -1));
@@ -84,7 +84,7 @@ test('regression: PRECACHE_URLS in service-worker.js lists every file referenced
 });
 
 test('manifest.json: parses as valid JSON and has the required PWA fields', () => {
-  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../manifest.json'), 'utf8'));
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../public/manifest.json'), 'utf8'));
   assert.equal(manifest.name, 'UtilX — Free Developer Tools');
   assert.equal(manifest.short_name, 'UtilX');
   assert.equal(manifest.display, 'standalone');

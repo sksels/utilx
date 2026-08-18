@@ -2,7 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
-const ThemeLib = require('../theme.js');
+const ThemeLib = require('../public/theme.js');
 
 test('resolveInitialTheme: uses stored value when present, ignoring system preference', () => {
   assert.equal(ThemeLib.resolveInitialTheme('light', false), 'light');
@@ -41,8 +41,12 @@ const PUBLIC_PAGES = [
   'tools/base64-tool.html', 'tools/color-converter.html',
 ];
 
+// Reads from the built Astro output (dist/), not raw .astro source -- these are integration
+// checks on the shipped HTML, and Astro's file-format build output preserves the same
+// about.html-style URLs the pre-Astro static HTML used, just serialized without the
+// newline between <head> and the first script tag.
 function readPage(relPath) {
-  return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf-8');
+  return fs.readFileSync(path.join(__dirname, '../dist', relPath), 'utf-8');
 }
 
 test('every public page loads /theme.js as the very first thing in <head>', () => {
@@ -50,7 +54,7 @@ test('every public page loads /theme.js as the very first thing in <head>', () =
     const html = readPage(page);
     assert.match(
       html,
-      /<head>\n<script src="\/theme\.js"><\/script>/,
+      /<head><script src="\/theme\.js"><\/script>/,
       `${page} does not load /theme.js first in <head>`
     );
   }

@@ -1,7 +1,7 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const RegexRunLib = require('../tools/lib/regex-run.js');
-const { escapeHtml } = require('../tools/lib/html-escape.js');
+const RegexRunLib = require('../public/tools/lib/regex-run.js');
+const { escapeHtml } = require('../public/tools/lib/html-escape.js');
 
 // Tech debt fix (ReDoS protection): this pure matching logic is what actually runs inside
 // tools/lib/regex-worker.js (off the main thread, behind a timeout -- see

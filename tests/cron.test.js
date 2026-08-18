@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const CronLib = require('../tools/lib/cron.js');
+const CronLib = require('../public/tools/lib/cron.js');
 
 test('standard cron: numeric minute/hour', () => {
   const out = CronLib.explainStandardCron(['0', '9', '*', '*', '1-5']);

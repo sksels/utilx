@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const Base64Lib = require('../tools/lib/base64.js');
+const Base64Lib = require('../public/tools/lib/base64.js');
 
 test('encodeUtf8ToBase64 / decodeBase64ToUtf8 round trip (ASCII)', () => {
   const encoded = Base64Lib.encodeUtf8ToBase64('Hello, UtilX!');

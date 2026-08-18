@@ -2,9 +2,16 @@
   "name": "utilx",
   "private": true,
   "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "pretest": "astro build",
     "test": "node --test"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0"
+  },
+  "devDependencies": {
+    "astro": "^7.2.2"
   }
 }

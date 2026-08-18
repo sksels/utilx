@@ -12,8 +12,9 @@ const TOOL_PAGES = {
   'tools/color-converter.html': '/tools/base64-tool.html',
 };
 
+// Reads from the built Astro output (dist/), not raw .astro source.
 function readPage(relPath) {
-  return fs.readFileSync(path.join(__dirname, '..', relPath), 'utf-8');
+  return fs.readFileSync(path.join(__dirname, '../dist', relPath), 'utf-8');
 }
 
 test('every tool page links to its designated related tool', () => {

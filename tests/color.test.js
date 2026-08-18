@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const ColorLib = require('../tools/lib/color.js');
+const ColorLib = require('../public/tools/lib/color.js');
 
 test('hexToRgb: 6-digit and 3-digit shorthand', () => {
   assert.deepEqual(ColorLib.hexToRgb('#5b8cff'), { r: 91, g: 140, b: 255 });

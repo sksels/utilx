@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const UrlStateLib = require('../tools/lib/url-state.js');
+const UrlStateLib = require('../public/tools/lib/url-state.js');
 
 test('encodeState / decodeState round trip (simple object)', () => {
   const state = { pattern: '\\d+', flags: 'g', text: 'abc123' };
