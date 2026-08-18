@@ -1,6 +1,13 @@
 [build]
   functions = "netlify/functions"
   publish = "dist"
+
+[build.environment]
+  # Astro 7 requires Node >=22.12.0 -- without this pin, Netlify's build image may default
+  # to an older Node version and astro build would fail on the actual deploy even though it
+  # builds fine locally (confirmed locally on Node v22.23.2). Matches the Node 24 already
+  # pinned in ci.yml.
+  NODE_VERSION = "22"
   # Astro build first (output: 'static', build.format: 'file' -- preserves the site's
   # existing about.html-style URLs). Then stamps the deploy's commit SHA into the service
   # worker's cache-version placeholder in the *built* dist/service-worker.js so every deploy
