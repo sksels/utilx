@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import OutputToolbar from '../../components/OutputToolbar.astro';
+import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -34,6 +36,8 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/shortcuts.js"></script>
 <script is:inline src="lib/url-state.js"></script>
 <script is:inline src="lib/html-escape.js"></script>
+<script is:inline src="/output-toolbar.js"></script>
+<script is:inline src="/local-state.js"></script>
 </Fragment>
 
 <main>
@@ -41,9 +45,13 @@ const jsonLd = JSON.stringify({
     <div class="breadcrumb"><a href="/index.html">Tools</a> / JSON Formatter</div>
     <h1>JSON Formatter &amp; Validator</h1>
     <p class="lede">Paste JSON below to beautify, minify, or validate it. Nothing is uploaded — everything runs in your browser.</p>
+    <div><LocalBadge /></div>
 
     <div class="card">
-      <label for="input">Input JSON</label>
+      <div class="field-header">
+        <label for="input">Input JSON</label>
+        <select id="inputRecent" class="recent-select" title="Load a recent input" disabled></select>
+      </div>
       <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
 
       <label for="indent">Indent size</label>
@@ -56,7 +64,6 @@ const jsonLd = JSON.stringify({
       <div>
         <button onclick="formatJson()">Format / Beautify</button>
         <button class="secondary" onclick="minifyJson()">Minify</button>
-        <button class="secondary" onclick="copyOutput()">Copy Output</button>
         <button class="secondary" onclick="copyShareLink()">Copy shareable link</button>
         <button class="secondary" onclick="clearAll()">Clear</button>
       </div>
@@ -67,6 +74,7 @@ const jsonLd = JSON.stringify({
       <div class="output-box">
         <label for="output">Output</label>
         <textarea id="output" rows="12" readonly></textarea>
+        <OutputToolbar targetId="output" download={true} downloadFilename="formatted.json" />
       </div>
     </div>
 
@@ -124,12 +132,19 @@ function showSuccess(text) {
   msg.innerHTML = '<div class="success-msg">' + text + '</div>';
 }
 
+// Persistent local state (CR#6): this tool's recent-input history and indent preference,
+// all local-only (see public/local-state.js -- same model as theme/tile-order persistence).
+const RECENT_KEY = 'utilx-json-formatter-recent';
+const INDENT_KEY = 'utilx-json-formatter-indent';
+
 function formatJson() {
   const input = document.getElementById('input').value;
   try {
     const parsed = JSON.parse(input);
     document.getElementById('output').value = JSON.stringify(parsed, null, getIndent());
     showSuccess('Valid JSON — formatted below.');
+    LocalStateLib.recordRecent(RECENT_KEY, input);
+    refreshRecentSelect();
   } catch (e) {
     showError(e);
     document.getElementById('output').value = '';
@@ -142,18 +157,16 @@ function minifyJson() {
     const parsed = JSON.parse(input);
     document.getElementById('output').value = JSON.stringify(parsed);
     showSuccess('Valid JSON — minified below.');
+    LocalStateLib.recordRecent(RECENT_KEY, input);
+    refreshRecentSelect();
   } catch (e) {
     showError(e);
     document.getElementById('output').value = '';
   }
 }
 
-function copyOutput() {
-  const out = document.getElementById('output');
-  if (!out.value) return;
-  out.select();
-  document.execCommand('copy');
-  showSuccess('Copied to clipboard.');
+function refreshRecentSelect() {
+  LocalStateLib.populateRecentSelect(document.getElementById('inputRecent'), RECENT_KEY, 'Recent inputs...');
 }
 
 function clearAll() {
@@ -181,6 +194,26 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     formatJson();
   }
+});
+
+OutputToolbarLib.init();
+
+// Persist the indent-size choice across visits (URL-shared state, when present, still wins
+// -- see restoreFromUrl below, which runs after this and overrides it).
+(function restoreIndentPref() {
+  const saved = LocalStateLib.loadPref(INDENT_KEY);
+  if (saved) document.getElementById('indent').value = saved;
+})();
+document.getElementById('indent').addEventListener('change', (e) => {
+  LocalStateLib.savePref(INDENT_KEY, e.target.value);
+});
+
+refreshRecentSelect();
+document.getElementById('inputRecent').addEventListener('change', (e) => {
+  if (!e.target.value) return;
+  document.getElementById('input').value = e.target.value;
+  formatJson();
+  e.target.value = '';
 });
 
 (function restoreFromUrl() {

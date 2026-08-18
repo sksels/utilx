@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import OutputToolbar from '../../components/OutputToolbar.astro';
+import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -33,6 +35,8 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/cron.js"></script>
 <script is:inline src="lib/shortcuts.js"></script>
 <script is:inline src="lib/url-state.js"></script>
+<script is:inline src="/output-toolbar.js"></script>
+<script is:inline src="/local-state.js"></script>
 </Fragment>
 
 <main>
@@ -40,6 +44,7 @@ const jsonLd = JSON.stringify({
     <div class="breadcrumb"><a href="/index.html">Tools</a> / Cron Builder</div>
     <h1>Cron Expression Builder &amp; Decoder</h1>
     <p class="lede">Build a 5-field cron expression with dropdowns, or paste one in — the decoder auto-detects standard cron (Linux/Kubernetes CronJob), or Quartz syntax (6-7 fields with seconds, used by Java/Spring schedulers).</p>
+    <div><LocalBadge /></div>
 
     <div class="card">
       <h2 style="margin-top:0;">Build</h2>
@@ -67,23 +72,26 @@ const jsonLd = JSON.stringify({
       <input type="text" id="dow" value="*">
       <div>
         <button onclick="buildCron()">Build Expression</button>
-        <button class="secondary" onclick="copyField('built')">Copy expression</button>
-        <button class="secondary" onclick="copyField('k8sYaml')">Copy as Kubernetes YAML</button>
       </div>
       <div id="buildMsg"></div>
       <div class="output-box">
         <label>Cron expression</label>
         <input type="text" id="built" readonly>
+        <OutputToolbar targetId="built" />
       </div>
       <div class="output-box">
         <label>As a Kubernetes CronJob snippet</label>
         <textarea id="k8sYaml" rows="4" readonly style="font-family:'SF Mono',Menlo,Consolas,monospace;"></textarea>
+        <OutputToolbar targetId="k8sYaml" download={true} downloadFilename="cronjob.yaml" />
       </div>
     </div>
 
     <div class="card">
       <h2 style="margin-top:0;">Decode</h2>
-      <label for="decodeInput">Paste a cron expression</label>
+      <div class="field-header">
+        <label for="decodeInput">Paste a cron expression</label>
+        <select id="decodeRecent" class="recent-select" title="Load a recent expression" disabled></select>
+      </div>
       <input type="text" id="decodeInput" placeholder="0 9 * * 1-5">
       <div>
         <button onclick="decodeCron()">Decode</button>
@@ -94,6 +102,7 @@ const jsonLd = JSON.stringify({
       <div class="output-box">
         <label>Plain-English explanation</label>
         <textarea id="decoded" rows="4" readonly></textarea>
+        <OutputToolbar targetId="decoded" />
       </div>
     </div>
 
@@ -125,13 +134,6 @@ function loadExample(expr) {
   document.getElementById('decodeInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
-function copyField(id) {
-  const el = document.getElementById(id);
-  if (!el.value) return;
-  el.select();
-  document.execCommand('copy');
-}
-
 function buildCron() {
   const m = document.getElementById('minute').value.trim() || '*';
   const h = document.getElementById('hour').value.trim() || '*';
@@ -154,11 +156,23 @@ function buildCron() {
   document.getElementById('k8sYaml').value = CronLib.buildK8sCronJobYaml(expr);
 }
 
+// Persistent local state (CR#6): recent decoded-expression history, local-only.
+const RECENT_KEY = 'utilx-cron-builder-recent-decode';
+
+function refreshRecentSelect() {
+  LocalStateLib.populateRecentSelect(document.getElementById('decodeRecent'), RECENT_KEY, 'Recent expressions...');
+}
+
 function decodeCron() {
   const input = document.getElementById('decodeInput').value.trim();
   const msg = document.getElementById('decodeMsg');
   const out = document.getElementById('decoded');
   const parts = input.split(/\s+/).filter(Boolean);
+
+  if (input) {
+    LocalStateLib.recordRecent(RECENT_KEY, input);
+    refreshRecentSelect();
+  }
 
   if (parts.length === 5) {
     const fieldErrors = CronLib.validateBuildFields(parts[0], parts[1], parts[2], parts[3], parts[4]);
@@ -219,5 +233,15 @@ document.addEventListener('keydown', (e) => {
   if (state.decodeInput) decodeCron();
   else if (BUILD_FIELD_IDS.some((id) => typeof state[id] === 'string')) buildCron();
 })();
+
+OutputToolbarLib.init();
+
+refreshRecentSelect();
+document.getElementById('decodeRecent').addEventListener('change', (e) => {
+  if (!e.target.value) return;
+  document.getElementById('decodeInput').value = e.target.value;
+  decodeCron();
+  e.target.value = '';
+});
 </script>
 </BaseLayout>

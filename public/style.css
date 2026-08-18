@@ -100,6 +100,19 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
   white-space: nowrap;
 }
 
+.local-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin: 0 0 14px;
+}
+.local-badge svg { width: 13px; height: 13px; color: #4ade80; flex-shrink: 0; }
+
 .theme-toggle {
   background: transparent;
   border: 1px solid var(--border);
@@ -180,6 +193,38 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
   transition: transform .2s var(--ease);
 }
 .tool-card:hover .tool-icon { transform: scale(1.08); }
+
+/* Visual anchor tabs (CR#6, backlog #38): each tool gets its own high-contrast, color-coded
+   icon chip instead of sharing one accent-blue outline icon. The goal is that a returning
+   user can find a tool by shape+color alone, before reading any text -- like recognizable
+   app icons. Colors are fixed per tool (not theme-dependent) so they stay a stable visual
+   anchor across light/dark mode. */
+.tool-icon-chip {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  transition: transform .2s var(--ease);
+}
+.tool-icon-chip .tool-icon {
+  width: 24px;
+  height: 24px;
+  color: #fff;
+  margin-bottom: 0;
+}
+.tool-card:hover .tool-icon-chip { transform: scale(1.08) rotate(-2deg); }
+.tool-card:hover .tool-icon-chip .tool-icon { transform: none; }
+
+.chip-json { background: linear-gradient(135deg, #f5a623, #f59e0b); }
+.chip-regex { background: linear-gradient(135deg, #c084fc, #a855f7); }
+.chip-cron { background: linear-gradient(135deg, #22d3ee, #06b6d4); }
+.chip-password { background: linear-gradient(135deg, #f87171, #ef4444); }
+.chip-base64 { background: linear-gradient(135deg, #34d399, #10b981); }
+.chip-color { background: linear-gradient(135deg, #f472b6, #a855f7, #3b82f6); }
 .tool-card h3 { margin: 0 0 6px; color: var(--text); font-size: 1.05rem; font-weight: 650; }
 .tool-card p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
 
@@ -291,6 +336,77 @@ button.secondary:active { transform: scale(0.96); }
 
 .output-box {
   margin-top: 16px;
+  position: relative; /* anchors the floating .output-toolbar to this box's corner */
+}
+
+/* Shared floating copy/download toolbar (CR#6) -- one reusable component instead of a
+   one-off "Copy"/"Download" button per tool. Docked to a fixed corner, not draggable, on
+   purpose: predictable position, no drag/touch/persistence complexity, works the same on
+   mobile. Extensible on purpose too -- adding a future action (zip, scramble, etc.) is just
+   another button with a new data-toolbar-action value, no layout changes needed. */
+.output-toolbar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  z-index: 2;
+}
+
+.output-toolbar .toolbar-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text-dim);
+  cursor: pointer;
+  transition: color .15s ease, border-color .15s ease;
+}
+
+.output-toolbar .toolbar-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+
+.output-toolbar .toolbar-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.output-toolbar .toolbar-btn.copied {
+  color: #4ade80;
+  border-color: #4ade80;
+}
+
+/* Persistent local state (CR#6): a compact "recent inputs" dropdown sitting inline with a
+   field's label, populated from localStorage -- see public/local-state.js. Hidden via
+   [disabled] styling rather than removed from the DOM when there's no history yet, so it's
+   always present for LocalStateLib.populateRecentSelect() to fill in later. */
+.field-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.recent-select {
+  width: auto;
+  max-width: 160px;
+  padding: 4px 8px;
+  font-size: 0.78rem;
+  border-radius: 6px;
+  color: var(--text-dim);
+}
+
+.recent-select:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .two-col {

@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import OutputToolbar from '../../components/OutputToolbar.astro';
+import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -34,6 +36,7 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/shortcuts.js"></script>
 <script is:inline src="lib/url-state.js"></script>
 <script is:inline src="lib/html-escape.js"></script>
+<script is:inline src="/output-toolbar.js"></script>
 </Fragment>
 
 <main>
@@ -41,6 +44,7 @@ const jsonLd = JSON.stringify({
     <div class="breadcrumb"><a href="/index.html">Tools</a> / Base64 Encoder / Decoder</div>
     <h1>Base64 Encoder / Decoder</h1>
     <p class="lede">Encode or decode text using Base64, with correct UTF-8 handling (emoji and accented characters included).</p>
+    <div><LocalBadge text="Processed 100% locally — JWTs and secrets never leave this tab" /></div>
 
     <div class="card">
       <label for="input">Input</label>
@@ -60,7 +64,7 @@ const jsonLd = JSON.stringify({
       <div class="output-box">
         <label for="output">Output</label>
         <textarea id="output" rows="8"></textarea>
-        <button class="secondary" onclick="downloadOutput()">Download output as file</button>
+        <OutputToolbar targetId="output" download={true} downloadFilename="output.txt" />
       </div>
     </div>
 
@@ -76,14 +80,17 @@ const jsonLd = JSON.stringify({
       <div class="output-box">
         <label>Header</label>
         <textarea id="jwtHeader" rows="4" readonly></textarea>
+        <OutputToolbar targetId="jwtHeader" />
       </div>
       <div class="output-box">
         <label>Payload</label>
         <textarea id="jwtPayload" rows="6" readonly></textarea>
+        <OutputToolbar targetId="jwtPayload" />
       </div>
       <div class="output-box">
         <label>Signature (raw, unverified)</label>
         <input type="text" id="jwtSignature" readonly>
+        <OutputToolbar targetId="jwtSignature" />
       </div>
     </div>
 
@@ -120,20 +127,6 @@ function decode() {
   } catch (e) {
     msg.innerHTML = '<div class="error-msg">' + escapeHtml(e.message) + '</div>';
   }
-}
-
-function downloadOutput() {
-  const output = document.getElementById('output').value;
-  if (!output) return;
-  const blob = new Blob([output], { type: 'application/octet-stream' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'output.txt';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
 }
 
 function decodeJwt() {
@@ -200,5 +193,7 @@ document.addEventListener('keydown', (e) => {
   if (!state || typeof state.input !== 'string') return;
   document.getElementById('input').value = state.input;
 })();
+
+OutputToolbarLib.init();
 </script>
 </BaseLayout>

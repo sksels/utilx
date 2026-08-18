@@ -1,0 +1,35 @@
+---
+// Shared floating copy/download toolbar (CR#6). Renders purely declarative markup --
+// buttons carrying data-toolbar-action/data-toolbar-target attributes -- that
+// public/output-toolbar.js wires up via one delegated click listener (OutputToolbarLib.init(),
+// called once per page). Docked to a fixed corner via .output-toolbar in style.css, not
+// draggable, by design.
+//
+// Must be placed inside a container with position:relative -- .output-box already has this
+// (see style.css) so the common case is just dropping <OutputToolbar targetId="..." /> as a
+// child of an existing <div class="output-box">.
+interface Props {
+  /** id of the element to read text from (input/textarea via .value, else .textContent) */
+  targetId: string;
+  /** show the copy button. Default true. */
+  copy?: boolean;
+  /** show the download-as-file button. Default false -- opt in per output. */
+  download?: boolean;
+  /** filename used when download is true. */
+  downloadFilename?: string;
+}
+
+const { targetId, copy = true, download = false, downloadFilename = 'output.txt' } = Astro.props;
+---
+<div class="output-toolbar">
+  {copy && (
+    <button type="button" class="toolbar-btn" data-toolbar-action="copy" data-toolbar-target={targetId} title="Copy to clipboard">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a2 2 0 0 1 2-2h10"></path></svg>
+    </button>
+  )}
+  {download && (
+    <button type="button" class="toolbar-btn" data-toolbar-action="download" data-toolbar-target={targetId} data-toolbar-filename={downloadFilename} title="Download as file">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0l-4-4m4 4l4-4"></path><path d="M4 19h16"></path></svg>
+    </button>
+  )}
+</div>
