@@ -267,11 +267,13 @@ function compareJson() {
   try {
     diffs = deepDiff(a, b, '', []);
   } catch (e) {
-    // deepDiff recurses per nesting level and can hit the call-stack limit on very deeply
-    // nested (but perfectly valid) JSON -- confirmed around ~5,000 levels deep, versus
-    // JSON.parse itself, which handles 100,000+ levels fine. Previously this exception
-    // was uncaught here, so Compare would silently do nothing with no error shown at all.
-    msg.innerHTML = '<div class="error-msg">These JSON documents are too deeply nested to compare (' + escapeHtml(e.message) + ').</div>';
+    // Tech debt fix: deepDiff used to recurse once per nesting level and could hit the call-
+    // stack limit on very deeply nested (but perfectly valid) JSON -- confirmed around ~5,000
+    // levels deep, versus JSON.parse itself, which handles 100,000+ levels fine. It's now
+    // rewritten (tools/lib/json-tools.js) to use an explicit stack instead of recursion, so
+    // this should no longer be reachable for depth reasons -- kept as a defensive fallback in
+    // case of some other unexpected failure, so Compare never silently does nothing.
+    msg.innerHTML = '<div class="error-msg">Could not compare these JSON documents (' + escapeHtml(e.message) + ').</div>';
     box.style.display = 'none';
     return;
   }
