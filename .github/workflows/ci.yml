@@ -44,13 +44,19 @@ jobs:
           # a valid choice, but 24 gives the longest support runway.
           node-version: 24
 
+      - name: Install dependencies
+        run: npm ci
+
       - name: Syntax-check all JavaScript files
         run: |
           set -e
-          find . -type d \( -name node_modules -o -name .git \) -prune -o -type f -name '*.js' -print | while read -r f; do
+          find . -type d \( -name node_modules -o -name .git -o -name dist \) -prune -o -type f -name '*.js' -print | while read -r f; do
             echo "Checking $f"
             node --check "$f"
           done
 
+      - name: Astro build (validates the site actually builds)
+        run: npm run build
+
       - name: Run regression test suite
-        run: node --test  
+        run: node --test

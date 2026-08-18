@@ -1,13 +1,17 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UtilX Analytics</title>
-<meta name="robots" content="noindex, nofollow">
-<link rel="stylesheet" href="../style.css">
-<script src="../tools/lib/html-escape.js"></script>
-<style>
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="UtilX Analytics"
+  noindex={true}
+  includeThemeJs={false}
+  includeAdsAndAnalytics={false}
+  header="minimal"
+  showFooter={false}
+>
+<Fragment slot="head-extra">
+<script is:inline src="../tools/lib/html-escape.js"></script>
+<style is:global>
   .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin: 24px 0; }
   .stat-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
   .stat-card .num { font-size: 2rem; font-weight: 700; color: var(--accent); }
@@ -16,14 +20,7 @@
   .stats-table th, .stats-table td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
   .stats-table th { color: var(--text-dim); font-weight: 600; }
 </style>
-</head>
-<body>
-
-<header class="site">
-  <div class="wrap">
-    <a class="brand" href="/index.html">Util<span>X</span></a>
-  </div>
-</header>
+</Fragment>
 
 <main>
   <div class="wrap">
@@ -60,7 +57,7 @@
   </div>
 </main>
 
-<script>
+<script is:inline>
 // Security note: escape before innerHTML, same discipline as the tool pages -- 'detail'
 // comes from the stats function's JSON error body and e.message from a caught exception;
 // neither should ever contain attacker HTML in practice, but there's no reason to trust that
@@ -148,6 +145,4 @@ function fillTable(tableId, rows, cols) {
   });
 }
 </script>
-
-</body>
-</html>
+</BaseLayout>

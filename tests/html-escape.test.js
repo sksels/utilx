@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { escapeHtml } = require('../tools/lib/html-escape.js');
+const { escapeHtml } = require('../public/tools/lib/html-escape.js');
 
 test('escapeHtml: escapes &, <, >', () => {
   assert.equal(escapeHtml('a & b < c > d'), 'a &amp; b &lt; c &gt; d');

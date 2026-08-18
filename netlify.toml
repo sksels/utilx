@@ -1,9 +1,20 @@
 [build]
   functions = "netlify/functions"
-  # Stamps the deploy's commit SHA into the service worker's cache-version placeholder so
-  # every deploy that touches a cached file gets a fresh cache name automatically -- no
-  # manual version bump to remember. $COMMIT_REF is provided by Netlify at build time.
-  command = "sed -i \"s/__CACHE_VERSION__/$COMMIT_REF/\" service-worker.js"
+  publish = "dist"
+
+[build.environment]
+  # Astro 7 requires Node >=22.12.0 -- without this pin, Netlify's build image may default
+  # to an older Node version and astro build would fail on the actual deploy even though it
+  # builds fine locally (confirmed locally on Node v22.23.2). Matches the Node 24 already
+  # pinned in ci.yml.
+  NODE_VERSION = "22"
+  # Astro build first (output: 'static', build.format: 'file' -- preserves the site's
+  # existing about.html-style URLs). Then stamps the deploy's commit SHA into the service
+  # worker's cache-version placeholder in the *built* dist/service-worker.js so every deploy
+  # that touches a cached file gets a fresh cache name automatically -- no manual version
+  # bump to remember, and the source file in public/ stays untouched. $COMMIT_REF is
+  # provided by Netlify at build time.
+  command = "npm run build && sed -i \"s/__CACHE_VERSION__/$COMMIT_REF/\" dist/service-worker.js"
 
 # Baseline security headers (security release). Honest caveat on script-src/style-src:
 # every tool page wires up its buttons with inline onclick="..." handlers and inline

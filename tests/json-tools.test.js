@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const JsonToolsLib = require('../tools/lib/json-tools.js');
+const JsonToolsLib = require('../public/tools/lib/json-tools.js');
 
 test('deepDiff: no differences on identical objects', () => {
   const diffs = JsonToolsLib.deepDiff({ a: 1 }, { a: 1 }, '', []);

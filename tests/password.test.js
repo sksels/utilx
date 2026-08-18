@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const PasswordLib = require('../tools/lib/password.js');
+const PasswordLib = require('../public/tools/lib/password.js');
 
 test('buildCharset: combines selected sets', () => {
   const cs = PasswordLib.buildCharset({ upper: true, lower: true, numbers: false, symbols: false });
