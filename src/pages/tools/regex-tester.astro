@@ -1,5 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import OutputToolbar from '../../components/OutputToolbar.astro';
+import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -35,6 +37,8 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/url-state.js"></script>
 <script is:inline src="lib/html-escape.js"></script>
 <script is:inline src="lib/regex-run.js"></script>
+<script is:inline src="/output-toolbar.js"></script>
+<script is:inline src="/local-state.js"></script>
 </Fragment>
 
 <main>
@@ -42,9 +46,13 @@ const jsonLd = JSON.stringify({
     <div class="breadcrumb"><a href="/index.html">Tools</a> / Regex Tester</div>
     <h1>Regex Tester</h1>
     <p class="lede">Test a regular expression against sample text and see matches highlighted live. Uses JavaScript's regex engine.</p>
+    <div><LocalBadge /></div>
 
     <div class="card">
-      <label for="pattern">Pattern</label>
+      <div class="field-header">
+        <label for="pattern">Pattern</label>
+        <select id="patternRecent" class="recent-select" title="Load a recent pattern" disabled></select>
+      </div>
       <input type="text" id="pattern" placeholder="\b[A-Z][a-z]+\b">
 
       <label for="flags">Flags</label>
@@ -71,11 +79,13 @@ const jsonLd = JSON.stringify({
       <div class="output-box">
         <label>Match details</label>
         <textarea id="matches" rows="8" readonly></textarea>
+        <OutputToolbar targetId="matches" download={true} downloadFilename="matches.txt" />
       </div>
 
       <div class="output-box" id="explainBox" style="display:none;">
         <label>Plain-English breakdown</label>
         <pre id="explainOutput" style="white-space: pre-wrap; background:var(--code-bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.85rem;"></pre>
+        <OutputToolbar targetId="explainOutput" />
       </div>
     </div>
 
@@ -222,6 +232,13 @@ function runRegexInline(pattern, effectiveFlags, text) {
   applyRegexResult(RegexRunLib.runMatch(pattern, effectiveFlags, text, escapeHtml));
 }
 
+// Persistent local state (CR#6): recent-pattern history, local-only (see local-state.js).
+const RECENT_KEY = 'utilx-regex-tester-recent-pattern';
+
+function refreshRecentSelect() {
+  LocalStateLib.populateRecentSelect(document.getElementById('patternRecent'), RECENT_KEY, 'Recent patterns...');
+}
+
 function runRegex() {
   const pattern = document.getElementById('pattern').value;
   const flags = RegexExplainLib.normalizeFlags(document.getElementById('flags').value);
@@ -249,6 +266,9 @@ function runRegex() {
     matchesBox.value = '';
     return;
   }
+
+  LocalStateLib.recordRecent(RECENT_KEY, pattern);
+  refreshRecentSelect();
 
   if (typeof Worker === 'undefined') {
     runRegexInline(pattern, effectiveFlags, text);
@@ -296,5 +316,16 @@ document.addEventListener('keydown', (e) => {
   if (typeof state.text === 'string') document.getElementById('testtext').value = state.text;
   if (state.pattern) { runRegex(); explainPattern(); }
 })();
+
+OutputToolbarLib.init();
+
+refreshRecentSelect();
+document.getElementById('patternRecent').addEventListener('change', (e) => {
+  if (!e.target.value) return;
+  document.getElementById('pattern').value = e.target.value;
+  runRegex();
+  explainPattern();
+  e.target.value = '';
+});
 </script>
 </BaseLayout>
