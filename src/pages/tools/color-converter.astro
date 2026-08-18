@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -32,6 +33,7 @@ const jsonLd = JSON.stringify({
 <Fragment slot="head-extra">
 <script is:inline src="lib/color.js"></script>
 <script is:inline src="lib/url-state.js"></script>
+<script is:inline src="/local-state.js"></script>
 </Fragment>
 
 <main>
@@ -39,11 +41,15 @@ const jsonLd = JSON.stringify({
     <div class="breadcrumb"><a href="/index.html">Tools</a> / Color Converter</div>
     <h1>Color Converter</h1>
     <p class="lede">Enter a color in any format below — the others update automatically.</p>
+    <div><LocalBadge text="Processed 100% locally — uploaded images never leave this tab" /></div>
 
     <div class="card">
       <div id="swatch" class="color-swatch" style="background:#5b8cff;"></div>
 
-      <label for="hex">HEX</label>
+      <div class="field-header">
+        <label for="hex">HEX</label>
+        <select id="hexRecent" class="recent-select" title="Load a recent color" disabled></select>
+      </div>
       <input type="text" id="hex" value="#5b8cff">
 
       <label for="rgb">RGB</label>
@@ -100,6 +106,13 @@ const rgbToHex = ColorLib.rgbToHex;
 const rgbToHsl = ColorLib.rgbToHsl;
 const hslToRgb = ColorLib.hslToRgb;
 
+// Persistent local state (CR#6): recent hex-color history, local-only.
+const RECENT_KEY = 'utilx-color-converter-recent-hex';
+
+function refreshRecentSelect() {
+  LocalStateLib.populateRecentSelect(document.getElementById('hexRecent'), RECENT_KEY, 'Recent colors...');
+}
+
 function updateFrom(source) {
   let rgb;
   let alpha; // undefined when the input carried no alpha channel
@@ -151,6 +164,9 @@ function updateFrom(source) {
   swatch.style.background = alpha === undefined
     ? 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')'
     : 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
+
+  LocalStateLib.recordRecent(RECENT_KEY, hex);
+  refreshRecentSelect();
 }
 
 hexEl.addEventListener('input', () => updateFrom('hex'));
@@ -259,6 +275,14 @@ function copyShareLink() {
   document.body.removeChild(temp);
   msg.innerHTML = '<div class="success-msg">Shareable link copied to clipboard.</div>';
 }
+
+refreshRecentSelect();
+document.getElementById('hexRecent').addEventListener('change', (e) => {
+  if (!e.target.value) return;
+  hexEl.value = e.target.value;
+  updateFrom('hex');
+  e.target.value = '';
+});
 
 (function restoreFromUrl() {
   const state = UrlStateLib.decodeState(location.search);

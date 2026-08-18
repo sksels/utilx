@@ -1,0 +1,17 @@
+---
+// Zero-Tracker Transparency badge (CR#6, backlog #42). Purely static markup -- reassures
+// security-conscious users that this tool's inputs/outputs never leave the browser. Distinct
+// from the header's site-wide .trust-badge ("0 cookies · 0 trackers"): this one is scoped to
+// the specific tool's data handling, so it's placed inline near the lede/inputs of each tool
+// page rather than in the global header.
+interface Props {
+  /** override the default copy, e.g. for tools with an extra caveat worth stating. */
+  text?: string;
+}
+
+const { text = 'Processed 100% locally in your browser' } = Astro.props;
+---
+<span class="local-badge" title="Nothing you type or upload here is sent to a server.">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="10" rx="2"></rect><path d="M8 11V7a4 4 0 0 1 8 0v4"></path></svg>
+  {text}
+</span>

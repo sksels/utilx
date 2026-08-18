@@ -74,6 +74,12 @@ test('regression: PRECACHE_URLS in service-worker.js lists every file referenced
 
   const mustInclude = [
     '/', '/index.html', '/style.css', '/theme.js', '/popup-nav.js', '/pwa-lib.js',
+    '/sw-register.js',
+    // CR#6: shared libs loaded on most/all tool pages (output-toolbar.js on 5 of 6,
+    // local-state.js on 4 of 6) -- without these in the shell cache, the copy/download
+    // toolbar and recent-input history silently break offline (see service-worker.js's
+    // fetch handler: anything not in PRECACHE_URLS skips caching entirely).
+    '/output-toolbar.js', '/local-state.js',
     '/manifest.json',
     '/tools/json-formatter.html', '/tools/regex-tester.html', '/tools/cron-builder.html',
     '/tools/password-generator.html', '/tools/base64-tool.html', '/tools/color-converter.html'
