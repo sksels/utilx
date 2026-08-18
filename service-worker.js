@@ -26,6 +26,7 @@ var PRECACHE_URLS = [
   '/theme.js',
   '/popup-nav.js',
   '/pwa-lib.js',
+  '/tile-order.js',
   '/manifest.json',
   '/tools/json-formatter.html',
   '/tools/regex-tester.html',
@@ -41,7 +42,9 @@ var PRECACHE_URLS = [
   '/tools/lib/color.js',
   '/tools/lib/shortcuts.js',
   '/tools/lib/url-state.js',
-  '/tools/lib/html-escape.js'
+  '/tools/lib/html-escape.js',
+  '/tools/lib/regex-run.js',
+  '/tools/lib/regex-worker.js'
 ];
 
 self.addEventListener('install', function (event) {

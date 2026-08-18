@@ -47,18 +47,44 @@ test('deepDiff: array vs object type change is a "changed" at root', () => {
   assert.equal(diffs[0].type, 'changed');
 });
 
-test('deepDiff: throws (rather than hanging or silently returning wrong results) on extremely deep nesting', () => {
-  // Documents a real, confirmed boundary: JSON.parse itself comfortably handles 100,000+
-  // levels of nesting, but deepDiff recurses once per nesting level and hits the call-stack
-  // limit around ~5,000 levels -- a depth realistic for real-world deeply nested API
-  // responses or tree structures. This is not fixed here (that would mean rewriting
-  // deepDiff to use an explicit stack instead of recursion); the fix in json-formatter.html
-  // is to catch this specific failure and show a clear "too deeply nested to compare"
-  // message instead of the call silently doing nothing, which is what happened before.
+test('deepDiff: tech debt fix -- no longer throws on nesting deep enough to blow the old call stack', () => {
+  // The old recursive implementation hit the JS engine's call-stack limit around ~5,000
+  // levels deep (see git history / tests/json-tools.test.js prior to the iterative rewrite),
+  // even though JSON.parse itself comfortably handles 100,000+ levels. This test uses the
+  // exact depth that used to throw and asserts it now resolves correctly instead.
   const depth = 5000;
   const a = JSON.parse('['.repeat(depth) + '1' + ']'.repeat(depth));
   const b = JSON.parse('['.repeat(depth) + '2' + ']'.repeat(depth));
-  assert.throws(() => JsonToolsLib.deepDiff(a, b, '', []), /Maximum call stack/);
+  const diffs = JsonToolsLib.deepDiff(a, b, '', []);
+  assert.equal(diffs.length, 1);
+  assert.equal(diffs[0].type, 'changed');
+  assert.equal(diffs[0].from, 1);
+  assert.equal(diffs[0].to, 2);
+  // Sanity-check the path was built correctly all the way down: depth-1 "[0]" segments.
+  assert.equal(diffs[0].path, '[0]'.repeat(depth));
+});
+
+test('deepDiff: handles nesting an order of magnitude beyond the old call-stack limit', () => {
+  // 50,000 levels deep -- ten times the depth that broke the old recursive version.
+  // Only bounded by available memory now, not by V8's recursion limit.
+  const depth = 50000;
+  const a = JSON.parse('['.repeat(depth) + '1' + ']'.repeat(depth));
+  const b = JSON.parse('['.repeat(depth) + '1' + ']'.repeat(depth));
+  const diffs = JsonToolsLib.deepDiff(a, b, '', []);
+  assert.equal(diffs.length, 0);
+});
+
+test('deepDiff: preserves original depth-first, left-to-right ordering of results', () => {
+  // Regression guard for the recursion -> explicit-stack rewrite: verifies sibling order
+  // and that a changed sibling's full subtree is emitted before the next sibling's diffs,
+  // matching what the old recursive version produced.
+  const a = { a: { x: 1, y: 1 }, b: 1, c: { z: 1 } };
+  const b = { a: { x: 2, y: 2 }, b: 2, c: { z: 2 } };
+  const diffs = JsonToolsLib.deepDiff(a, b, '', []);
+  assert.deepEqual(
+    diffs.map((d) => d.path),
+    ['a.x', 'a.y', 'b', 'c.z']
+  );
 });
 
 test('shortVal: truncates long values and labels undefined', () => {

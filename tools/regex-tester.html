@@ -32,6 +32,7 @@
 <script src="lib/shortcuts.js"></script>
 <script src="lib/url-state.js"></script>
 <script src="lib/html-escape.js"></script>
+<script src="lib/regex-run.js"></script>
 <script type="application/ld+json">
 {
   "@context": "https://schema.org",
@@ -180,6 +181,94 @@ function explainPattern() {
 
 const escapeHtml = HtmlEscapeLib.escapeHtml;
 
+// Tech debt fix (ReDoS protection): a catastrophic-backtracking pattern (classic example:
+// /(a+)+$/ against a long string with no trailing match) can make regex matching run for
+// an effectively unbounded amount of time -- previously this ran directly on the main
+// thread inside runRegex(), so a pattern like that would freeze the whole tab with no way
+// to recover except closing it. The match loop now runs inside a Web Worker
+// (lib/regex-worker.js); if it doesn't respond within REGEX_TIMEOUT_MS, the worker is
+// forcibly terminated and the page shows a clear message instead of hanging. Falls back to
+// running inline (old behavior, unprotected) only if Workers aren't available/constructible
+// at all, so the tool still works in that rare case.
+const REGEX_TIMEOUT_MS = 2000;
+let regexWorker = null;
+let regexRequestSeq = 0;
+let regexWorkerTimeout = null;
+
+function getRegexWorker() {
+  if (!regexWorker) regexWorker = new Worker('lib/regex-worker.js');
+  return regexWorker;
+}
+
+function applyRegexResult(data) {
+  const msg = document.getElementById('msg');
+  const highlighted = document.getElementById('highlighted');
+  const matchesBox = document.getElementById('matches');
+
+  if (!data.ok) {
+    msg.innerHTML = '<div class="error-msg">Invalid pattern: ' + escapeHtml(data.message) + '</div>';
+    highlighted.innerHTML = '';
+    matchesBox.value = '';
+    return;
+  }
+  highlighted.innerHTML = data.html || '<span style="color:var(--text-dim)">No matches</span>';
+  matchesBox.value = data.results.length ? data.results.join('\n') : 'No matches found.';
+  msg.innerHTML = '<div class="success-msg">' + data.count + ' match' + (data.count === 1 ? '' : 'es') + ' found.</div>';
+}
+
+function runRegexInWorker(pattern, effectiveFlags, text) {
+  const msg = document.getElementById('msg');
+
+  let worker;
+  try {
+    worker = getRegexWorker();
+  } catch (e) {
+    // Worker construction failed (e.g. blocked by a restrictive environment) -- fall back
+    // to running inline rather than leaving the tool completely broken.
+    runRegexInline(pattern, effectiveFlags, text);
+    return;
+  }
+
+  if (regexWorkerTimeout) clearTimeout(regexWorkerTimeout);
+  const requestId = ++regexRequestSeq;
+  msg.innerHTML = '<div class="success-msg">Running…</div>';
+
+  worker.onmessage = function (e) {
+    // Guards against a stale response from a request that already timed out and was
+    // superseded by a newer one (e.g. the user clicked "Test Regex" again quickly).
+    if (e.data.requestId !== requestId) return;
+    clearTimeout(regexWorkerTimeout);
+    applyRegexResult(e.data);
+  };
+  worker.onerror = function () {
+    clearTimeout(regexWorkerTimeout);
+    runRegexInline(pattern, effectiveFlags, text);
+  };
+
+  regexWorkerTimeout = setTimeout(function () {
+    worker.terminate();
+    regexWorker = null; // a terminated worker can't be reused -- next run creates a fresh one
+    const highlighted = document.getElementById('highlighted');
+    const matchesBox = document.getElementById('matches');
+    msg.innerHTML =
+      '<div class="error-msg">This pattern took too long to run against the given text ' +
+      '(over ' + (REGEX_TIMEOUT_MS / 1000) + 's) — it may have catastrophic backtracking. ' +
+      'Try a more specific pattern or a shorter test string.</div>';
+    highlighted.innerHTML = '';
+    matchesBox.value = '';
+  }, REGEX_TIMEOUT_MS);
+
+  worker.postMessage({ requestId, pattern, flags: effectiveFlags, text });
+}
+
+// Fallback path only, used when Web Workers aren't available/constructible at all -- this
+// runs the same matching logic (tools/lib/regex-run.js) directly on the main thread, so
+// there is no ReDoS protection in this edge case (a catastrophic-backtracking pattern
+// could still hang the tab here, same as before this fix).
+function runRegexInline(pattern, effectiveFlags, text) {
+  applyRegexResult(RegexRunLib.runMatch(pattern, effectiveFlags, text, escapeHtml));
+}
+
 function runRegex() {
   const pattern = document.getElementById('pattern').value;
   const flags = RegexExplainLib.normalizeFlags(document.getElementById('flags').value);
@@ -208,37 +297,12 @@ function runRegex() {
     return;
   }
 
-  let re;
-  try {
-    re = new RegExp(pattern, effectiveFlags);
-  } catch (e) {
-    msg.innerHTML = '<div class="error-msg">Invalid pattern: ' + escapeHtml(e.message) + '</div>';
-    highlighted.innerHTML = '';
-    matchesBox.value = '';
+  if (typeof Worker === 'undefined') {
+    runRegexInline(pattern, effectiveFlags, text);
     return;
   }
 
-  let match;
-  let lastIndex = 0;
-  let html = '';
-  let results = [];
-  let count = 0;
-  const safeRe = new RegExp(re.source, re.flags.includes('g') ? re.flags : re.flags + 'g');
-
-  while ((match = safeRe.exec(text)) !== null) {
-    count++;
-    html += escapeHtml(text.slice(lastIndex, match.index));
-    html += '<mark style="background:#5b8cff;color:#0a0c12;border-radius:3px;padding:0 2px;">' + escapeHtml(match[0]) + '</mark>';
-    lastIndex = match.index + match[0].length;
-    results.push('Match ' + count + ': "' + match[0] + '" at index ' + match.index + (match.length > 1 ? '\n  Groups: ' + JSON.stringify(match.slice(1)) : ''));
-    if (match[0] === '') { safeRe.lastIndex++; }
-    if (count > 500) break;
-  }
-  html += escapeHtml(text.slice(lastIndex));
-
-  highlighted.innerHTML = html || '<span style="color:var(--text-dim)">No matches</span>';
-  matchesBox.value = results.length ? results.join('\n') : 'No matches found.';
-  msg.innerHTML = '<div class="success-msg">' + count + ' match' + (count === 1 ? '' : 'es') + ' found.</div>';
+  runRegexInWorker(pattern, effectiveFlags, text);
 }
 
 function clearAll() {
