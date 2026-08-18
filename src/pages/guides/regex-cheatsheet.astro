@@ -1,0 +1,64 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="Regex Cheat Sheet: Syntax You Actually Use | UtilX"
+  description="A practical regular expression cheat sheet covering character classes, quantifiers, anchors, groups, and lookaheads, with plain-English explanations."
+  canonicalPath="/guides/regex-cheatsheet.html"
+>
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Guides</a> / Regex Cheat Sheet</div>
+    <h1>Regex Cheat Sheet: Syntax You Actually Use</h1>
+    <p class="lede">Regular expressions have a huge spec, but 90% of real-world usage comes from about 20 tokens. Here they are.</p>
+
+    <h2>Character classes</h2>
+    <table class="ref-table">
+      <tr><th>Token</th><th>Matches</th></tr>
+      <tr><td><code>.</code></td><td>Any character except newline</td></tr>
+      <tr><td><code>\d</code></td><td>Any digit (0-9)</td></tr>
+      <tr><td><code>\D</code></td><td>Any non-digit</td></tr>
+      <tr><td><code>\w</code></td><td>Word character (letters, digits, underscore)</td></tr>
+      <tr><td><code>\s</code></td><td>Whitespace (space, tab, newline)</td></tr>
+      <tr><td><code>[abc]</code></td><td>Any of a, b, or c</td></tr>
+      <tr><td><code>[^abc]</code></td><td>Anything except a, b, or c</td></tr>
+      <tr><td><code>[a-z]</code></td><td>Any lowercase letter, a through z</td></tr>
+    </table>
+
+    <h2>Quantifiers</h2>
+    <table class="ref-table">
+      <tr><th>Token</th><th>Meaning</th></tr>
+      <tr><td><code>*</code></td><td>Zero or more</td></tr>
+      <tr><td><code>+</code></td><td>One or more</td></tr>
+      <tr><td><code>?</code></td><td>Zero or one (optional)</td></tr>
+      <tr><td><code>{'{n}'}</code></td><td>Exactly n times</td></tr>
+      <tr><td><code>{'{n,m}'}</code></td><td>Between n and m times</td></tr>
+    </table>
+
+    <h2>Anchors and boundaries</h2>
+    <table class="ref-table">
+      <tr><th>Token</th><th>Meaning</th></tr>
+      <tr><td><code>^</code></td><td>Start of string (or line, with the <code>m</code> flag)</td></tr>
+      <tr><td><code>$</code></td><td>End of string (or line, with the <code>m</code> flag)</td></tr>
+      <tr><td><code>\b</code></td><td>Word boundary</td></tr>
+    </table>
+
+    <h2>Groups and lookarounds</h2>
+    <table class="ref-table">
+      <tr><th>Token</th><th>Meaning</th></tr>
+      <tr><td><code>(abc)</code></td><td>Capture group</td></tr>
+      <tr><td><code>(?:abc)</code></td><td>Non-capturing group</td></tr>
+      <tr><td><code>a|b</code></td><td>Match a or b</td></tr>
+      <tr><td><code>(?=abc)</code></td><td>Positive lookahead — must be followed by "abc"</td></tr>
+      <tr><td><code>(?!abc)</code></td><td>Negative lookahead — must not be followed by "abc"</td></tr>
+    </table>
+
+    <h2>Example: matching an email-like string</h2>
+    <pre><code>{String.raw`\b[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}\b`}</code></pre>
+    <p>This is fine for quick filtering, but note that a fully RFC-compliant email regex is notoriously complex — for real validation, send a confirmation email instead of relying purely on regex.</p>
+
+    <h2>Try it yourself</h2>
+    <p>Paste any pattern into the <a href="/tools/regex-tester.html">Regex Tester</a> to see live matches highlighted against your own sample text.</p>
+  </div>
+</main>
+</BaseLayout>

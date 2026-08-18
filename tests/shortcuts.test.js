@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const ShortcutsLib = require('../tools/lib/shortcuts.js');
+const ShortcutsLib = require('../public/tools/lib/shortcuts.js');
 
 test('isRunShortcut: Ctrl+Enter matches', () => {
   assert.equal(ShortcutsLib.isRunShortcut({ key: 'Enter', ctrlKey: true, metaKey: false }), true);

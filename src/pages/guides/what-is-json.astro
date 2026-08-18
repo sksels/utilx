@@ -1,0 +1,42 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+---
+<BaseLayout
+  title="JSON Basics: Syntax, Common Errors, and How to Fix Them | UtilX"
+  description="A plain-English guide to JSON syntax, the most common validation errors (trailing commas, unquoted keys, single quotes), and how to fix them."
+  canonicalPath="/guides/what-is-json.html"
+>
+<main>
+  <div class="wrap">
+    <div class="breadcrumb"><a href="/index.html">Guides</a> / JSON Basics</div>
+    <h1>JSON Basics: Syntax, Common Errors, and How to Fix Them</h1>
+    <p class="lede">JSON (JavaScript Object Notation) is the most widely used format for exchanging data between servers, APIs, and applications. It's readable, lightweight, and supported natively by nearly every programming language. Here's what you need to know to write it correctly.</p>
+
+    <h2>The building blocks</h2>
+    <p>JSON has exactly six data types: strings, numbers, booleans (<code>true</code>/<code>false</code>), <code>null</code>, objects, and arrays. An object is a set of key-value pairs wrapped in curly braces; an array is an ordered list wrapped in square brackets.</p>
+    <pre><code>{`{
+  "name": "Ada Lovelace",
+  "born": 1815,
+  "isProgrammer": true,
+  "languages": ["Analytical Engine notation"],
+  "employer": null
+}`}</code></pre>
+
+    <h2>The five mistakes that break JSON</h2>
+    <table class="ref-table">
+      <tr><th>Mistake</th><th>Wrong</th><th>Right</th></tr>
+      <tr><td>Trailing comma</td><td><code>{'{"a":1,}'}</code></td><td><code>{'{"a":1}'}</code></td></tr>
+      <tr><td>Unquoted keys</td><td><code>{'{a:1}'}</code></td><td><code>{'{"a":1}'}</code></td></tr>
+      <tr><td>Single quotes</td><td><code>{"{'a':'b'}"}</code></td><td><code>{'{"a":"b"}'}</code></td></tr>
+      <tr><td>Comments</td><td><code>{'{"a":1 // note}'}</code></td><td>Not allowed in JSON at all</td></tr>
+      <tr><td>Undefined / functions</td><td><code>{'{"a":undefined}'}</code></td><td>Use <code>null</code> instead</td></tr>
+    </table>
+
+    <h2>Why validators give confusing error messages</h2>
+    <p>Most JSON parsers stop at the exact character where the structure stops making sense — which is often <em>after</em> the actual mistake. If you get an error at line 4, check line 3 first; a missing comma or unclosed brace on an earlier line is the usual culprit.</p>
+
+    <h2>Try it yourself</h2>
+    <p>Paste your JSON into the <a href="/tools/json-formatter.html">JSON Formatter &amp; Validator</a> to get an instant, precise error location and a cleanly indented result.</p>
+  </div>
+</main>
+</BaseLayout>

@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const PopupNavLib = require('../popup-nav.js');
+const PopupNavLib = require('../public/popup-nav.js');
 
 test('computeCenteredPosition: centers the popup on the screen', () => {
   const pos = PopupNavLib.computeCenteredPosition(1920, 1080, 1040, 800);

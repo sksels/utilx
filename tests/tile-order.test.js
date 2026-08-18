@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const TileOrderLib = require('../tile-order.js');
+const TileOrderLib = require('../public/tile-order.js');
 
 // Feature (backlog #6): user-customizable tile drag-and-drop layout. These tests cover the
 // pure reconciliation/reorder logic; the actual drag-and-drop DOM wiring (initTileOrder) is

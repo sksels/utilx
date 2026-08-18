@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const RegexExplainLib = require('../tools/lib/regex-explain.js');
+const RegexExplainLib = require('../public/tools/lib/regex-explain.js');
 
 test('explainRegex: character class', () => {
   const lines = RegexExplainLib.explainRegex('[A-Z]');
