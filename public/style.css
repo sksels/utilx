@@ -417,6 +417,18 @@ button.secondary:active { transform: scale(0.96); }
   color: #0a0c12;
 }
 
+/* CR#7 full rollout: a couple of tools (Password/UUID Generator's "Generate 10"/"Generate
+   100") need a short text label instead of an icon -- no icon reads unambiguously as "ten of
+   these" at 16px. Same height/border/hover treatment as .toolbar-btn, just auto width with
+   horizontal padding instead of a fixed 30x30 square. */
+.toolbar-btn.wide {
+  width: auto;
+  padding: 0 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 /* CR#7 pilot (JSON Formatter), iteration 2: input-box is a composer-style panel -- one
    bordered container holding the input field and any secondary controls (e.g. indent
    size). Goal: no buttons live outside any box, anywhere. The panel's own border is the
@@ -432,7 +444,8 @@ button.secondary:active { transform: scale(0.96); }
   margin-top: 6px;
 }
 .input-box textarea,
-.input-box input[type=text] {
+.input-box input[type=text],
+.input-box select {
   border: none;
   border-radius: 0;
   background: transparent;
@@ -440,7 +453,8 @@ button.secondary:active { transform: scale(0.96); }
   display: block;
 }
 .input-box textarea:focus,
-.input-box input[type=text]:focus {
+.input-box input[type=text]:focus,
+.input-box select:focus {
   box-shadow: none;
 }
 .input-box .input-secondary {

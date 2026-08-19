@@ -56,10 +56,15 @@ const jsonLd = JSON.stringify({
       <input type="text" id="rgb" value="rgb(91, 140, 255)">
 
       <label for="hsl">HSL</label>
-      <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
-
-      <div>
-        <button class="secondary" onclick="copyShareLink()">Copy shareable link</button>
+      <div class="input-box">
+        <div class="input-target">
+          <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
+          <div class="input-toolbar">
+            <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       <div id="msg"></div>
