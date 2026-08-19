@@ -1,4 +1,11 @@
 :root {
+  /* Without this, native form controls (a <select>'s dropdown list especially) render using
+     the OS/browser's own dark-vs-light preference, independent of our data-theme toggle --
+     confirmed report: light theme selected, but the indent-size dropdown's popped-open
+     option list was unreadable (matching the OS's dark-mode native-control colors while our
+     CSS still painted it as light). Tying color-scheme to data-theme keeps native popups
+     (option lists, date pickers, etc.) consistent with whichever theme is actually active. */
+  color-scheme: dark;
   --bg: #0f1117;
   --bg-card: #161925;
   --border: #262b3a;
@@ -18,6 +25,7 @@
 }
 
 :root[data-theme="light"] {
+  color-scheme: light;
   --bg: #f6f7fb;
   --bg-card: #ffffff;
   --border: #e1e4ec;
@@ -30,6 +38,18 @@
   --shadow-sm: 0 1px 3px rgba(20, 24, 40, 0.06);
   --shadow-md: 0 10px 30px rgba(20, 24, 40, 0.08);
   --shadow-glow: 0 0 0 1px var(--accent), 0 10px 30px rgba(59, 111, 224, 0.14);
+}
+
+/* A tool opened in its own popup window (see BaseLayout's window.opener check) is otherwise
+   pixel-identical to the main site -- easy to lose track of which window is which when both
+   are open side by side. A subtly cooler/deeper page background (cards stay their normal
+   color) is enough to tell them apart at a glance without looking like a different, broken
+   theme. */
+:root.popup-mode {
+  --bg: #0a0e18;
+}
+:root[data-theme="light"].popup-mode {
+  --bg: #e9edfa;
 }
 
 * { box-sizing: border-box; }
@@ -356,7 +376,13 @@ button.secondary:active { transform: scale(0.96); }
 .input-target:has(> .input-toolbar),
 .output-target:has(> .output-toolbar) {
   display: flex;
-  align-items: flex-start;
+  /* Confirmed live: flex-start pinned a short 1-2 button toolbar to the very top of a
+     taller/wrapping field, leaving a big empty gap below it and reading as "misaligned"
+     rather than deliberately docked. Centering the toolbar against the field's own height
+     works for both cases -- a single button lands in the middle of a tall textarea, and a
+     dense column of 5 buttons (Base64's busiest case) still fits comfortably centered
+     beside an 8-row textarea. */
+  align-items: center;
   gap: 8px;
 }
 .input-target:has(> .input-toolbar) > input,
@@ -371,8 +397,7 @@ button.secondary:active { transform: scale(0.96); }
 }
 /* Multi-line fields are tall enough that a column of buttons reads naturally down their
    side (like an editor's icon rail) -- that's the default. Single-line fields (.inline) are
-   too short for a column to make sense, so those lay the buttons out in a row instead,
-   vertically centered against the field. */
+   too short for a column to make sense, so those lay the buttons out in a row instead. */
 .input-toolbar,
 .output-toolbar {
   display: flex;
@@ -383,10 +408,6 @@ button.secondary:active { transform: scale(0.96); }
 .input-toolbar.inline,
 .output-toolbar.inline {
   flex-direction: row;
-}
-.input-target:has(> .input-toolbar.inline),
-.output-target:has(> .output-toolbar.inline) {
-  align-items: center;
 }
 
 /* The two "control cluster" exceptions above (a toolbar that belongs to more than just one
@@ -407,6 +428,12 @@ button.secondary:active { transform: scale(0.96); }
   flex: 0 0 auto;
 }
 
+/* Now that every toolbar button lives outside the field (not overlaid or sharing a border
+   with it), the earlier primary/secondary split -- one filled accent button among several
+   plain outlined ones -- read as arbitrary rather than meaningful, especially once there was
+   no shared box tying them together as "a set". All toolbar buttons now use one consistent
+   filled-accent color, so the whole set reads as a single, deliberate action row/rail
+   regardless of which specific action a button performs. */
 .output-toolbar .toolbar-btn,
 .input-toolbar .toolbar-btn {
   width: 30px;
@@ -416,17 +443,17 @@ button.secondary:active { transform: scale(0.96); }
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg-card);
-  color: var(--text-dim);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: #0a0c12;
   cursor: pointer;
-  transition: color .15s ease, border-color .15s ease;
+  transition: background .15s ease, border-color .15s ease;
 }
 
 .output-toolbar .toolbar-btn:hover,
 .input-toolbar .toolbar-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
   box-shadow: none;
 }
 
@@ -438,21 +465,8 @@ button.secondary:active { transform: scale(0.96); }
 
 .output-toolbar .toolbar-btn.copied,
 .input-toolbar .toolbar-btn.copied {
-  color: #4ade80;
+  background: #4ade80;
   border-color: #4ade80;
-}
-
-/* The Format/Beautify button acts as this toolbar's "primary" action (mirrors the old
-   primary-styled button it replaced) -- filled accent color instead of the default outline
-   treatment, so it's still visually distinct from Minify/Copy-link/Clear at a glance. */
-.input-toolbar .toolbar-btn.primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #0a0c12;
-}
-.input-toolbar .toolbar-btn.primary:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
   color: #0a0c12;
 }
 
@@ -502,6 +516,13 @@ button.secondary:active { transform: scale(0.96); }
 }
 .input-box .input-secondary label {
   margin-top: 0;
+}
+/* This select only ever holds a couple of short options ("2 spaces", "Tab") -- the global
+   select{width:100%} rule was stretching it across the entire panel width, several times
+   wider than its own text needs. */
+.input-box .input-secondary select {
+  width: auto;
+  min-width: 140px;
 }
 
 /* Persistent local state (CR#6): a compact "recent inputs" dropdown sitting inline with a

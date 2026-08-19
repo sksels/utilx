@@ -88,8 +88,11 @@ const jsonLd = JSON.stringify({
       <div class="input-target">
         <textarea id="jwtInput" rows="4" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
         <div class="input-toolbar">
-          <button class="toolbar-btn primary" onclick="decodeJwt()" title="Decode JWT">
+          <button class="toolbar-btn" onclick="decodeJwt()" title="Decode JWT">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="clearJwt()" title="Clear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
       </div>
@@ -186,6 +189,14 @@ function clearAll() {
   document.getElementById('input').value = '';
   document.getElementById('output').value = '';
   document.getElementById('msg').innerHTML = '';
+}
+
+function clearJwt() {
+  document.getElementById('jwtInput').value = '';
+  document.getElementById('jwtHeader').value = '';
+  document.getElementById('jwtPayload').value = '';
+  document.getElementById('jwtSignature').value = '';
+  document.getElementById('jwtMsg').innerHTML = '';
 }
 
 function copyShareLink() {

@@ -57,6 +57,7 @@ const jsonLd = JSON.stringify({
 
       <label for="flags">Flags</label>
       <input type="text" id="flags" value="g" placeholder="e.g. gi (no spaces)">
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;"><code>g</code> = global, find every match instead of stopping at the first one. See the full flag reference below.</p>
 
       <label for="testtext">Test string</label>
       <div class="input-target">
@@ -106,7 +107,7 @@ const jsonLd = JSON.stringify({
       <h2 style="margin-top:0;">Common patterns</h2>
       <p style="color:var(--text-dim); margin-top:-8px;">Click to load a ready-made pattern into the tester above.</p>
       <div>
-        <button class="secondary" onclick="loadPattern('\\b[\\w.+-]+@[\\w-]+\\.[a-zA-Z]{2,}\\b', 'test@example.com\nnot-an-email\nfirst.last+tag@sub.example.co')">Email validation</button>
+        <button class="secondary" onclick="loadPattern('\\b[\\w.+-]+@[\\w-]+(?:\\.[\\w-]+)+\\b', 'test@example.com\nnot-an-email\nfirst.last+tag@sub.example.co')">Email validation</button>
         <button class="secondary" onclick="loadPattern('\\+?1?[-.\\s]?\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}', '(555) 123-4567\n555-123-4567\n+1 555.123.4567\nnot a number')">Phone number (US)</button>
         <button class="secondary" onclick="loadPattern('https?:\\/\\/[\\w.-]+\\.[a-zA-Z]{2,}(\\/\\S*)?', 'https://utilx.tools/tools\nhttp://example.com\nnot a url')">URL</button>
         <button class="secondary" onclick="loadPattern('^\\d{5}(-\\d{4})?$', '90210\n90210-1234\nabcde')">US ZIP code</button>
