@@ -83,14 +83,14 @@ const jsonLd = JSON.stringify({
       </div>
       <div id="buildMsg"></div>
       <div class="output-box">
-        <label>Cron expression</label>
+        <label for="built">Cron expression</label>
         <div class="output-target">
           <input type="text" id="built" readonly>
           <OutputToolbar targetId="built" inline={true} />
         </div>
       </div>
       <div class="output-box">
-        <label>As a Kubernetes CronJob snippet</label>
+        <label for="k8sYaml">As a Kubernetes CronJob snippet</label>
         <div class="output-target">
           <textarea id="k8sYaml" rows="4" readonly style="font-family:'SF Mono',Menlo,Consolas,monospace;"></textarea>
           <OutputToolbar targetId="k8sYaml" download={true} downloadFilename="cronjob.yaml" />
@@ -121,7 +121,7 @@ const jsonLd = JSON.stringify({
       <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to build or decode, depending on which field you're in.</p>
       <div id="decodeMsg"></div>
       <div class="output-box">
-        <label>Plain-English explanation</label>
+        <label for="decoded">Plain-English explanation</label>
         <div class="output-target">
           <textarea id="decoded" rows="4" readonly></textarea>
           <OutputToolbar targetId="decoded" />

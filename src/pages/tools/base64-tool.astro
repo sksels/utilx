@@ -99,21 +99,21 @@ const jsonLd = JSON.stringify({
       </div>
       <div id="jwtMsg"></div>
       <div class="output-box">
-        <label>Header</label>
+        <label for="jwtHeader">Header</label>
         <div class="output-target">
           <textarea id="jwtHeader" rows="4" readonly></textarea>
           <OutputToolbar targetId="jwtHeader" />
         </div>
       </div>
       <div class="output-box">
-        <label>Payload</label>
+        <label for="jwtPayload">Payload</label>
         <div class="output-target">
           <textarea id="jwtPayload" rows="6" readonly></textarea>
           <OutputToolbar targetId="jwtPayload" />
         </div>
       </div>
       <div class="output-box">
-        <label>Signature (raw, unverified)</label>
+        <label for="jwtSignature">Signature (raw, unverified)</label>
         <div class="output-target">
           <input type="text" id="jwtSignature" readonly>
           <OutputToolbar targetId="jwtSignature" inline={true} />

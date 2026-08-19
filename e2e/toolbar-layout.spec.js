@@ -25,15 +25,26 @@ for (const path of TOOL_PAGES) {
     test('every toolbar is vertically centered against its parent, not pinned to the top', async ({ page }) => {
       await page.goto(path);
 
-      const toolbars = page.locator('.input-toolbar, .output-toolbar');
-      const count = await toolbars.count();
-      expect(count, `expected at least one toolbar on ${path}`).toBeGreaterThan(0);
+      const allToolbars = page.locator('.input-toolbar, .output-toolbar');
+      const totalCount = await allToolbars.count();
+      expect(totalCount, `expected at least one toolbar on ${path}`).toBeGreaterThan(0);
 
-      for (let i = 0; i < count; i++) {
-        const toolbar = toolbars.nth(i);
+      // Some toolbars belong to a section that's collapsed until the user triggers it (e.g.
+      // Regex Tester's "Plain-English breakdown" box, display:none until Explain is clicked)
+      // -- boundingBox() is legitimately null for those, and that's correct, not a layout
+      // bug. Only visible toolbars are meaningful to check here.
+      const toolbars = [];
+      for (let i = 0; i < totalCount; i++) {
+        const el = allToolbars.nth(i);
+        if (await el.isVisible()) toolbars.push(el);
+      }
+      expect(toolbars.length, `expected at least one visible toolbar on ${path}`).toBeGreaterThan(0);
+
+      for (let i = 0; i < toolbars.length; i++) {
+        const toolbar = toolbars[i];
         const toolbarBox = await toolbar.boundingBox();
         const parentBox = await toolbar.locator('xpath=..').first().boundingBox();
-        expect(toolbarBox, `toolbar #${i} on ${path} has no bounding box (hidden?)`).not.toBeNull();
+        expect(toolbarBox, `toolbar #${i} on ${path} has no bounding box`).not.toBeNull();
         expect(parentBox, `toolbar #${i}'s parent on ${path} has no bounding box`).not.toBeNull();
 
         const toolbarCenterY = toolbarBox.y + toolbarBox.height / 2;

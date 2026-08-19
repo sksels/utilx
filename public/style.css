@@ -34,13 +34,21 @@
   --border: #e1e4ec;
   --text: #1a1d29;
   --text-dim: #5b6072;
-  --accent: #3b6fe0;
-  --accent-hover: #2f5bc4;
-  --accent-soft: rgba(59, 111, 224, 0.08);
+  /* These four all got darkened from their original values after axe-core's first real CI
+     run (accessibility.spec.js) caught them failing WCAG AA color-contrast (4.5:1) against
+     this theme's light backgrounds -- --accent was 4.32:1 (just under the line), --success
+     was 1.74:1 and --danger 2.78:1 (nowhere close). None of these four had ever been
+     contrast-checked before; the dark theme's originals happened to already pass against its
+     much darker backgrounds, which is why only light theme needed new values here. */
+  --accent: #2f5bc4;
+  --accent-hover: #24479c;
+  --accent-soft: rgba(47, 91, 196, 0.08);
+  --success: #15803d;
+  --danger: #b91c1c;
   --code-bg: #eef0f6;
   --shadow-sm: 0 1px 3px rgba(20, 24, 40, 0.06);
   --shadow-md: 0 10px 30px rgba(20, 24, 40, 0.08);
-  --shadow-glow: 0 0 0 1px var(--accent), 0 10px 30px rgba(59, 111, 224, 0.14);
+  --shadow-glow: 0 0 0 1px var(--accent), 0 10px 30px rgba(47, 91, 196, 0.14);
 }
 
 /* A tool opened in its own popup window (see BaseLayout's window.opener check) is otherwise

@@ -23,14 +23,18 @@ for (const path of PAGES) {
   for (const theme of THEMES) {
     test(`${path} has no serious/critical WCAG violations (${theme} theme)`, async ({ page }) => {
       await page.goto(path);
-      if (theme === 'light') {
-        // Matches theme.js's own toggle mechanism (data-theme attribute + localStorage),
-        // not a UI click, so this stays stable if the toggle button's markup ever changes.
-        await page.evaluate(() => {
-          document.documentElement.setAttribute('data-theme', 'light');
-          localStorage.setItem('theme', 'light');
-        });
-      }
+      // Force the theme explicitly for BOTH cases, not just light. Playwright's default
+      // emulated color-scheme is 'light', and theme.js (public/theme.js) resolves its
+      // initial theme from prefers-color-scheme when nothing is in localStorage -- so
+      // without this, the "dark theme" run was silently rendering light theme too (first
+      // real run of this test caught it: identical violations reported under both theme
+      // labels for the same pages). Matches theme.js's own storage key and toggle
+      // mechanism (data-theme attribute + localStorage), not a UI click, so this stays
+      // stable if the toggle button's markup ever changes.
+      await page.evaluate((t) => {
+        document.documentElement.setAttribute('data-theme', t);
+        localStorage.setItem('utilx-theme', t);
+      }, theme);
 
       const results = await new AxeBuilder({ page })
         .withTags(['wcag2a', 'wcag2aa', 'wcag22aa'])
