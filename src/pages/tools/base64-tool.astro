@@ -114,9 +114,11 @@ const jsonLd = JSON.stringify({
       </div>
       <div class="output-box">
         <label>Signature (raw, unverified)</label>
-        <div class="output-target">
-          <input type="text" id="jwtSignature" readonly>
-          <OutputToolbar targetId="jwtSignature" inline={true} />
+        <div class="input-box">
+          <div class="output-target">
+            <input type="text" id="jwtSignature" readonly>
+            <OutputToolbar targetId="jwtSignature" inline={true} />
+          </div>
         </div>
       </div>
     </div>

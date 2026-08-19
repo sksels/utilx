@@ -403,6 +403,22 @@ button.secondary:active { transform: scale(0.96); }
   flex: 0 0 auto;
 }
 
+/* Confirmed live (generating 100 UUIDs): a multi-line field's native scrollbar renders
+   directly under the corner-docked toolbar's buttons once content overflows, since the
+   toolbar is pinned right:3px -- inside the ~15-17px a visible desktop scrollbar occupies.
+   scrollbar-gutter reserves that track permanently (no layout jump the moment scrolling
+   starts), and pushing the toolbar's own right offset out past it means the buttons are
+   never physically where the scrollbar renders, whether or not it's actually visible right
+   now. Single-line inputs never scroll, so they keep the tighter default 3px inset --
+   this only targets toolbars that follow a <textarea>. */
+textarea {
+  scrollbar-gutter: stable;
+}
+textarea ~ .output-toolbar,
+textarea ~ .input-toolbar {
+  right: 20px;
+}
+
 .output-toolbar .toolbar-btn,
 .input-toolbar .toolbar-btn {
   width: 30px;
