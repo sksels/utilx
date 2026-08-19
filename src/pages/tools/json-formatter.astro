@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
+import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
@@ -67,8 +68,8 @@ const jsonLd = JSON.stringify({
             </select>
           </div>
         </div>
-        <div class="input-toolbar">
-          <button class="toolbar-btn primary" onclick="formatJson()" title="Format / Beautify">
+        <InputToolbar>
+          <button class="toolbar-btn" onclick="formatJson()" title="Format / Beautify">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg>
           </button>
           <button class="toolbar-btn" onclick="minifyJson()" title="Minify">
@@ -80,7 +81,7 @@ const jsonLd = JSON.stringify({
           <button class="toolbar-btn" onclick="clearAll()" title="Clear">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
-        </div>
+        </InputToolbar>
       </div>
       <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format.</p>
 

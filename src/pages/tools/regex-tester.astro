@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
+import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
@@ -62,8 +63,8 @@ const jsonLd = JSON.stringify({
       <label for="testtext">Test string</label>
       <div class="input-target">
         <textarea id="testtext" rows="8" placeholder="Paste sample text here to test your pattern against it."></textarea>
-        <div class="input-toolbar">
-          <button class="toolbar-btn primary" onclick="runRegex()" title="Test Regex">
+        <InputToolbar>
+          <button class="toolbar-btn" onclick="runRegex()" title="Test Regex">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
           </button>
           <button class="toolbar-btn" onclick="explainPattern()" title="Explain pattern">
@@ -75,7 +76,7 @@ const jsonLd = JSON.stringify({
           <button class="toolbar-btn" onclick="clearAll()" title="Clear">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
-        </div>
+        </InputToolbar>
       </div>
       <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to test.</p>
 

@@ -6,12 +6,21 @@
     "build": "astro build",
     "preview": "astro preview",
     "pretest": "astro build",
-    "test": "node --test"
+    "test": "node --test",
+    "lint:css": "stylelint \"public/*.css\"",
+    "test:e2e": "playwright test",
+    "test:perf": "lhci autorun"
   },
   "dependencies": {
     "@libsql/client": "^0.14.0"
   },
   "devDependencies": {
-    "astro": "^7.2.2"
+    "@axe-core/playwright": "^4.13.0",
+    "@lhci/cli": "^0.15.1",
+    "@playwright/test": "^1.62.1",
+    "astro": "^7.2.2",
+    "stylelint": "^17.14.1",
+    "stylelint-config-standard": "^40.0.0",
+    "stylelint-declaration-strict-value": "^1.11.1"
   }
 }

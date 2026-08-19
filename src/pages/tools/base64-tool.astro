@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
+import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
@@ -50,11 +51,11 @@ const jsonLd = JSON.stringify({
       <label for="input">Input</label>
       <div class="input-target">
         <textarea id="input" rows="8" placeholder="Type or paste text here..."></textarea>
-        <div class="input-toolbar">
-          <button class="toolbar-btn primary" onclick="encode()" title="Encode">
+        <InputToolbar>
+          <button class="toolbar-btn" onclick="encode()" title="Encode">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
           </button>
-          <button class="toolbar-btn primary" onclick="decode()" title="Decode">
+          <button class="toolbar-btn" onclick="decode()" title="Decode">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
           </button>
           <button class="toolbar-btn" onclick="swap()" title="Swap">
@@ -66,7 +67,7 @@ const jsonLd = JSON.stringify({
           <button class="toolbar-btn" onclick="clearAll()" title="Clear">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
-        </div>
+        </InputToolbar>
       </div>
       <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to encode. In the JWT box below, it decodes instead.</p>
 
@@ -87,14 +88,14 @@ const jsonLd = JSON.stringify({
       <label for="jwtInput">JWT</label>
       <div class="input-target">
         <textarea id="jwtInput" rows="4" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
-        <div class="input-toolbar">
+        <InputToolbar>
           <button class="toolbar-btn" onclick="decodeJwt()" title="Decode JWT">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
           </button>
           <button class="toolbar-btn" onclick="clearJwt()" title="Clear">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
-        </div>
+        </InputToolbar>
       </div>
       <div id="jwtMsg"></div>
       <div class="output-box">

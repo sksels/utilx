@@ -1,0 +1,22 @@
+# Automated dependency-update PRs. This is the piece I can commit myself -- it does NOT
+# turn on Dependabot's separate security-alert scanning (that's a repo Settings > Code
+# security toggle, not a file, so it needs to be done once in the GitHub UI; see the
+# handoff notes for the exact steps).
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    groups:
+      # Bundles routine patch/minor bumps into one PR instead of one-PR-per-package --
+      # keeps the review queue manageable on a solo-maintained project. Major version bumps
+      # are excluded from the group so they still surface as individually-reviewed PRs.
+      routine-updates:
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"

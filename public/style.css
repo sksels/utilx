@@ -15,6 +15,9 @@
   --accent-hover: #7ba0ff;
   --accent-soft: rgba(91, 140, 255, 0.1);
   --code-bg: #0a0c12;
+  --text-on-accent: #0a0c12;
+  --success: #4ade80;
+  --danger: #ff6b6b;
   --radius: 10px;
   --radius-lg: 14px;
   --max-width: 960px;
@@ -131,7 +134,7 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
   padding: 4px 12px;
   margin: 0 0 14px;
 }
-.local-badge svg { width: 13px; height: 13px; color: #4ade80; flex-shrink: 0; }
+.local-badge svg { width: 13px; height: 13px; color: var(--success); flex-shrink: 0; }
 
 .theme-toggle {
   background: transparent;
@@ -200,8 +203,8 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
   transform: translateY(-1px);
   /* Distinct green "click" flash, separate from the blue hover glow -- fast transition in
      so it reads as an immediate press response rather than a slow color fade. */
-  border-color: #4ade80;
-  box-shadow: 0 0 0 1px #4ade80, 0 10px 24px rgba(74, 222, 128, 0.22);
+  border-color: var(--success);
+  box-shadow: 0 0 0 1px var(--success), 0 10px 24px rgba(74, 222, 128, 0.22);
   transition: border-color .05s ease, box-shadow .05s ease, transform .2s var(--ease);
 }
 .tool-icon {
@@ -233,6 +236,9 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
 .tool-icon-chip .tool-icon {
   width: 24px;
   height: 24px;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- plain white is
+     correct on every one of the fixed, theme-independent chip gradient colors below, not a
+     drifted one-off; not worth a token since nothing else in the palette shares it. */
   color: #fff;
   margin-bottom: 0;
 }
@@ -333,7 +339,7 @@ label {
 
 button {
   background: var(--accent);
-  color: #0a0c12;
+  color: var(--text-on-accent);
   border: none;
   border-radius: 8px;
   padding: 10px 18px;
@@ -373,15 +379,17 @@ button.secondary:active { transform: scale(0.96); }
    fields (JSON Formatter's input, Password Generator's checkbox cluster) group a toolbar
    *outside* an .input-box panel instead (see .input-box-row below), so their .input-target
    has no toolbar child and stays a normal block container. */
-.input-target:has(> .input-toolbar),
-.output-target:has(> .output-toolbar) {
+/* Single source of truth: ANY div whose direct child is a .input-toolbar or .output-toolbar
+   gets this layout -- a plain field wrapper, an .input-target/.output-target, or an
+   .input-box-row wrapper around a grouped .input-box panel (Password Generator, JSON
+   Formatter). This used to be two separate rules (this one, plus a near-duplicate on
+   .input-box-row below) -- when this one got its flex-start -> center fix, the duplicate on
+   .input-box-row didn't, and drifted out of sync (confirmed live on the Password Generator
+   page: its 2-button toolbar pinned to the top of a much taller panel). There is now only
+   one place this layout is defined, so that specific class of bug can't recur. */
+div:has(> .input-toolbar),
+div:has(> .output-toolbar) {
   display: flex;
-  /* Confirmed live: flex-start pinned a short 1-2 button toolbar to the very top of a
-     taller/wrapping field, leaving a big empty gap below it and reading as "misaligned"
-     rather than deliberately docked. Centering the toolbar against the field's own height
-     works for both cases -- a single button lands in the middle of a tall textarea, and a
-     dense column of 5 buttons (Base64's busiest case) still fits comfortably centered
-     beside an 8-row textarea. */
   align-items: center;
   gap: 8px;
 }
@@ -412,11 +420,10 @@ button.secondary:active { transform: scale(0.96); }
 
 /* The two "control cluster" exceptions above (a toolbar that belongs to more than just one
    field): the .input-box panel keeps its own grouping border, and the toolbar sits outside
-   it as a sibling in this row, same left-to-right layout as the normal case. */
+   it as a sibling in this row. display/align-items/gap are NOT redeclared here -- they come
+   from the generic div:has(> .input-toolbar) rule above, since .input-box-row also has an
+   .input-toolbar as a direct child. Only the property that rule doesn't set lives here. */
 .input-box-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
   margin-top: 6px;
 }
 .input-box-row > .input-box {
@@ -445,7 +452,7 @@ button.secondary:active { transform: scale(0.96); }
   border-radius: 6px;
   border: 1px solid var(--accent);
   background: var(--accent);
-  color: #0a0c12;
+  color: var(--text-on-accent);
   cursor: pointer;
   transition: background .15s ease, border-color .15s ease;
 }
@@ -465,9 +472,9 @@ button.secondary:active { transform: scale(0.96); }
 
 .output-toolbar .toolbar-btn.copied,
 .input-toolbar .toolbar-btn.copied {
-  background: #4ade80;
-  border-color: #4ade80;
-  color: #0a0c12;
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--text-on-accent);
 }
 
 /* CR#7 full rollout: a couple of tools (Password/UUID Generator's "Generate 10"/"Generate
@@ -560,13 +567,13 @@ button.secondary:active { transform: scale(0.96); }
 }
 
 .error-msg {
-  color: #ff6b6b;
+  color: var(--danger);
   font-size: 0.85rem;
   margin-top: 8px;
   animation: fadeInUp .25s var(--ease);
 }
 .success-msg {
-  color: #4ade80;
+  color: var(--success);
   font-size: 0.85rem;
   margin-top: 8px;
   animation: fadeInUp .25s var(--ease);
@@ -686,6 +693,10 @@ footer.site a:hover { color: var(--text); }
   line-height: 1;
   cursor: pointer;
   background: var(--accent);
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- the PWA install
+     banner is a separate, rarely-seen surface (not the main toolbar-btn/button convention);
+     pre-existing white-on-accent choice here, left as-is rather than silently reconciling it
+     with --text-on-accent's near-black, which would be an unreviewed visual change. */
   color: #fff;
   white-space: nowrap;
 }

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
+import InputToolbar from '../../components/InputToolbar.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -58,14 +59,14 @@ const jsonLd = JSON.stringify({
       <label for="hsl">HSL</label>
       <div class="input-target">
         <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
-        <div class="input-toolbar inline">
+        <InputToolbar inline>
           <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </button>
           <button class="toolbar-btn" onclick="clearAll()" title="Clear">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
-        </div>
+        </InputToolbar>
       </div>
 
       <div id="msg"></div>

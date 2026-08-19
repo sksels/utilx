@@ -55,8 +55,32 @@ jobs:
             node --check "$f"
           done
 
+      - name: Lint CSS (design-token enforcement, duplicate-selector detection)
+        run: npm run lint:css
+
       - name: Astro build (validates the site actually builds)
         run: npm run build
 
       - name: Run regression test suite
         run: node --test
+
+      - name: Install Playwright's Chromium
+        # Only Chromium, not the full browser matrix -- keeps CI fast, and the layout/a11y
+        # assertions below don't need cross-browser coverage to catch what they're built to
+        # catch. This step needs normal internet access, which is why it can't run in this
+        # project's Claude sandbox (blocked by that sandbox's network allowlist) but works
+        # fine here in GitHub Actions.
+        run: npx playwright install --with-deps chromium
+
+      - name: Layout-assertion + accessibility tests (Playwright)
+        run: npm run test:e2e
+
+      - name: Performance budgets (Lighthouse CI)
+        # First real run of this gate -- the error thresholds below (LCP, CLS, overall
+        # performance score) are standard "good" Core Web Vitals targets, not numbers
+        # calibrated against this site's actual measured performance (Lighthouse can't run
+        # in this project's Claude sandbox either -- same network-allowlist constraint as
+        # Chromium/Playwright above). If this fails on its first run, that's real signal to
+        # act on, not a false alarm to loosen blindly: check the uploaded report link in the
+        # job output before changing any threshold in .lighthouserc.json.
+        run: npm run test:perf
