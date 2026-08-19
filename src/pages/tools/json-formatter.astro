@@ -73,8 +73,10 @@ const jsonLd = JSON.stringify({
 
       <div class="output-box">
         <label for="output">Output</label>
-        <textarea id="output" rows="12" readonly></textarea>
-        <OutputToolbar targetId="output" download={true} downloadFilename="formatted.json" />
+        <div class="output-target">
+          <textarea id="output" rows="12" readonly></textarea>
+          <OutputToolbar targetId="output" download={true} downloadFilename="formatted.json" />
+        </div>
       </div>
     </div>
 

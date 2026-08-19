@@ -78,14 +78,18 @@ const jsonLd = JSON.stringify({
 
       <div class="output-box">
         <label>Match details</label>
-        <textarea id="matches" rows="8" readonly></textarea>
-        <OutputToolbar targetId="matches" download={true} downloadFilename="matches.txt" />
+        <div class="output-target">
+          <textarea id="matches" rows="8" readonly></textarea>
+          <OutputToolbar targetId="matches" download={true} downloadFilename="matches.txt" />
+        </div>
       </div>
 
       <div class="output-box" id="explainBox" style="display:none;">
         <label>Plain-English breakdown</label>
-        <pre id="explainOutput" style="white-space: pre-wrap; background:var(--code-bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.85rem;"></pre>
-        <OutputToolbar targetId="explainOutput" />
+        <div class="output-target">
+          <pre id="explainOutput" style="white-space: pre-wrap; background:var(--code-bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.85rem;"></pre>
+          <OutputToolbar targetId="explainOutput" />
+        </div>
       </div>
     </div>
 

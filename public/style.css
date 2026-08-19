@@ -336,7 +336,17 @@ button.secondary:active { transform: scale(0.96); }
 
 .output-box {
   margin-top: 16px;
-  position: relative; /* anchors the floating .output-toolbar to this box's corner */
+}
+
+/* Anchors the floating .output-toolbar to the actual target element's corner (the textarea/
+   input/pre/div being copied from) -- not to .output-box as a whole. Bug fix: .output-box
+   often also contains a <label> above the target element, and since .output-toolbar was
+   positioned relative to .output-box's top edge, the buttons landed near the label instead
+   of the target, visually straddling the border between them. Wrapping just the target +
+   toolbar pair keeps the buttons pinned to the element they actually act on regardless of
+   whether a label precedes it. */
+.output-target {
+  position: relative;
 }
 
 /* Shared floating copy/download toolbar (CR#6) -- one reusable component instead of a

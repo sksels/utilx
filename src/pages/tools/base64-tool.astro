@@ -63,8 +63,10 @@ const jsonLd = JSON.stringify({
 
       <div class="output-box">
         <label for="output">Output</label>
-        <textarea id="output" rows="8"></textarea>
-        <OutputToolbar targetId="output" download={true} downloadFilename="output.txt" />
+        <div class="output-target">
+          <textarea id="output" rows="8"></textarea>
+          <OutputToolbar targetId="output" download={true} downloadFilename="output.txt" />
+        </div>
       </div>
     </div>
 
@@ -79,18 +81,24 @@ const jsonLd = JSON.stringify({
       <div id="jwtMsg"></div>
       <div class="output-box">
         <label>Header</label>
-        <textarea id="jwtHeader" rows="4" readonly></textarea>
-        <OutputToolbar targetId="jwtHeader" />
+        <div class="output-target">
+          <textarea id="jwtHeader" rows="4" readonly></textarea>
+          <OutputToolbar targetId="jwtHeader" />
+        </div>
       </div>
       <div class="output-box">
         <label>Payload</label>
-        <textarea id="jwtPayload" rows="6" readonly></textarea>
-        <OutputToolbar targetId="jwtPayload" />
+        <div class="output-target">
+          <textarea id="jwtPayload" rows="6" readonly></textarea>
+          <OutputToolbar targetId="jwtPayload" />
+        </div>
       </div>
       <div class="output-box">
         <label>Signature (raw, unverified)</label>
-        <input type="text" id="jwtSignature" readonly>
-        <OutputToolbar targetId="jwtSignature" />
+        <div class="output-target">
+          <input type="text" id="jwtSignature" readonly>
+          <OutputToolbar targetId="jwtSignature" />
+        </div>
       </div>
     </div>
 
