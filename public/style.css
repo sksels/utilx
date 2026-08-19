@@ -45,6 +45,15 @@
   --accent-soft: rgba(47, 91, 196, 0.08);
   --success: #15803d;
   --danger: #b91c1c;
+  /* --text-on-accent is text painted directly on a solid --accent background (button text,
+     toolbar-btn labels like the UUID generator's "10x"/"100x"). The dark theme's default
+     (#0a0c12, near-black) works there because dark theme's --accent (#5b8cff) is light
+     enough for dark text -- but this theme's --accent (#2f5bc4, above) is a mid-tone blue,
+     so that same near-black text was only 3.17:1 against it (axe caught it on Password
+     Generator's "10x"/"100x" buttons and JSON Formatter's "Compare" button -- the only
+     buttons with real text nodes; icon-only buttons don't trigger this rule at all). White
+     clears the 4.5:1 minimum with room to spare against this theme's darker accent. */
+  --text-on-accent: #ffffff;
   --code-bg: #eef0f6;
   --shadow-sm: 0 1px 3px rgba(20, 24, 40, 0.06);
   --shadow-md: 0 10px 30px rgba(20, 24, 40, 0.08);
