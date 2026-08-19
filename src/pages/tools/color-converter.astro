@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
+import InputToolbar from '../../components/InputToolbar.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -56,10 +57,16 @@ const jsonLd = JSON.stringify({
       <input type="text" id="rgb" value="rgb(91, 140, 255)">
 
       <label for="hsl">HSL</label>
-      <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
-
-      <div>
-        <button class="secondary" onclick="copyShareLink()">Copy shareable link</button>
+      <div class="input-target">
+        <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
+        <InputToolbar inline>
+          <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="clearAll()" title="Clear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </InputToolbar>
       </div>
 
       <div id="msg"></div>
@@ -68,6 +75,7 @@ const jsonLd = JSON.stringify({
     <div class="card">
       <h2 style="margin-top:0;">Sample a color from an image</h2>
       <p style="color:var(--text-dim); margin-top:-8px;">Upload an image, then click anywhere on it to pick that pixel's color. Nothing is uploaded anywhere — the image stays in your browser.</p>
+      <label for="imageInput">Choose an image</label>
       <input type="file" id="imageInput" accept="image/*">
       <canvas id="imageCanvas" style="max-width:100%; margin-top:12px; border-radius:8px; border:1px solid var(--border); cursor:crosshair; display:none;"></canvas>
       <div id="imageMsg"></div>
@@ -262,6 +270,14 @@ function updateContrast() {
 fgColorEl.addEventListener('input', updateContrast);
 bgColorEl.addEventListener('input', updateContrast);
 updateContrast();
+
+function clearAll() {
+  hexEl.value = '';
+  rgbEl.value = '';
+  hslEl.value = '';
+  swatch.style.background = 'transparent';
+  msg.innerHTML = '';
+}
 
 function copyShareLink() {
   const url = UrlStateLib.buildShareUrl(location.origin, location.pathname, {

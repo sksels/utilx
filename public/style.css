@@ -1,4 +1,11 @@
 :root {
+  /* Without this, native form controls (a <select>'s dropdown list especially) render using
+     the OS/browser's own dark-vs-light preference, independent of our data-theme toggle --
+     confirmed report: light theme selected, but the indent-size dropdown's popped-open
+     option list was unreadable (matching the OS's dark-mode native-control colors while our
+     CSS still painted it as light). Tying color-scheme to data-theme keeps native popups
+     (option lists, date pickers, etc.) consistent with whichever theme is actually active. */
+  color-scheme: dark;
   --bg: #0f1117;
   --bg-card: #161925;
   --border: #262b3a;
@@ -8,6 +15,9 @@
   --accent-hover: #7ba0ff;
   --accent-soft: rgba(91, 140, 255, 0.1);
   --code-bg: #0a0c12;
+  --text-on-accent: #0a0c12;
+  --success: #4ade80;
+  --danger: #ff6b6b;
   --radius: 10px;
   --radius-lg: 14px;
   --max-width: 960px;
@@ -18,18 +28,48 @@
 }
 
 :root[data-theme="light"] {
+  color-scheme: light;
   --bg: #f6f7fb;
   --bg-card: #ffffff;
   --border: #e1e4ec;
   --text: #1a1d29;
   --text-dim: #5b6072;
-  --accent: #3b6fe0;
-  --accent-hover: #2f5bc4;
-  --accent-soft: rgba(59, 111, 224, 0.08);
+  /* These four all got darkened from their original values after axe-core's first real CI
+     run (accessibility.spec.js) caught them failing WCAG AA color-contrast (4.5:1) against
+     this theme's light backgrounds -- --accent was 4.32:1 (just under the line), --success
+     was 1.74:1 and --danger 2.78:1 (nowhere close). None of these four had ever been
+     contrast-checked before; the dark theme's originals happened to already pass against its
+     much darker backgrounds, which is why only light theme needed new values here. */
+  --accent: #2f5bc4;
+  --accent-hover: #24479c;
+  --accent-soft: rgba(47, 91, 196, 0.08);
+  --success: #15803d;
+  --danger: #b91c1c;
+  /* --text-on-accent is text painted directly on a solid --accent background (button text,
+     toolbar-btn labels like the UUID generator's "10x"/"100x"). The dark theme's default
+     (#0a0c12, near-black) works there because dark theme's --accent (#5b8cff) is light
+     enough for dark text -- but this theme's --accent (#2f5bc4, above) is a mid-tone blue,
+     so that same near-black text was only 3.17:1 against it (axe caught it on Password
+     Generator's "10x"/"100x" buttons and JSON Formatter's "Compare" button -- the only
+     buttons with real text nodes; icon-only buttons don't trigger this rule at all). White
+     clears the 4.5:1 minimum with room to spare against this theme's darker accent. */
+  --text-on-accent: #ffffff;
   --code-bg: #eef0f6;
   --shadow-sm: 0 1px 3px rgba(20, 24, 40, 0.06);
   --shadow-md: 0 10px 30px rgba(20, 24, 40, 0.08);
-  --shadow-glow: 0 0 0 1px var(--accent), 0 10px 30px rgba(59, 111, 224, 0.14);
+  --shadow-glow: 0 0 0 1px var(--accent), 0 10px 30px rgba(47, 91, 196, 0.14);
+}
+
+/* A tool opened in its own popup window (see BaseLayout's window.opener check) is otherwise
+   pixel-identical to the main site -- easy to lose track of which window is which when both
+   are open side by side. A subtly cooler/deeper page background (cards stay their normal
+   color) is enough to tell them apart at a glance without looking like a different, broken
+   theme. */
+:root.popup-mode {
+  --bg: #0a0e18;
+}
+:root[data-theme="light"].popup-mode {
+  --bg: #e9edfa;
 }
 
 * { box-sizing: border-box; }
@@ -46,6 +86,18 @@ html, body {
 
 a { color: var(--accent); text-decoration: none; transition: color .15s ease; }
 a:hover { color: var(--accent-hover); text-decoration: underline; }
+
+/* axe-core's link-in-text-block rule (WCAG 1.4.1) failed on the site's first real run: an
+   inline link like "...Read Understanding Base64." has no way to be told apart from its
+   surrounding paragraph text except color, and that color pairing was only 2.72:1 (need
+   3:1). Chasing a specific color combination that clears 3:1 against body text AND 4.5:1
+   against the page background in both themes is fragile -- an underline satisfies the rule
+   unconditionally, in both themes, regardless of what --accent/--text end up being. Scoped
+   to actual body copy (a link inside a <p>) so nav/header/tile-card links, which aren't
+   "text in a paragraph" and don't trigger this rule, keep their existing hover-only style. */
+main p a {
+  text-decoration: underline;
+}
 
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(6px); }
@@ -111,7 +163,7 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
   padding: 4px 12px;
   margin: 0 0 14px;
 }
-.local-badge svg { width: 13px; height: 13px; color: #4ade80; flex-shrink: 0; }
+.local-badge svg { width: 13px; height: 13px; color: var(--success); flex-shrink: 0; }
 
 .theme-toggle {
   background: transparent;
@@ -180,8 +232,8 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
   transform: translateY(-1px);
   /* Distinct green "click" flash, separate from the blue hover glow -- fast transition in
      so it reads as an immediate press response rather than a slow color fade. */
-  border-color: #4ade80;
-  box-shadow: 0 0 0 1px #4ade80, 0 10px 24px rgba(74, 222, 128, 0.22);
+  border-color: var(--success);
+  box-shadow: 0 0 0 1px var(--success), 0 10px 24px rgba(74, 222, 128, 0.22);
   transition: border-color .05s ease, box-shadow .05s ease, transform .2s var(--ease);
 }
 .tool-icon {
@@ -213,6 +265,9 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
 .tool-icon-chip .tool-icon {
   width: 24px;
   height: 24px;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- plain white is
+     correct on every one of the fixed, theme-independent chip gradient colors below, not a
+     drifted one-off; not worth a token since nothing else in the palette shares it. */
   color: #fff;
   margin-bottom: 0;
 }
@@ -313,7 +368,7 @@ label {
 
 button {
   background: var(--accent);
-  color: #0a0c12;
+  color: var(--text-on-accent);
   border: none;
   border-radius: 8px;
   padding: 10px 18px;
@@ -336,24 +391,87 @@ button.secondary:active { transform: scale(0.96); }
 
 .output-box {
   margin-top: 16px;
-  position: relative; /* anchors the floating .output-toolbar to this box's corner */
 }
 
-/* Shared floating copy/download toolbar (CR#6) -- one reusable component instead of a
-   one-off "Copy"/"Download" button per tool. Docked to a fixed corner, not draggable, on
-   purpose: predictable position, no drag/touch/persistence complexity, works the same on
-   mobile. Extensible on purpose too -- adding a future action (zip, scramble, etc.) is just
-   another button with a new data-toolbar-action value, no layout changes needed. */
-.output-toolbar {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+/* CR#7, redesigned: buttons now live entirely OUTSIDE the field's own border, never
+   overlaid on top of it and never merged into a shared box with it. Two earlier approaches
+   both ran into real, confirmed problems: an absolute-position overlay in the field's
+   corner collided with a textarea's native scrollbar once content overflowed (confirmed
+   live by generating 100 UUIDs), and later wrapping the field + toolbar in one shared
+   bordered panel made a <select>'s native chrome read inconsistently next to plain inputs,
+   and left the field feeling "cramped" no matter how much padding was added. A field and
+   its toolbar are just two flex siblings: the field keeps its own untouched default
+   border/padding (identical to every other field on the page, toolbar or not), and the
+   toolbar is a separate cluster of buttons docked beside it, at a fixed distance, that
+   never overlaps the field's content or scrollbar because it was never on top of it to
+   begin with. :has() scopes this to targets that actually contain a toolbar -- a handful of
+   fields (JSON Formatter's input, Password Generator's checkbox cluster) group a toolbar
+   *outside* an .input-box panel instead (see .input-box-row below), so their .input-target
+   has no toolbar child and stays a normal block container. */
+/* Single source of truth: ANY div whose direct child is a .input-toolbar or .output-toolbar
+   gets this layout -- a plain field wrapper, an .input-target/.output-target, or an
+   .input-box-row wrapper around a grouped .input-box panel (Password Generator, JSON
+   Formatter). This used to be two separate rules (this one, plus a near-duplicate on
+   .input-box-row below) -- when this one got its flex-start -> center fix, the duplicate on
+   .input-box-row didn't, and drifted out of sync (confirmed live on the Password Generator
+   page: its 2-button toolbar pinned to the top of a much taller panel). There is now only
+   one place this layout is defined, so that specific class of bug can't recur. */
+div:has(> .input-toolbar),
+div:has(> .output-toolbar) {
   display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.input-target:has(> .input-toolbar) > input,
+.input-target:has(> .input-toolbar) > select,
+.input-target:has(> .input-toolbar) > textarea,
+.output-target:has(> .output-toolbar) > input,
+.output-target:has(> .output-toolbar) > textarea,
+.output-target:has(> .output-toolbar) > pre {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: auto;
+}
+/* Multi-line fields are tall enough that a column of buttons reads naturally down their
+   side (like an editor's icon rail) -- that's the default. Single-line fields (.inline) are
+   too short for a column to make sense, so those lay the buttons out in a row instead. */
+.input-toolbar,
+.output-toolbar {
+  display: flex;
+  flex-direction: column;
   gap: 4px;
-  z-index: 2;
+  flex: 0 0 auto;
+}
+.input-toolbar.inline,
+.output-toolbar.inline {
+  flex-direction: row;
 }
 
-.output-toolbar .toolbar-btn {
+/* The two "control cluster" exceptions above (a toolbar that belongs to more than just one
+   field): the .input-box panel keeps its own grouping border, and the toolbar sits outside
+   it as a sibling in this row. display/align-items/gap are NOT redeclared here -- they come
+   from the generic div:has(> .input-toolbar) rule above, since .input-box-row also has an
+   .input-toolbar as a direct child. Only the property that rule doesn't set lives here. */
+.input-box-row {
+  margin-top: 6px;
+}
+.input-box-row > .input-box {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-top: 0;
+}
+.input-box-row > .input-toolbar {
+  flex: 0 0 auto;
+}
+
+/* Now that every toolbar button lives outside the field (not overlaid or sharing a border
+   with it), the earlier primary/secondary split -- one filled accent button among several
+   plain outlined ones -- read as arbitrary rather than meaningful, especially once there was
+   no shared box tying them together as "a set". All toolbar buttons now use one consistent
+   filled-accent color, so the whole set reads as a single, deliberate action row/rail
+   regardless of which specific action a button performs. */
+.output-toolbar .toolbar-btn,
+.input-toolbar .toolbar-btn {
   width: 30px;
   height: 30px;
   padding: 0;
@@ -361,27 +479,86 @@ button.secondary:active { transform: scale(0.96); }
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  border: 1px solid var(--border);
-  background: var(--bg-card);
-  color: var(--text-dim);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--text-on-accent);
   cursor: pointer;
-  transition: color .15s ease, border-color .15s ease;
+  transition: background .15s ease, border-color .15s ease;
 }
 
-.output-toolbar .toolbar-btn:hover {
-  color: var(--accent);
-  border-color: var(--accent);
+.output-toolbar .toolbar-btn:hover,
+.input-toolbar .toolbar-btn:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
   box-shadow: none;
 }
 
-.output-toolbar .toolbar-btn svg {
+.output-toolbar .toolbar-btn svg,
+.input-toolbar .toolbar-btn svg {
   width: 16px;
   height: 16px;
 }
 
-.output-toolbar .toolbar-btn.copied {
-  color: #4ade80;
-  border-color: #4ade80;
+.output-toolbar .toolbar-btn.copied,
+.input-toolbar .toolbar-btn.copied {
+  background: var(--success);
+  border-color: var(--success);
+  color: var(--text-on-accent);
+}
+
+/* CR#7 full rollout: a couple of tools (Password/UUID Generator's "Generate 10"/"Generate
+   100") need a short text label instead of an icon -- no icon reads unambiguously as "ten of
+   these" at 16px. Same height/border/hover treatment as .toolbar-btn, just auto width with
+   horizontal padding instead of a fixed 30x30 square. */
+.toolbar-btn.wide {
+  width: auto;
+  padding: 0 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* input-box is a composer-style panel -- a bordered container grouping a field with a
+   secondary control that isn't itself another action button (e.g. JSON Formatter's indent
+   size picker below its textarea, Password Generator's checkbox cluster). It's no longer
+   used just to wrap a single field + its own toolbar -- see the .input-target/.output-target
+   rules above, which handle that directly without any wrapper. Where a toolbar belongs to
+   one of these grouped panels, it sits outside the panel as a sibling (.input-box-row), not
+   inside it. */
+.input-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.input-box textarea,
+.input-box input[type=text],
+.input-box select {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
+  display: block;
+}
+.input-box textarea:focus,
+.input-box input[type=text]:focus,
+.input-box select:focus {
+  box-shadow: none;
+}
+.input-box .input-secondary {
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
+}
+.input-box .input-secondary label {
+  margin-top: 0;
+}
+/* This select only ever holds a couple of short options ("2 spaces", "Tab") -- the global
+   select{width:100%} rule was stretching it across the entire panel width, several times
+   wider than its own text needs. */
+.input-box .input-secondary select {
+  width: auto;
+  min-width: 140px;
 }
 
 /* Persistent local state (CR#6): a compact "recent inputs" dropdown sitting inline with a
@@ -419,13 +596,13 @@ button.secondary:active { transform: scale(0.96); }
 }
 
 .error-msg {
-  color: #ff6b6b;
+  color: var(--danger);
   font-size: 0.85rem;
   margin-top: 8px;
   animation: fadeInUp .25s var(--ease);
 }
 .success-msg {
-  color: #4ade80;
+  color: var(--success);
   font-size: 0.85rem;
   margin-top: 8px;
   animation: fadeInUp .25s var(--ease);
@@ -503,10 +680,9 @@ footer.site a:hover { color: var(--text); }
 .breadcrumb { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 14px; }
 .breadcrumb a { color: var(--text-dim); }
 
-/* PWA toasts -- shown by sw-register.js. #utilx-update-toast for "new version available",
-   #utilx-install-prompt for the "Add to Home Screen" prompt. Both share the same base
-   layout/button styling; only the vertical stacking order differs when both are visible. */
-#utilx-update-toast,
+/* PWA install prompt -- shown by sw-register.js. (Its sibling, the "update available" toast,
+   was removed in CR#7: updates now apply silently in the background -- see
+   service-worker.js -- so there's nothing left to prompt the user about.) */
 #utilx-install-prompt {
   position: fixed;
   left: 50%;
@@ -526,18 +702,12 @@ footer.site a:hover { color: var(--text); }
   font-size: 0.88rem;
   color: var(--text);
 }
-/* If the update toast is already showing, stack the install prompt above it instead of
-   overlapping -- update toast takes priority at the default bottom position. */
-#utilx-update-toast ~ #utilx-install-prompt {
-  bottom: 76px;
-}
 .utilx-toast-label { line-height: 1; }
 /* Buttons don't inherit font-family/line-height from the page by default, and native button
    chrome (-webkit-appearance) can add invisible vertical padding that CSS padding doesn't
    fully override -- both caused the label and button text to look vertically misaligned in
    the same flex row (regression: still visibly off after the first line-height-only fix, so
    this round also matches font-size exactly and strips native appearance). See review comments. */
-#utilx-update-toast button,
 #utilx-install-prompt button {
   -webkit-appearance: none;
   appearance: none;
@@ -552,12 +722,14 @@ footer.site a:hover { color: var(--text); }
   line-height: 1;
   cursor: pointer;
   background: var(--accent);
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- the PWA install
+     banner is a separate, rarely-seen surface (not the main toolbar-btn/button convention);
+     pre-existing white-on-accent choice here, left as-is rather than silently reconciling it
+     with --text-on-accent's near-black, which would be an unreviewed visual change. */
   color: #fff;
   white-space: nowrap;
 }
-#utilx-update-toast button:hover,
 #utilx-install-prompt button:hover { background: var(--accent-hover); }
-#utilx-update-toast button:disabled { opacity: 0.6; cursor: default; }
 .utilx-toast-dismiss {
   background: transparent !important;
   color: var(--text-dim);

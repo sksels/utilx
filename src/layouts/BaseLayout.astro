@@ -58,6 +58,16 @@ const isHome = canonicalPath === '/';
 <html lang="en">
 <head>
 {includeThemeJs && <script is:inline src="/theme.js"></script>}
+<script is:inline>
+// A tool opened via the homepage's "open in popup window" feature (popup-nav.js) loads this
+// exact same page/CSS in a separate window -- previously indistinguishable from the main
+// site at a glance, which read as a bug rather than "yes, this really is a separate window".
+// window.opener is only ever set when a page was opened via window.open() from another page
+// (never on a normal navigation or a directly-typed URL), so this is a reliable, zero-cost
+// signal with no extra script file needed. See the .popup-mode background overrides in
+// style.css.
+if (window.opener) document.documentElement.classList.add('popup-mode');
+</script>
 {includeAdsAndAnalytics && (
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745"
      crossorigin="anonymous"></script>
@@ -89,6 +99,8 @@ const isHome = canonicalPath === '/';
 {pwa && (
   <>
     <link rel="manifest" href="/manifest.json">
+    <link rel="icon" href="/icon-192.png" type="image/png">
+    <link rel="apple-touch-icon" href="/icon-192.png">
     <meta name="theme-color" content="#0f1117">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">

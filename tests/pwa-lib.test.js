@@ -43,13 +43,6 @@ test('isPrecachedAsset: true only for paths in the precache list', () => {
   assert.equal(PwaLib.isPrecachedAsset('/not-cached.js', urls), false);
 });
 
-test('shouldShowUpdateToast: only when a worker is waiting AND this is an update, not first install', () => {
-  assert.equal(PwaLib.shouldShowUpdateToast(true, true), true);
-  assert.equal(PwaLib.shouldShowUpdateToast(true, false), false); // first-ever install: no controller yet
-  assert.equal(PwaLib.shouldShowUpdateToast(false, true), false); // nothing waiting
-  assert.equal(PwaLib.shouldShowUpdateToast(false, false), false);
-});
-
 test('shouldShowInstallPrompt: only when installable, not already installed, and not dismissed', () => {
   assert.equal(PwaLib.shouldShowInstallPrompt(true, false, false), true);
 });

@@ -1,47 +1,10 @@
-// Registers the UtilX service worker, shows a small "update available" toast once a new
-// version has installed and is waiting to activate, and shows a dismissible "Add to Home
-// Screen" prompt when the browser reports the app is installable. Both decisions (show
-// update toast / show install prompt) are pure and tested -- see tools/lib's sibling
-// pwa-lib.js and tests/pwa-lib.test.js. Refresh is always user-confirmed via the toast
-// button, never a silent/automatic reload -- these tools all hold live user input (pasted
-// JSON, a regex under test, etc.) that a surprise reload would throw away.
+// Registers the UtilX service worker (which now updates silently in the background -- see
+// service-worker.js's CR#7 note -- so there is no update toast/prompt here anymore), and
+// shows a dismissible "Add to Home Screen" prompt when the browser reports the app is
+// installable. That one decision (show install prompt) is pure and tested -- see the
+// sibling pwa-lib.js and tests/pwa-lib.test.js.
 (function () {
   var INSTALL_DISMISSED_KEY = 'utilx-install-dismissed';
-
-  function showUpdateToast(registration) {
-    if (document.getElementById('utilx-update-toast')) return;
-
-    var toast = document.createElement('div');
-    toast.id = 'utilx-update-toast';
-    toast.setAttribute('role', 'status');
-
-    var label = document.createElement('span');
-    label.className = 'utilx-toast-label';
-    label.textContent = 'A new version of UtilX is available.';
-
-    var refreshBtn = document.createElement('button');
-    refreshBtn.type = 'button';
-    refreshBtn.textContent = 'Refresh';
-    refreshBtn.addEventListener('click', function () {
-      if (registration.waiting) {
-        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
-      }
-      refreshBtn.disabled = true;
-      refreshBtn.textContent = 'Refreshing…';
-    });
-
-    var dismissBtn = document.createElement('button');
-    dismissBtn.type = 'button';
-    dismissBtn.className = 'utilx-toast-dismiss';
-    dismissBtn.setAttribute('aria-label', 'Dismiss');
-    dismissBtn.innerHTML = '&times;';
-    dismissBtn.addEventListener('click', function () { toast.remove(); });
-
-    toast.appendChild(label);
-    toast.appendChild(refreshBtn);
-    toast.appendChild(dismissBtn);
-    document.body.appendChild(toast);
-  }
 
   function isStandalone() {
     try {
@@ -107,32 +70,14 @@
   if (!('serviceWorker' in navigator)) return;
 
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('/service-worker.js').then(function (registration) {
-      // A worker was already waiting when this page loaded (installed via another tab).
-      if (window.PwaLib.shouldShowUpdateToast(!!registration.waiting, !!navigator.serviceWorker.controller)) {
-        showUpdateToast(registration);
-      }
-
-      registration.addEventListener('updatefound', function () {
-        var newWorker = registration.installing;
-        if (!newWorker) return;
-        newWorker.addEventListener('statechange', function () {
-          var hasController = !!navigator.serviceWorker.controller;
-          if (newWorker.state === 'installed' && window.PwaLib.shouldShowUpdateToast(true, hasController)) {
-            showUpdateToast(registration);
-          }
-        });
-      });
-    }).catch(function () {
+    // Registration is fire-and-forget now -- the new worker calls skipWaiting() and
+    // clients.claim() on its own (see service-worker.js), so there is nothing for this page
+    // to do once it's registered. No 'controllerchange' reload listener either: letting a
+    // background update silently take over future requests, without reloading the page the
+    // user is actively using, is the whole point of the CR#7 change.
+    navigator.serviceWorker.register('/service-worker.js').catch(function () {
       // Registration failing is non-fatal -- the site works exactly as it does today,
       // just without install/offline support for this visit.
-    });
-
-    var refreshing = false;
-    navigator.serviceWorker.addEventListener('controllerchange', function () {
-      if (refreshing) return;
-      refreshing = true;
-      window.location.reload();
     });
   });
 })();

@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
+import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
@@ -69,20 +70,31 @@ const jsonLd = JSON.stringify({
         </div>
       </div>
       <label for="dow">Day of week (0-6, Sun=0, * for every)</label>
-      <input type="text" id="dow" value="*">
-      <div>
-        <button onclick="buildCron()">Build Expression</button>
+      <div class="input-target">
+        <input type="text" id="dow" value="*">
+        <InputToolbar inline>
+          <button class="toolbar-btn" onclick="buildCron()" title="Build Expression">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="clearBuild()" title="Clear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </InputToolbar>
       </div>
       <div id="buildMsg"></div>
       <div class="output-box">
-        <label>Cron expression</label>
-        <input type="text" id="built" readonly>
-        <OutputToolbar targetId="built" />
+        <label for="built">Cron expression</label>
+        <div class="output-target">
+          <input type="text" id="built" readonly>
+          <OutputToolbar targetId="built" inline={true} />
+        </div>
       </div>
       <div class="output-box">
-        <label>As a Kubernetes CronJob snippet</label>
-        <textarea id="k8sYaml" rows="4" readonly style="font-family:'SF Mono',Menlo,Consolas,monospace;"></textarea>
-        <OutputToolbar targetId="k8sYaml" download={true} downloadFilename="cronjob.yaml" />
+        <label for="k8sYaml">As a Kubernetes CronJob snippet</label>
+        <div class="output-target">
+          <textarea id="k8sYaml" rows="4" readonly style="font-family:'SF Mono',Menlo,Consolas,monospace;"></textarea>
+          <OutputToolbar targetId="k8sYaml" download={true} downloadFilename="cronjob.yaml" />
+        </div>
       </div>
     </div>
 
@@ -92,17 +104,28 @@ const jsonLd = JSON.stringify({
         <label for="decodeInput">Paste a cron expression</label>
         <select id="decodeRecent" class="recent-select" title="Load a recent expression" disabled></select>
       </div>
-      <input type="text" id="decodeInput" placeholder="0 9 * * 1-5">
-      <div>
-        <button onclick="decodeCron()">Decode</button>
-        <button class="secondary" onclick="copyShareLink()">Copy shareable link</button>
+      <div class="input-target">
+        <input type="text" id="decodeInput" placeholder="0 9 * * 1-5">
+        <InputToolbar inline>
+          <button class="toolbar-btn" onclick="decodeCron()" title="Decode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="clearDecode()" title="Clear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </InputToolbar>
       </div>
       <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to build or decode, depending on which field you're in.</p>
       <div id="decodeMsg"></div>
       <div class="output-box">
-        <label>Plain-English explanation</label>
-        <textarea id="decoded" rows="4" readonly></textarea>
-        <OutputToolbar targetId="decoded" />
+        <label for="decoded">Plain-English explanation</label>
+        <div class="output-target">
+          <textarea id="decoded" rows="4" readonly></textarea>
+          <OutputToolbar targetId="decoded" />
+        </div>
       </div>
     </div>
 
@@ -154,6 +177,20 @@ function buildCron() {
   const expr = CronLib.buildCronExpression(m, h, dom, mon, dow);
   document.getElementById('built').value = expr;
   document.getElementById('k8sYaml').value = CronLib.buildK8sCronJobYaml(expr);
+}
+
+function clearBuild() {
+  BUILD_FIELD_IDS.forEach((id) => { document.getElementById(id).value = '*'; });
+  document.getElementById('minute').value = '0';
+  document.getElementById('built').value = '';
+  document.getElementById('k8sYaml').value = '';
+  document.getElementById('buildMsg').innerHTML = '';
+}
+
+function clearDecode() {
+  document.getElementById('decodeInput').value = '';
+  document.getElementById('decoded').value = '';
+  document.getElementById('decodeMsg').innerHTML = '';
 }
 
 // Persistent local state (CR#6): recent decoded-expression history, local-only.

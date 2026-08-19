@@ -34,8 +34,16 @@
 
   // Pure: builds the window.open() features string. resizable=yes is the whole point of
   // this backlog item; scrollbars=yes so tool content that's a bit tall still works.
+  //
+  // popup=1 is load-bearing, not decorative: modern Chromium (Chrome/Edge) only renders a
+  // true chrome-less popup window when this token is present. Without it, Chromium silently
+  // ignores toolbar=no/location=no/menubar=no entirely and opens a regular tab-bar-and-
+  // address-bar window instead -- which is exactly what this looked like before the fix
+  // (a slightly smaller regular browser window, not a real popup). Firefox and Safari don't
+  // require the token but harmlessly accept it.
   function buildFeaturesString(width, height, left, top) {
     return [
+      'popup=1',
       'width=' + width,
       'height=' + height,
       'left=' + left,
