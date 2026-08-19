@@ -7,10 +7,22 @@
 //   - Static assets (CSS/JS/icons): stale-while-revalidate. Serve the cached copy
 //     instantly for speed, and refresh the cache in the background regardless.
 //
-// Update strategy: new installs sit in the "waiting" state and do NOT auto-activate.
-// The page shows an "update available" toast (see sw-register.js) and only calls
-// skipWaiting() once the user clicks Refresh -- never a silent forced reload, since
-// these tools all involve live user input that a surprise reload could throw away.
+// Update strategy (revised -- see CR#7 note below): new installs call skipWaiting()
+// immediately and take over via clients.claim() on activate, entirely in the background.
+// This does NOT reload or otherwise disturb any currently-open tab/window -- an open tab
+// keeps running the JS it already loaded into memory for the rest of that session (no
+// forced reload is ever triggered, so live user input like a pasted JSON blob or a regex
+// under test is never at risk). The new version simply takes effect the next time the app
+// is genuinely reloaded or reopened (e.g. relaunched from an installed PWA's taskbar/home-
+// screen icon), with no prompt, toast, or confirmation of any kind.
+//
+// CR#7 note: this replaces the original "ask before refresh" toast design. That design
+// assumed a browser-tab context; once the site became installable (CR#4) and users started
+// launching it from a taskbar/home-screen icon like a native app, an interactive "a new
+// version is available, click Refresh" toast doesn't fit that mental model at all -- an
+// installed app's icon is expected to just open the current version, silently, the way any
+// other desktop/mobile app updates. See tests/pwa-lib.test.js and sw-register.js for the
+// registration side of this.
 //
 // The pure decision logic (which caches are stale, which requests to intercept, etc.)
 // lives in pwa-lib.js so it's unit-testable with plain node:test -- see tests/pwa-lib.test.js.
@@ -57,9 +69,10 @@ self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(SHELL_CACHE).then(function (cache) {
       return cache.addAll(PRECACHE_URLS);
+    }).then(function () {
+      return self.skipWaiting();
     })
   );
-  // No self.skipWaiting() here on purpose -- see update-strategy note above.
 });
 
 self.addEventListener('activate', function (event) {
@@ -76,13 +89,6 @@ self.addEventListener('activate', function (event) {
         return self.clients.claim();
       })
   );
-});
-
-// The page's toast sends this once the user clicks "Refresh".
-self.addEventListener('message', function (event) {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });
 
 self.addEventListener('fetch', function (event) {
