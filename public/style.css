@@ -368,6 +368,19 @@ button.secondary:active { transform: scale(0.96); }
   z-index: 2;
 }
 
+/* CR#7 alignment fix: top:3px only looks right when the target is a tall multi-line
+   textarea, where the toolbar reads as "docked to the corner." On a single-line
+   input/select, the field is much shorter than the box that positioning assumes, so the
+   toolbar ends up pinned near the top with a visibly uneven gap underneath instead of
+   looking centered on the field. .inline switches to true vertical centering, independent
+   of the exact field height (padding/border/line-height can all vary slightly by field
+   without needing new fixed offsets each time). */
+.output-toolbar.inline,
+.input-toolbar.inline {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .output-toolbar .toolbar-btn,
 .input-toolbar .toolbar-btn {
   width: 30px;

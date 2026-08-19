@@ -72,7 +72,7 @@ const jsonLd = JSON.stringify({
       <div class="input-box">
         <div class="input-target">
           <input type="text" id="dow" value="*">
-          <div class="input-toolbar">
+          <div class="input-toolbar inline">
             <button class="toolbar-btn primary" onclick="buildCron()" title="Build Expression">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
             </button>
@@ -84,7 +84,7 @@ const jsonLd = JSON.stringify({
         <label>Cron expression</label>
         <div class="output-target">
           <input type="text" id="built" readonly>
-          <OutputToolbar targetId="built" />
+          <OutputToolbar targetId="built" inline={true} />
         </div>
       </div>
       <div class="output-box">
@@ -105,7 +105,7 @@ const jsonLd = JSON.stringify({
       <div class="input-box">
         <div class="input-target">
           <input type="text" id="decodeInput" placeholder="0 9 * * 1-5">
-          <div class="input-toolbar">
+          <div class="input-toolbar inline">
             <button class="toolbar-btn primary" onclick="decodeCron()" title="Decode">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
             </button>
