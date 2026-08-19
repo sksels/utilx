@@ -1,11 +1,18 @@
-// UtilX service worker -- precaches the installable app shell (the 6 tools + launcher)
-// and applies two caching strategies depending on request type:
+// UtilX service worker -- precaches the installable app shell (the 6 tools + launcher).
+// Both request types below now use the same network-first strategy; the cached shell is
+// only a fallback for when the network request genuinely fails (offline).
 //   - HTML documents (navigations): network-first, cache as fallback only. This is
 //     deliberate -- every real visit should still hit the network so the AdSense script
-//     and the analytics beacon fire exactly as they would in a normal browser tab. The
-//     cached shell only serves when the network request genuinely fails.
-//   - Static assets (CSS/JS/icons): stale-while-revalidate. Serve the cached copy
-//     instantly for speed, and refresh the cache in the background regardless.
+//     and the analytics beacon fire exactly as they would in a normal browser tab.
+//   - Static assets (CSS/JS/icons): also network-first as of this fix (previously
+//     stale-while-revalidate -- serve cache instantly, refresh in the background). That
+//     saved a network round-trip on repeat visits, but it meant a real visitor (not just
+//     an already-open tab) could sit on a stale style.css/JS bundle for an entire extra
+//     visit after a new deploy, with no way to force it short of unregistering the service
+//     worker by hand -- confirmed live: a hard refresh (Ctrl+Shift+R) bypasses the browser's
+//     own HTTP cache but does NOT bypass a service worker's fetch handler, so it did nothing
+//     here. Network-first costs one extra round-trip per asset on a warm cache, but every
+//     visit now gets what's actually deployed, same guarantee HTML navigations already had.
 //
 // Update strategy (revised -- see CR#7 note below): new installs call skipWaiting()
 // immediately and take over via clients.claim() on activate, entirely in the background.
@@ -121,16 +128,15 @@ self.addEventListener('fetch', function (event) {
 
   if (self.PwaLib.isPrecachedAsset(url.pathname, PRECACHE_URLS)) {
     event.respondWith(
-      caches.match(request).then(function (cached) {
-        var network = fetch(request)
-          .then(function (response) {
-            var copy = response.clone();
-            caches.open(SHELL_CACHE).then(function (cache) { cache.put(request, copy); });
-            return response;
-          })
-          .catch(function () { return cached; });
-        return cached || network;
-      })
+      fetch(request)
+        .then(function (response) {
+          var copy = response.clone();
+          caches.open(SHELL_CACHE).then(function (cache) { cache.put(request, copy); });
+          return response;
+        })
+        .catch(function () {
+          return caches.match(request);
+        })
     );
   }
 });
