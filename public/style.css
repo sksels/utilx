@@ -78,6 +78,18 @@ html, body {
 a { color: var(--accent); text-decoration: none; transition: color .15s ease; }
 a:hover { color: var(--accent-hover); text-decoration: underline; }
 
+/* axe-core's link-in-text-block rule (WCAG 1.4.1) failed on the site's first real run: an
+   inline link like "...Read Understanding Base64." has no way to be told apart from its
+   surrounding paragraph text except color, and that color pairing was only 2.72:1 (need
+   3:1). Chasing a specific color combination that clears 3:1 against body text AND 4.5:1
+   against the page background in both themes is fragile -- an underline satisfies the rule
+   unconditionally, in both themes, regardless of what --accent/--text end up being. Scoped
+   to actual body copy (a link inside a <p>) so nav/header/tile-card links, which aren't
+   "text in a paragraph" and don't trigger this rule, keep their existing hover-only style. */
+main p a {
+  text-decoration: underline;
+}
+
 @keyframes fadeInUp {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
