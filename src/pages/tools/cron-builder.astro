@@ -72,8 +72,11 @@ const jsonLd = JSON.stringify({
       <div class="input-target">
         <input type="text" id="dow" value="*">
         <div class="input-toolbar inline">
-          <button class="toolbar-btn primary" onclick="buildCron()" title="Build Expression">
+          <button class="toolbar-btn" onclick="buildCron()" title="Build Expression">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="clearBuild()" title="Clear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
       </div>
@@ -103,11 +106,14 @@ const jsonLd = JSON.stringify({
       <div class="input-target">
         <input type="text" id="decodeInput" placeholder="0 9 * * 1-5">
         <div class="input-toolbar inline">
-          <button class="toolbar-btn primary" onclick="decodeCron()" title="Decode">
+          <button class="toolbar-btn" onclick="decodeCron()" title="Decode">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
           </button>
           <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="clearDecode()" title="Clear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </div>
       </div>
@@ -170,6 +176,20 @@ function buildCron() {
   const expr = CronLib.buildCronExpression(m, h, dom, mon, dow);
   document.getElementById('built').value = expr;
   document.getElementById('k8sYaml').value = CronLib.buildK8sCronJobYaml(expr);
+}
+
+function clearBuild() {
+  BUILD_FIELD_IDS.forEach((id) => { document.getElementById(id).value = '*'; });
+  document.getElementById('minute').value = '0';
+  document.getElementById('built').value = '';
+  document.getElementById('k8sYaml').value = '';
+  document.getElementById('buildMsg').innerHTML = '';
+}
+
+function clearDecode() {
+  document.getElementById('decodeInput').value = '';
+  document.getElementById('decoded').value = '';
+  document.getElementById('decodeMsg').innerHTML = '';
 }
 
 // Persistent local state (CR#6): recent decoded-expression history, local-only.
