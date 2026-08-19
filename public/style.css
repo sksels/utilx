@@ -382,7 +382,8 @@ button.secondary:active { transform: scale(0.96); }
 .output-target:has(> .output-toolbar.inline) {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 10px;
+  padding: 6px 10px 6px 0;
 }
 .input-target:has(> .input-toolbar.inline) > input,
 .input-target:has(> .input-toolbar.inline) > select,
@@ -390,6 +391,11 @@ button.secondary:active { transform: scale(0.96); }
   width: auto;
   flex: 1 1 auto;
   min-width: 0;
+  /* Widen the field itself: taller vertical padding than the default 10px/12px so the box
+     has real breathing room around the text, and the 30px button docked beside it (not
+     overlaid) no longer reads as cramped against a thin default-height field. */
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 .output-toolbar.inline,
 .input-toolbar.inline {
