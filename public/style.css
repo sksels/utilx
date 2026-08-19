@@ -416,7 +416,7 @@ button.secondary:active { transform: scale(0.96); }
 .input-box-row {
   display: flex;
   gap: 8px;
-  align-items: flex-start;
+  align-items: center;
   margin-top: 6px;
 }
 .input-box-row > .input-box {
