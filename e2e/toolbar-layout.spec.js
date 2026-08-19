@@ -56,6 +56,33 @@ for (const path of TOOL_PAGES) {
             `(toolbar center y=${toolbarCenterY}, parent center y=${parentCenterY}) -- ` +
             `check for a stray align-items that isn't "center" on the parent, per STYLE_GUIDE.md`
         ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
+
+        // The check above only proves the toolbar's own container box is centered -- it
+        // doesn't prove the *visible buttons inside it* are. Real incident: every .toolbar-btn
+        // silently inherited the base `button` rule's margin-top:16px/margin-right:8px (no
+        // toolbar-btn rule ever reset margin), which inflates the toolbar's own box height
+        // without adding any real gap on the trailing edge. align-items:center on the parent
+        // still centered that inflated *container* correctly, so the check above kept passing,
+        // while the buttons visibly rendered off-center within it. Comparing the buttons'
+        // own combined bounding box (first button's top to last button's bottom) against the
+        // parent catches that class of bug even when the container-level check can't.
+        const buttons = toolbar.locator('.toolbar-btn');
+        const buttonCount = await buttons.count();
+        if (buttonCount > 0) {
+          const firstBox = await buttons.first().boundingBox();
+          const lastBox = await buttons.last().boundingBox();
+          expect(firstBox, `toolbar #${i}'s first button on ${path} has no bounding box`).not.toBeNull();
+          expect(lastBox, `toolbar #${i}'s last button on ${path} has no bounding box`).not.toBeNull();
+
+          const buttonsCenterY = (firstBox.y + (lastBox.y + lastBox.height)) / 2;
+
+          expect(
+            Math.abs(buttonsCenterY - parentCenterY),
+            `toolbar #${i} on ${path}: its container is centered, but the visible buttons ` +
+              `inside it are not (buttons center y=${buttonsCenterY}, parent center y=${parentCenterY}) -- ` +
+              `check for stray margin on .toolbar-btn (the base button rule's margin isn't reset)`
+          ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
+        }
       }
     });
 

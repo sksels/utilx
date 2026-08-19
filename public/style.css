@@ -475,6 +475,18 @@ div:has(> .output-toolbar) {
   width: 30px;
   height: 30px;
   padding: 0;
+  /* The base `button` rule (above) sets margin-top:16px/margin-right:8px for standalone
+     action buttons like "Build"/"Decode" -- toolbar buttons never explicitly reset margin,
+     so every toolbar-btn silently inherited that stray 16px top margin. Harmless-looking on
+     a single-button inline toolbar next to a short input (barely visible at that scale), but
+     it compounds on a multi-button *column* toolbar (e.g. the Kubernetes snippet's copy +
+     download buttons): each button's own 16px margin-top adds on top of the toolbar's 4px
+     flex `gap`, inflating the toolbar's total height well past its visible button content
+     and throwing off `align-items:center` on the outer div:has(...) row -- confirmed live,
+     the two buttons rendered clearly above true center next to the taller textarea. margin:0
+     here removes the inherited spacing entirely; the 4px/8px gaps are handled purely by the
+     toolbar's own `gap` (column/row) and the outer row's `gap`, not by button margin. */
+  margin: 0;
   display: flex;
   align-items: center;
   justify-content: center;
