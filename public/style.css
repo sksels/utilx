@@ -368,17 +368,33 @@ button.secondary:active { transform: scale(0.96); }
   z-index: 2;
 }
 
-/* CR#7 alignment fix: top:3px only looks right when the target is a tall multi-line
-   textarea, where the toolbar reads as "docked to the corner." On a single-line
-   input/select, the field is much shorter than the box that positioning assumes, so the
-   toolbar ends up pinned near the top with a visibly uneven gap underneath instead of
-   looking centered on the field. .inline switches to true vertical centering, independent
-   of the exact field height (padding/border/line-height can all vary slightly by field
-   without needing new fixed offsets each time). */
+/* CR#7 alignment fix, take 2: the first attempt (top:50% + translateY(-50%) on the
+   floating toolbar) was mathematically sound but still rendered with the buttons
+   overflowing past the field's bottom border in practice -- confirmed via screenshot, not
+   just theory. Rather than keep chasing exact px/line-height math for a floated overlay,
+   .inline switches these fields to genuine flex layout: the target wrapper becomes a flex
+   row (input + toolbar side by side), and the browser's own flex vertical-centering places
+   the toolbar correctly regardless of the field's computed height. This also means the
+   toolbar no longer overlaps the field's own text -- a real improvement, not just a
+   workaround, since single-line fields are cramped for an overlay in the first place. Uses
+   :has() so no markup changes were needed beyond the .inline class already on the toolbar. */
+.input-target:has(> .input-toolbar.inline),
+.output-target:has(> .output-toolbar.inline) {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.input-target:has(> .input-toolbar.inline) > input,
+.input-target:has(> .input-toolbar.inline) > select,
+.output-target:has(> .output-toolbar.inline) > input {
+  width: auto;
+  flex: 1 1 auto;
+  min-width: 0;
+}
 .output-toolbar.inline,
 .input-toolbar.inline {
-  top: 50%;
-  transform: translateY(-50%);
+  position: static;
+  flex: 0 0 auto;
 }
 
 .output-toolbar .toolbar-btn,
