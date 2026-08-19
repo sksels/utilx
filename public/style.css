@@ -356,8 +356,8 @@ button.secondary:active { transform: scale(0.96); }
    another button with a new data-toolbar-action value, no layout changes needed. */
 .output-toolbar {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 3px;
+  right: 3px;
   display: flex;
   gap: 4px;
   z-index: 2;
@@ -392,6 +392,50 @@ button.secondary:active { transform: scale(0.96); }
 .output-toolbar .toolbar-btn.copied {
   color: #4ade80;
   border-color: #4ade80;
+}
+
+/* CR#7 pilot (JSON Formatter): input-box is a composer-style panel -- one bordered container
+   holding the input field, any secondary controls (e.g. indent size), and the action
+   buttons that used to sit outside the box entirely. Goal: no buttons live outside any
+   box, anywhere. The panel's own border is the only visible border; the textarea/input
+   inside it goes borderless so it reads as one continuous surface, with the action row
+   set off by a top divider (same visual language as .tool-card-guide). */
+.input-box {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--code-bg);
+  overflow: hidden;
+  margin-top: 6px;
+}
+.input-box textarea,
+.input-box input[type=text] {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  margin: 0;
+  display: block;
+}
+.input-box textarea:focus,
+.input-box input[type=text]:focus {
+  box-shadow: none;
+}
+.input-box .input-secondary {
+  padding: 10px 12px 0;
+}
+.input-box .input-secondary label {
+  margin-top: 0;
+}
+.input-box .input-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 10px 12px;
+  margin-top: 10px;
+  border-top: 1px solid var(--border);
+}
+.input-box .input-actions button {
+  margin: 0;
 }
 
 /* Persistent local state (CR#6): a compact "recent inputs" dropdown sitting inline with a
