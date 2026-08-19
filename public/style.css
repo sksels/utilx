@@ -349,12 +349,17 @@ button.secondary:active { transform: scale(0.96); }
   position: relative;
 }
 
-/* Shared floating copy/download toolbar (CR#6) -- one reusable component instead of a
-   one-off "Copy"/"Download" button per tool. Docked to a fixed corner, not draggable, on
-   purpose: predictable position, no drag/touch/persistence complexity, works the same on
-   mobile. Extensible on purpose too -- adding a future action (zip, scramble, etc.) is just
-   another button with a new data-toolbar-action value, no layout changes needed. */
-.output-toolbar {
+/* Shared floating toolbar (CR#6, extended CR#7) -- one reusable visual pattern for any
+   small set of icon actions docked to a corner of a box, not draggable on purpose:
+   predictable position, no drag/touch/persistence complexity, works the same on mobile.
+   .output-toolbar was the original (copy/download on readonly output). .input-toolbar
+   (CR#7 pilot) reuses the identical rules so an input box's actions (Format/Minify/
+   Copy-link/Clear) look and sit exactly like the output ones -- same size, same corner
+   inset, same hover/active treatment. Extensible on purpose too -- adding a future action
+   is just another button with a new data-toolbar-action value or onclick, no layout
+   changes needed. */
+.output-toolbar,
+.input-toolbar {
   position: absolute;
   top: 3px;
   right: 3px;
@@ -363,7 +368,8 @@ button.secondary:active { transform: scale(0.96); }
   z-index: 2;
 }
 
-.output-toolbar .toolbar-btn {
+.output-toolbar .toolbar-btn,
+.input-toolbar .toolbar-btn {
   width: 30px;
   height: 30px;
   padding: 0;
@@ -378,28 +384,46 @@ button.secondary:active { transform: scale(0.96); }
   transition: color .15s ease, border-color .15s ease;
 }
 
-.output-toolbar .toolbar-btn:hover {
+.output-toolbar .toolbar-btn:hover,
+.input-toolbar .toolbar-btn:hover {
   color: var(--accent);
   border-color: var(--accent);
   box-shadow: none;
 }
 
-.output-toolbar .toolbar-btn svg {
+.output-toolbar .toolbar-btn svg,
+.input-toolbar .toolbar-btn svg {
   width: 16px;
   height: 16px;
 }
 
-.output-toolbar .toolbar-btn.copied {
+.output-toolbar .toolbar-btn.copied,
+.input-toolbar .toolbar-btn.copied {
   color: #4ade80;
   border-color: #4ade80;
 }
 
-/* CR#7 pilot (JSON Formatter): input-box is a composer-style panel -- one bordered container
-   holding the input field, any secondary controls (e.g. indent size), and the action
-   buttons that used to sit outside the box entirely. Goal: no buttons live outside any
-   box, anywhere. The panel's own border is the only visible border; the textarea/input
-   inside it goes borderless so it reads as one continuous surface, with the action row
-   set off by a top divider (same visual language as .tool-card-guide). */
+/* The Format/Beautify button acts as this toolbar's "primary" action (mirrors the old
+   primary-styled button it replaced) -- filled accent color instead of the default outline
+   treatment, so it's still visually distinct from Minify/Copy-link/Clear at a glance. */
+.input-toolbar .toolbar-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #0a0c12;
+}
+.input-toolbar .toolbar-btn.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+  color: #0a0c12;
+}
+
+/* CR#7 pilot (JSON Formatter), iteration 2: input-box is a composer-style panel -- one
+   bordered container holding the input field and any secondary controls (e.g. indent
+   size). Goal: no buttons live outside any box, anywhere. The panel's own border is the
+   only visible border; the textarea/input inside it goes borderless so it reads as one
+   continuous surface. Actions no longer live in a bottom row (iteration 1) -- they're now
+   a floating .input-toolbar docked to the target's corner, identical in style and position
+   to .output-toolbar (see .input-target below and the shared rules above). */
 .input-box {
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -420,22 +444,19 @@ button.secondary:active { transform: scale(0.96); }
   box-shadow: none;
 }
 .input-box .input-secondary {
-  padding: 10px 12px 0;
+  padding: 10px 12px;
+  border-top: 1px solid var(--border);
 }
 .input-box .input-secondary label {
   margin-top: 0;
 }
-.input-box .input-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-  padding: 10px 12px;
-  margin-top: 10px;
-  border-top: 1px solid var(--border);
-}
-.input-box .input-actions button {
-  margin: 0;
+
+/* Anchors the floating .input-toolbar to the actual target element (the textarea/input the
+   buttons act on), the same wrapper pattern .output-target uses and for the same reason --
+   keeps the buttons pinned to the target's own corner regardless of what else shares the
+   panel (e.g. .input-secondary below it). */
+.input-target {
+  position: relative;
 }
 
 /* Persistent local state (CR#6): a compact "recent inputs" dropdown sitting inline with a
