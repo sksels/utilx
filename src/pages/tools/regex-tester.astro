@@ -40,6 +40,9 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/regex-run.js"></script>
 <script is:inline src="/output-toolbar.js"></script>
 <script is:inline src="/local-state.js"></script>
+<script is:inline src="/debounce.js"></script>
+<script is:inline src="/field-flash.js"></script>
+<script is:inline src="/split-pane.js"></script>
 </Fragment>
 
 <main>
@@ -50,58 +53,64 @@ const jsonLd = JSON.stringify({
     <div><LocalBadge /></div>
 
     <div class="card">
-      <div class="field-header">
-        <label for="pattern">Pattern</label>
-        <select id="patternRecent" class="recent-select" title="Load a recent pattern" disabled></select>
-      </div>
-      <input type="text" id="pattern" placeholder="\b[A-Z][a-z]+\b">
+      <div class="split-pane" id="mainSplitPane">
+        <div class="split-pane-left">
+          <div class="field-header">
+            <label for="pattern">Pattern</label>
+            <select id="patternRecent" class="recent-select" title="Load a recent pattern" disabled></select>
+          </div>
+          <input type="text" id="pattern" placeholder="\b[A-Z][a-z]+\b">
 
-      <label for="flags">Flags</label>
-      <input type="text" id="flags" value="g" placeholder="e.g. gi (no spaces)">
-      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;"><code>g</code> = global, find every match instead of stopping at the first one. See the full flag reference below.</p>
+          <label for="flags">Flags</label>
+          <input type="text" id="flags" value="g" placeholder="e.g. gi (no spaces)">
+          <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;"><code>g</code> = global, find every match instead of stopping at the first one. See the full flag reference below.</p>
 
-      <label for="testtext">Test string</label>
-      <div class="input-target">
-        <textarea id="testtext" rows="8" placeholder="Paste sample text here to test your pattern against it."></textarea>
-        <InputToolbar>
-          <button class="toolbar-btn" onclick="runRegex()" title="Test Regex">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="explainPattern()" title="Explain pattern">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 17v-.5"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 4"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="clearAll()" title="Clear">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </InputToolbar>
+          <label for="testtext">Test string</label>
+          <div class="input-target">
+            <textarea id="testtext" rows="8" placeholder="Paste sample text here to test your pattern against it."></textarea>
+            <InputToolbar>
+              <button class="toolbar-btn" onclick="runRegex()" title="Test Regex">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="explainPattern()" title="Explain pattern">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 17v-.5"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 4"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="clearAll()" title="Clear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </InputToolbar>
+          </div>
+          <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tests automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to test immediately.</p>
+        </div>
+        <div class="split-divider" id="mainSplitDivider" role="separator" aria-orientation="vertical" aria-label="Resize input and output panes" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" tabindex="0"></div>
+        <div class="split-pane-right">
+          <div class="output-box">
+            <label>Highlighted matches</label>
+            <div id="highlighted" class="card" style="white-space: pre-wrap; word-break: break-word; min-height: 60px;"></div>
+          </div>
+
+          <div class="output-box">
+            <label for="matches">Match details</label>
+            <div class="output-target">
+              <textarea id="matches" rows="8" readonly></textarea>
+              <OutputToolbar targetId="matches" download={true} downloadFilename="matches.txt" />
+            </div>
+          </div>
+
+          <div class="output-box" id="explainBox" style="display:none;">
+            <label>Plain-English breakdown</label>
+            <div class="output-target">
+              <pre id="explainOutput" style="white-space: pre-wrap; background:var(--code-bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.85rem;"></pre>
+              <OutputToolbar targetId="explainOutput" />
+            </div>
+          </div>
+        </div>
       </div>
-      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to test.</p>
 
       <div id="msg"></div>
-
-      <div class="output-box">
-        <label>Highlighted matches</label>
-        <div id="highlighted" class="card" style="white-space: pre-wrap; word-break: break-word; min-height: 60px;"></div>
-      </div>
-
-      <div class="output-box">
-        <label for="matches">Match details</label>
-        <div class="output-target">
-          <textarea id="matches" rows="8" readonly></textarea>
-          <OutputToolbar targetId="matches" download={true} downloadFilename="matches.txt" />
-        </div>
-      </div>
-
-      <div class="output-box" id="explainBox" style="display:none;">
-        <label>Plain-English breakdown</label>
-        <div class="output-target">
-          <pre id="explainOutput" style="white-space: pre-wrap; background:var(--code-bg); border:1px solid var(--border); border-radius:8px; padding:14px; font-size:0.85rem;"></pre>
-          <OutputToolbar targetId="explainOutput" />
-        </div>
-      </div>
     </div>
 
     <div class="card">
@@ -154,6 +163,12 @@ function explainPattern() {
   } catch (e) {
     out.textContent = 'Could not parse: ' + e.message;
     box.style.display = 'block';
+    // CR#7 (Live Interaction, backlog #40): border-flash only, no cursor jump. Unlike
+    // JSON.parse (json-formatter.astro), RegExp constructor error messages don't reliably
+    // expose a usable character position across engines -- there's no consistent "position N"
+    // or "line L column C" to extract, so this is scoped to "point at the field," not
+    // "point at the exact character" the way JSON Formatter does.
+    FieldFlashLib.flashError(document.getElementById('pattern'));
   }
 }
 
@@ -187,6 +202,7 @@ function applyRegexResult(data) {
     msg.innerHTML = '<div class="error-msg">Invalid pattern: ' + escapeHtml(data.message) + '</div>';
     highlighted.innerHTML = '';
     matchesBox.value = '';
+    FieldFlashLib.flashError(document.getElementById('pattern'));
     return;
   }
   highlighted.innerHTML = data.html || '<span style="color:var(--text-dim)">No matches</span>';
@@ -279,6 +295,7 @@ function runRegex() {
     msg.innerHTML = '<div class="error-msg">' + escapeHtml(flagsError) + '</div>';
     highlighted.innerHTML = '';
     matchesBox.value = '';
+    FieldFlashLib.flashError(document.getElementById('flags'));
     return;
   }
 
@@ -323,6 +340,28 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// CR#7 (Live Interaction, backlog #31): no-click auto-processing -- test the pattern as the
+// user types instead of requiring an explicit click/shortcut. Debounced so a burst of
+// keystrokes doesn't spin up a fresh Web Worker request per character; the toolbar button
+// and Ctrl+Enter shortcut above still work unchanged for an immediate, un-debounced run.
+// Skips entirely on an empty pattern (mirrors explainPattern()'s own early-return) rather
+// than auto-running a technically-valid-but-meaningless empty-pattern match while the user
+// hasn't typed anything into that field yet.
+const autoTest = DebounceLib.debounce(function () {
+  const pattern = document.getElementById('pattern').value;
+  if (!pattern) {
+    document.getElementById('msg').innerHTML = '';
+    document.getElementById('highlighted').innerHTML = '';
+    document.getElementById('matches').value = '';
+    return;
+  }
+  runRegex();
+  explainPattern();
+}, 400);
+document.getElementById('pattern').addEventListener('input', autoTest);
+document.getElementById('flags').addEventListener('input', autoTest);
+document.getElementById('testtext').addEventListener('input', autoTest);
+
 (function restoreFromUrl() {
   const state = UrlStateLib.decodeState(location.search);
   if (!state) return;
@@ -342,5 +381,15 @@ document.getElementById('patternRecent').addEventListener('change', (e) => {
   explainPattern();
   e.target.value = '';
 });
+
+// CR#7 (Live Interaction, backlog #36): resizable input/output split panes (desktop only --
+// see style.css's 700px fallback). Ratio persists across visits under its own local-state key.
+SplitPaneLib.init(
+  document.getElementById('mainSplitPane'),
+  document.querySelector('#mainSplitPane .split-pane-left'),
+  document.querySelector('#mainSplitPane .split-pane-right'),
+  document.getElementById('mainSplitDivider'),
+  'utilx-regex-tester-split-ratio'
+);
 </script>
 </BaseLayout>

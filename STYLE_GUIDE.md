@@ -63,6 +63,86 @@ Every field that has action buttons (Generate, Format, Copy, Clear, etc.) follow
 - `.input-box` — the bordered grouping panel for the two multi-control clusters (see above). Not a generic field wrapper.
 - `.card` — the outer bordered section container every tool's major blocks live in.
 
+## Interaction model: auto-process vs. click-to-run (CR#7, backlog #31)
+
+Most tools now run their primary action live as the user types instead of waiting for a
+Format/Test/Build button click. This isn't a blanket rule, though — apply it per field using
+this test, not by default:
+
+- **Auto-process when the output is a pure, deterministic function of the current input** —
+  JSON Formatter (format/compare), Regex Tester (test), Cron Builder (build/decode), and the
+  Base64 tool's JWT decoder all qualify: given the same input, there's exactly one correct
+  output, and re-running it live just keeps the output honestly reflecting what's currently
+  typed. Wire it via `document.getElementById(...).addEventListener('input', debounced)`,
+  where `debounced` wraps the *existing* click-handler function using `DebounceLib.debounce`
+  (`public/debounce.js`, ~400ms) — never bypass or duplicate that function's logic.
+- **Stay click-triggered when the action is ambiguous or non-deterministic given the current
+  input** — two concrete exceptions on this site, both deliberate, not oversights:
+  - Base64 tool's main Encode/Decode box: the same input text is equally valid as "please
+    encode this" or "please decode this" — only the user knows which they mean, so guessing
+    would be wrong roughly half the time. Stays click/shortcut-triggered.
+  - Password/UUID Generator: `generatePassword()`/`generateUuid()` are non-deterministic (a
+    fresh cryptographically random value every call) — there's no "the currently-correct
+    output for this input" to keep in sync, only "give me a new one now." Here, auto-firing
+    on every *option* change (a checkbox, a dropdown, a released slider — via `'change'`, not
+    `'input'`, and no debounce needed since those are already discrete events) still makes
+    sense, since a user who just unchecked "Symbols" clearly wants a fresh symbol-free value,
+    not the old one sitting there unchanged. What stays click-only is the *bulk* UUID
+    generation (10×/100×) — an explicit, deliberate bulk action, not something that should
+    fire from a dropdown change.
+- **The button/keyboard-shortcut path must keep working unchanged** either way — auto-run is
+  additive, not a replacement. Never remove a `.toolbar-btn` or its `onclick` handler when
+  adding an `input`/`change` listener; both should call the exact same function.
+- Debounce every `input`-event auto-run (typing is a burst of events); never debounce a
+  `change`-event auto-run (already one discrete event per user action).
+
+## Resizable input/output split panes (CR#7, backlog #36)
+
+Tools whose primary interaction is one large input textarea paired with one large output
+area (JSON Formatter, Regex Tester, Base64 Tool) lay them out side-by-side on desktop widths
+via a shared `.split-pane` / `.split-pane-left` / `.split-divider` / `.split-pane-right`
+structure, with a draggable divider between them (`public/split-pane.js`, wired with
+`SplitPaneLib.init(container, leftEl, rightEl, dividerEl, storageKey)`). Falls back to the
+normal stacked layout at the same 700px breakpoint `.two-col` already uses (see style.css) --
+two independently-narrow columns aren't useful on a phone screen. The chosen split ratio
+persists per-tool via `public/local-state.js`.
+
+Not every tool gets this treatment -- only apply it where there's a genuine one-big-input,
+one-big-output pairing to resize:
+- Cron Builder's Build/Decode sections use short single-line fields, not a large-textarea
+  input/output pair -- no natural split to make.
+- Password/UUID Generator has no "input" in this sense (it only ever generates).
+- Color Converter's fields are all short too.
+- JSON Formatter's Compare (diffA/diffB) section already lays its two inputs side-by-side via
+  the existing `.two-col` grid -- that's a distinct, already-solved "side-by-side" case
+  (two inputs, not resizable), left as-is rather than folded into `.split-pane`.
+
+When a tool does qualify, `msg`/status divs move to sit *below* the whole `.split-pane` (full
+width) rather than between the input and output, since with the two panes side-by-side there
+is no longer a single "between input and output" position for them.
+
+## Collapsible diff context rows (CR#7, backlog #37)
+
+JSON Formatter's Compare view (`compareJson()`) calls `JsonToolsLib.deepDiff(a, b, path,
+results, { includeUnchanged: true })` -- the 5th `options` param is opt-in and every other
+call site (and every existing test) omits it, so default behavior is unchanged. With it on,
+the diff includes `type: 'unchanged'` rows alongside `added`/`removed`/`changed`, giving
+full leaf-level context like a real diff view rather than just a changes list. Note this
+does *not* collapse a whole matching nested object/array into one row inside `deepDiff`
+itself -- two independently-parsed JSON documents never share object references even when
+deeply identical, so the `a === b` fast path only fires for primitive leaves, and traversal
+always continues into nested objects/arrays regardless of `includeUnchanged`. The visible
+"N differences found" count and the "No differences" empty state still only count non-
+`unchanged` rows, matching pre-#37 behavior exactly.
+
+Grouping/collapsing is purely a rendering concern (`renderDiffTable` in json-formatter.astro):
+consecutive `unchanged` rows in the flat results array get grouped into one
+`.diff-group-toggle` summary row, collapsed by default, expandable on click. Build table rows
+with `createElement`/`textContent`, never `innerHTML` string-concatenation -- a JSON key or
+value that happens to contain HTML-looking text must never be interpreted as markup (this
+was in fact a latent gap in the pre-#37 version of this exact code, fixed while rewriting it
+for the new grouping).
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).

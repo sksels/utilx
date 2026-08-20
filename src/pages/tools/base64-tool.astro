@@ -38,6 +38,9 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/url-state.js"></script>
 <script is:inline src="lib/html-escape.js"></script>
 <script is:inline src="/output-toolbar.js"></script>
+<script is:inline src="/local-state.js"></script>
+<script is:inline src="/debounce.js"></script>
+<script is:inline src="/split-pane.js"></script>
 </Fragment>
 
 <main>
@@ -48,38 +51,44 @@ const jsonLd = JSON.stringify({
     <div><LocalBadge text="Processed 100% locally — JWTs and secrets never leave this tab" /></div>
 
     <div class="card">
-      <label for="input">Input</label>
-      <div class="input-target">
-        <textarea id="input" rows="8" placeholder="Type or paste text here..."></textarea>
-        <InputToolbar>
-          <button class="toolbar-btn" onclick="encode()" title="Encode">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="decode()" title="Decode">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="swap()" title="Swap">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="clearAll()" title="Clear">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </InputToolbar>
-      </div>
-      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to encode. In the JWT box below, it decodes instead.</p>
-
-      <div id="msg"></div>
-
-      <div class="output-box">
-        <label for="output">Output</label>
-        <div class="output-target">
-          <textarea id="output" rows="8"></textarea>
-          <OutputToolbar targetId="output" download={true} downloadFilename="output.txt" />
+      <div class="split-pane" id="mainSplitPane">
+        <div class="split-pane-left">
+          <label for="input">Input</label>
+          <div class="input-target">
+            <textarea id="input" rows="8" placeholder="Type or paste text here..."></textarea>
+            <InputToolbar>
+              <button class="toolbar-btn" onclick="encode()" title="Encode">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="decode()" title="Decode">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="swap()" title="Swap">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="clearAll()" title="Clear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </InputToolbar>
+          </div>
+          <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to encode. In the JWT box below, it decodes instead. (Encode/Decode stay click-triggered here on purpose -- with the same input, only you know which direction you mean.)</p>
+        </div>
+        <div class="split-divider" id="mainSplitDivider" role="separator" aria-orientation="vertical" aria-label="Resize input and output panes" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" tabindex="0"></div>
+        <div class="split-pane-right">
+          <div class="output-box">
+            <label for="output">Output</label>
+            <div class="output-target">
+              <textarea id="output" rows="8"></textarea>
+              <OutputToolbar targetId="output" download={true} downloadFilename="output.txt" />
+            </div>
+          </div>
         </div>
       </div>
+
+      <div id="msg"></div>
     </div>
 
     <div class="card">
@@ -97,6 +106,7 @@ const jsonLd = JSON.stringify({
           </button>
         </InputToolbar>
       </div>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Decodes automatically as you paste/type -- unlike the box above, there's only one sensible action for a JWT.</p>
       <div id="jwtMsg"></div>
       <div class="output-box">
         <label for="jwtHeader">Header</label>
@@ -229,6 +239,33 @@ document.addEventListener('keydown', (e) => {
   document.getElementById('input').value = state.input;
 })();
 
+// CR#7 (Live Interaction, backlog #31): no-click auto-processing for the JWT decoder --
+// unlike the Encode/Decode box above (which is deliberately left click-triggered: the same
+// input text is ambiguous between the two directions, only the user knows which they mean),
+// a pasted JWT has exactly one sensible action, so it decodes live as you type/paste.
+// Debounced; the toolbar button and Ctrl+Enter shortcut above still work unchanged.
+const autoDecodeJwt = DebounceLib.debounce(function () {
+  if (!document.getElementById('jwtInput').value.trim()) {
+    document.getElementById('jwtHeader').value = '';
+    document.getElementById('jwtPayload').value = '';
+    document.getElementById('jwtSignature').value = '';
+    document.getElementById('jwtMsg').innerHTML = '';
+    return;
+  }
+  decodeJwt();
+}, 400);
+document.getElementById('jwtInput').addEventListener('input', autoDecodeJwt);
+
 OutputToolbarLib.init();
+
+// CR#7 (Live Interaction, backlog #36): resizable input/output split panes (desktop only --
+// see style.css's 700px fallback). Ratio persists across visits under its own local-state key.
+SplitPaneLib.init(
+  document.getElementById('mainSplitPane'),
+  document.querySelector('#mainSplitPane .split-pane-left'),
+  document.querySelector('#mainSplitPane .split-pane-right'),
+  document.getElementById('mainSplitDivider'),
+  'utilx-base64-tool-split-ratio'
+);
 </script>
 </BaseLayout>
