@@ -107,3 +107,66 @@ for (const path of TOOL_PAGES) {
     });
   });
 }
+
+// CR#8 backlog #53, re-fixed: the original fix for split-pane top alignment relied on margin
+// *collapsing* between each pane and its first child, and turned out to be wrong for JSON
+// Formatter/Regex Tester specifically (their left pane's first child is .field-header, a flex
+// container, which blocks its own child's margin from collapsing the way a bare <label> does).
+// Neither existing test above would have caught this -- the toolbar-centering test only compares
+// a toolbar to *its own* immediate parent, never one pane's content to the other pane's. Base64
+// Tool is included even though its left pane is a bare <label> (no .field-header), specifically
+// so a future change can't "fix" one DOM shape and quietly break the other.
+const SPLIT_PANE_PAGES = [
+  '/tools/json-formatter.html',
+  '/tools/regex-tester.html',
+  '/tools/base64-tool.html',
+];
+
+for (const path of SPLIT_PANE_PAGES) {
+  test(`${path} -- split-pane-left and split-pane-right content start at the same vertical offset`, async ({ page }) => {
+    await page.goto(path);
+
+    const leftFirstChild = page.locator('#mainSplitPane .split-pane-left > *:first-child');
+    const rightFirstChild = page.locator('#mainSplitPane .split-pane-right > *:first-child');
+
+    const leftBox = await leftFirstChild.boundingBox();
+    const rightBox = await rightFirstChild.boundingBox();
+
+    expect(leftBox, `${path}: split-pane-left's first child has no bounding box`).not.toBeNull();
+    expect(rightBox, `${path}: split-pane-right's first child has no bounding box`).not.toBeNull();
+
+    expect(
+      Math.abs(leftBox.y - rightBox.y),
+      `${path}: split-pane-left's first child starts at y=${leftBox.y}, split-pane-right's at ` +
+        `y=${rightBox.y} -- they should match. Check for a stray, un-zeroed margin-top on ` +
+        `either pane's first child (or its own first child), per STYLE_GUIDE.md's CR#8 #53 ` +
+        `section -- this is deliberately padding-based, not margin-collapsing-based, to avoid ` +
+        `the exact bug this test exists to catch.`
+    ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
+  });
+}
+
+// CR#8 backlog #49, re-fixed: the 96px min-width never actually took effect because
+// .input-box select is display:block, and a block-level box with width:auto fills its
+// containing block's width by definition -- min-width only clamps a computed width that would
+// otherwise be smaller, and here it never was. No existing test asserted select width at all
+// (axe-core checks WCAG issues, not layout proportions), so this shipped unnoticed twice
+// (CR#7's 140px attempt had the same bug).
+test('JSON Formatter -- indent-size select shrinks to content, does not stretch to fill its panel', async ({ page }) => {
+  await page.goto('/tools/json-formatter.html');
+
+  const select = page.locator('#indent');
+  const box = await select.boundingBox();
+  expect(box, 'indent-size select has no bounding box').not.toBeNull();
+
+  // min-width is 96px; 160px comfortably allows for cross-browser font/padding variance while
+  // still ruling out "stretched to fill the ~300px+ panel", which is the actual regression this
+  // guards against.
+  expect(
+    box.width,
+    `indent-size select is ${box.width}px wide -- expected it to shrink to content (~96-140px). ` +
+      `Check that .input-box .input-secondary select still has display:inline-block -- without ` +
+      `it, width:auto on a block-level select fills the panel instead of shrinking, per ` +
+      `STYLE_GUIDE.md's CR#8 #49 section.`
+  ).toBeLessThan(160);
+});
