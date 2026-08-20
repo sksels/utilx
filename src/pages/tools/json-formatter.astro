@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
 import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
+import InfoLink from '../../components/InfoLink.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -29,6 +30,7 @@ const jsonLd = JSON.stringify({
   title="JSON Formatter, Validator & Diff Checker | UtilX"
   description="Free online JSON formatter, validator, and diff checker. Pinpoints exact syntax error locations, beautifies or minifies JSON, and compares two JSON blobs to show exactly what changed — all in your browser."
   canonicalPath="/tools/json-formatter.html"
+  toolId="json-formatter"
   pwa={true}
   jsonLd={jsonLd}
 >
@@ -48,7 +50,12 @@ const jsonLd = JSON.stringify({
 <main>
   <div class="wrap">
     <div class="breadcrumb"><a href="/index.html">Tools</a> / JSON Formatter</div>
-    <h1>JSON Formatter &amp; Validator</h1>
+    <div class="tool-page-header">
+      <div class="tool-icon-chip chip-json">
+        <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3c-1.5 0-2 1-2 2v3c0 1-.5 2-2 2 1.5 0 2 1 2 2v3c0 1 .5 2 2 2"/><path d="M16 3c1.5 0 2 1 2 2v3c0 1 .5 2 2 2-1.5 0-2 1-2 2v3c0 1-.5 2-2 2"/></svg>
+      </div>
+      <h1>JSON Formatter &amp; Validator</h1>
+    </div>
     <p class="lede">Paste JSON below to beautify, minify, or validate it. Nothing is uploaded — everything runs in your browser.</p>
     <div><LocalBadge /></div>
 
@@ -61,23 +68,12 @@ const jsonLd = JSON.stringify({
           </div>
           <div class="input-box-row">
             <div class="input-box">
-              <div class="input-target">
-                <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
-              </div>
-
-              <div class="input-secondary">
-                <label for="indent">Indent size</label>
-                <select id="indent">
-                  <option value="2">2 spaces</option>
-                  <option value="4">4 spaces</option>
-                  <option value="tab">Tab</option>
-                </select>
-              </div>
+              <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
             </div>
+            <!-- CR#8 backlog #50: "Format / Beautify" removed -- #input already auto-formats
+                 on every keystroke (see autoFormat below) and Ctrl+Enter formats immediately,
+                 so the click added nothing either path didn't already do. -->
             <InputToolbar>
-              <button class="toolbar-btn" onclick="formatJson()" title="Format / Beautify">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg>
-              </button>
               <button class="toolbar-btn" onclick="minifyJson()" title="Minify">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
               </button>
@@ -89,11 +85,36 @@ const jsonLd = JSON.stringify({
               </button>
             </InputToolbar>
           </div>
-          <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
+          <!-- CR#8 #48/#53 follow-up: this used to be nested *inside* .input-box, alongside the
+               textarea, in one shared bordered panel -- which meant .input-toolbar (a flex
+               sibling of .input-box, centered via align-items:center) centered against the
+               *combined* textarea+indent-picker height, not the textarea alone. Visually that
+               put the 3-button toolbar noticeably below the textarea's own center. Moving
+               .input-secondary out to a sibling of .input-box-row (rather than a child of
+               .input-box) means .input-box now wraps only the textarea, so the toolbar centers
+               against exactly that -- and style.css re-joins the two boxes visually (flattened
+               shared border, no gap) so the on-screen look is unchanged. -->
+          <div class="input-secondary">
+            <label for="indent">Indent size</label>
+            <select id="indent">
+              <option value="2">2 spaces</option>
+              <option value="4">4 spaces</option>
+              <option value="tab">Tab</option>
+            </select>
+          </div>
         </div>
         <div class="split-divider" id="mainSplitDivider" role="separator" aria-orientation="vertical" aria-label="Resize input and output panes" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" tabindex="0"></div>
-        <div class="split-pane-right">
-          <div class="output-box">
+        <!-- CR#8 #48/#53 follow-up: at the site owner's explicit request, the output box now
+             grows to fill the same total height as the input side (textarea + indent-size
+             picker combined), so its bottom border lines up with .input-secondary's bottom
+             border instead of stopping short at the output textarea's own natural rows=12
+             height. Requires the tip paragraph below (moved out from .split-pane-left, see
+             below) to NOT be part of either pane's flow -- otherwise .split-pane's
+             align-items:stretch would size both panes to include that paragraph's height too,
+             and the output box would overshoot past .input-secondary's bottom to match the
+             paragraph's bottom instead. -->
+        <div class="split-pane-right split-pane-right-fill">
+          <div class="output-box output-box-fill">
             <label for="output">Output</label>
             <div class="output-target">
               <textarea id="output" rows="12" readonly></textarea>
@@ -102,6 +123,7 @@ const jsonLd = JSON.stringify({
           </div>
         </div>
       </div>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
 
       <div id="msg"></div>
     </div>
@@ -131,8 +153,10 @@ const jsonLd = JSON.stringify({
     </div>
 
 
-    <h2>How this works</h2>
-    <p>This tool parses your JSON with the browser's built-in <code>JSON.parse</code> and re-serializes it with <code>JSON.stringify</code>. If your JSON is invalid, it tells you exactly where the parser stopped, so you can fix syntax errors like trailing commas, missing quotes, or unescaped characters quickly. See the <a href="/guides/what-is-json.html">JSON basics guide</a> for common mistakes.</p>
+    <InfoLink
+      href="/guides/what-is-json.html"
+      summary="Parses your JSON with the browser's built-in JSON.parse and re-serializes it with JSON.stringify. If it's invalid, it tells you exactly where the parser stopped."
+    />
     <p>Related tool: decoding a JWT? Its payload is Base64-encoded JSON — decode it with the <a href="/tools/base64-tool.html">Base64 Encoder / Decoder</a>, then format the result here.</p>
   </div>
 </main>

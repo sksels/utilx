@@ -18,6 +18,11 @@ interface Props {
   pwa?: boolean;
   /** Raw JSON string for an application/ld+json block (tool pages only). */
   jsonLd?: string;
+  /** Tool pages only -- e.g. 'json-formatter', 'color-converter'. Sets data-tool-id on <html>,
+      which style.css's :root.popup-mode[data-tool-id="..."] rules use to border the popup
+      window in that tool's own icon color (CR#8 backlog #57). Must exactly match the
+      corresponding chip-* and --tool-accent-* suffix in style.css. */
+  toolId?: string;
   /** Loads theme.js as the first head element. Default true; admin dashboard sets false. */
   includeThemeJs?: boolean;
   /** Loads the AdSense loader script + analytics.js. Default true; admin dashboard sets false. */
@@ -39,6 +44,7 @@ const {
   canonicalPath,
   pwa = false,
   jsonLd,
+  toolId,
   includeThemeJs = true,
   includeAdsAndAnalytics = true,
   includePopupNav = false,
@@ -55,7 +61,7 @@ const isHome = canonicalPath === '/';
 ---
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-tool-id={toolId}>
 <head>
 {includeThemeJs && <script is:inline src="/theme.js"></script>}
 <script is:inline>
