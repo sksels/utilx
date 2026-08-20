@@ -24,8 +24,27 @@
   // onto the stack in reverse order. Because the stack is LIFO, a task's children are always
   // fully drained before its next sibling is touched, which reproduces the same depth-first,
   // left-to-right order the old recursive version produced.
-  function deepDiff(a, b, path, results) {
+  // CR#7 (Live Interaction, backlog #37): `options.includeUnchanged` is an opt-in addition
+  // for the collapsible-diff-view feature -- default behavior (the 4-arg call every existing
+  // caller and test uses) is completely unchanged. When true, a leaf whose value is
+  // identical on both sides gets a `type: 'unchanged'` entry instead of being silently
+  // skipped, so the UI can render it as (by default, collapsed) context, git-diff-style,
+  // instead of just omitting it.
+  //
+  // This still only fires the `a === b` fast path for reference/primitive equality, same as
+  // the default mode -- which, note, means it essentially never short-circuits a *whole
+  // nested object/array* as one unit: two independently-parsed JSON documents never share
+  // object references, even when deeply identical, so `a === b` is false for every nested
+  // object/array pair and traversal always continues down into their children regardless.
+  // The practical effect is that includeUnchanged marks matching *leaves* (primitives),
+  // recursing all the way down through unchanged branches rather than collapsing them --
+  // which is exactly what's wanted here: full leaf-level context, like a real text diff
+  // shows every unchanged line rather than hiding whole matching sections from the data
+  // itself. Grouping/collapsing consecutive unchanged rows for display is a UI-layer concern
+  // (json-formatter.astro), kept separate from this pure diffing logic.
+  function deepDiff(a, b, path, results, options) {
     results = results || [];
+    const includeUnchanged = !!(options && options.includeUnchanged);
     const stack = [{ kind: 'diff', a, b, path: path || '' }];
 
     while (stack.length) {
@@ -42,7 +61,12 @@
       }
 
       const a = task.a, b = task.b;
-      if (a === b) continue;
+      if (a === b) {
+        if (includeUnchanged) {
+          results.push({ path: p || '(root)', type: 'unchanged', from: a, to: b });
+        }
+        continue;
+      }
 
       const aIsObj = a !== null && typeof a === 'object';
       const bIsObj = b !== null && typeof b === 'object';

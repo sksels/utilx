@@ -307,6 +307,102 @@ document.getElementById('inputRecent').addEventListener('change', (e) => {
 const shortVal = JsonToolsLib.shortVal;
 const deepDiff = JsonToolsLib.deepDiff;
 
+// CR#7 (Live Interaction, backlog #37): renders the diff as a git-diff-style table --
+// changed/added/removed rows always visible, consecutive runs of unchanged (context) rows
+// collapsed by default behind a single toggle row so the eye goes straight to what changed.
+// Every cell is built via createElement + textContent, never innerHTML string-concatenation
+// -- a JSON key or value that happens to contain HTML-looking text can then never be
+// interpreted as markup. The previous version of this code built rows via innerHTML string
+// concatenation without escaping d.path/shortVal(d.from)/shortVal(d.to) at all; caught and
+// fixed here while rewriting this function for the new collapsible grouping, matching the
+// "never trust user-controlled text going into the DOM" rule this codebase already applies
+// to error messages elsewhere (see jsonErrorText above). Also switched the row-type colors
+// from hardcoded hex to the --success/--danger/--accent tokens (the hardcoded '#5b8cff' was
+// always the dark-theme accent color specifically, so a "changed" row's color didn't actually
+// adapt in light mode -- var(--accent) does.
+function buildDiffRow(d) {
+  const tr = document.createElement('tr');
+
+  const pathTd = document.createElement('td');
+  const code = document.createElement('code');
+  code.textContent = d.path;
+  pathTd.appendChild(code);
+
+  const typeTd = document.createElement('td');
+  typeTd.textContent = d.type;
+  typeTd.style.color = d.type === 'added' ? 'var(--success)'
+    : d.type === 'removed' ? 'var(--danger)'
+    : d.type === 'unchanged' ? 'var(--text-dim)'
+    : 'var(--accent)';
+
+  const beforeTd = document.createElement('td');
+  beforeTd.textContent = shortVal(d.from);
+
+  const afterTd = document.createElement('td');
+  afterTd.textContent = shortVal(d.to);
+
+  tr.append(pathTd, typeTd, beforeTd, afterTd);
+  return tr;
+}
+
+function buildDiffGroupToggleRow(count, groupId) {
+  const tr = document.createElement('tr');
+  tr.className = 'diff-group-toggle';
+  const td = document.createElement('td');
+  td.colSpan = 4;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'diff-group-toggle-btn';
+  btn.setAttribute('aria-expanded', 'false');
+  const label = count + ' unchanged line' + (count === 1 ? '' : 's');
+  btn.textContent = '▸ ' + label;
+  btn.addEventListener('click', function () {
+    const willExpand = btn.getAttribute('aria-expanded') !== 'true';
+    btn.setAttribute('aria-expanded', String(willExpand));
+    btn.textContent = (willExpand ? '▾ ' : '▸ ') + label;
+    document.querySelectorAll('#diffTable tr[data-diff-group="' + groupId + '"]').forEach(function (row) {
+      row.style.display = willExpand ? 'table-row' : 'none';
+    });
+  });
+
+  td.appendChild(btn);
+  tr.appendChild(td);
+  return tr;
+}
+
+function renderDiffTable(table, diffs) {
+  table.innerHTML = '';
+  const headerRow = document.createElement('tr');
+  ['Path', 'Change', 'Before', 'After'].forEach(function (h) {
+    const th = document.createElement('th');
+    th.textContent = h;
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  let i = 0;
+  let groupId = 0;
+  while (i < diffs.length) {
+    if (diffs[i].type === 'unchanged') {
+      const start = i;
+      while (i < diffs.length && diffs[i].type === 'unchanged') i++;
+      const run = diffs.slice(start, i);
+      groupId++;
+      table.appendChild(buildDiffGroupToggleRow(run.length, groupId));
+      run.forEach(function (d) {
+        const row = buildDiffRow(d);
+        row.dataset.diffGroup = String(groupId);
+        row.style.display = 'none';
+        table.appendChild(row);
+      });
+      continue;
+    }
+    table.appendChild(buildDiffRow(diffs[i]));
+    i++;
+  }
+}
+
 function compareJson() {
   const msg = document.getElementById('diffMsg');
   const box = document.getElementById('diffResultBox');
@@ -331,7 +427,10 @@ function compareJson() {
 
   let diffs;
   try {
-    diffs = deepDiff(a, b, '', []);
+    // CR#7 (Live Interaction, backlog #37): includeUnchanged:true so the rendered table can
+    // show full context (git-diff-style), not just the changed rows -- see renderDiffTable
+    // above, which collapses consecutive unchanged rows behind a toggle by default.
+    diffs = deepDiff(a, b, '', [], { includeUnchanged: true });
   } catch (e) {
     // Tech debt fix: deepDiff used to recurse once per nesting level and could hit the call-
     // stack limit on very deeply nested (but perfectly valid) JSON -- confirmed around ~5,000
@@ -343,24 +442,21 @@ function compareJson() {
     box.style.display = 'none';
     return;
   }
-  table.innerHTML = '<tr><th>Path</th><th>Change</th><th>Before</th><th>After</th></tr>';
 
-  if (diffs.length === 0) {
+  // The "N differences found" / "No differences" messaging is still driven purely by real
+  // changes, exactly as before this feature -- 'unchanged' rows are display-only context,
+  // not something that should count toward or ever produce a nonzero "differences found".
+  const changeCount = diffs.filter(function (d) { return d.type !== 'unchanged'; }).length;
+
+  if (changeCount === 0) {
     msg.innerHTML = '<div class="success-msg">No differences — both are equivalent.</div>';
+    table.innerHTML = '<tr><th>Path</th><th>Change</th><th>Before</th><th>After</th></tr>';
     box.style.display = 'block';
     return;
   }
 
-  msg.innerHTML = '<div class="success-msg">' + diffs.length + ' difference' + (diffs.length === 1 ? '' : 's') + ' found.</div>';
-  diffs.forEach(function (d) {
-    const tr = document.createElement('tr');
-    const color = d.type === 'added' ? '#4ade80' : d.type === 'removed' ? '#ff6b6b' : '#5b8cff';
-    tr.innerHTML = '<td><code>' + d.path + '</code></td>' +
-      '<td style="color:' + color + ';">' + d.type + '</td>' +
-      '<td>' + shortVal(d.from) + '</td>' +
-      '<td>' + shortVal(d.to) + '</td>';
-    table.appendChild(tr);
-  });
+  msg.innerHTML = '<div class="success-msg">' + changeCount + ' difference' + (changeCount === 1 ? '' : 's') + ' found.</div>';
+  renderDiffTable(table, diffs);
   box.style.display = 'block';
 }
 

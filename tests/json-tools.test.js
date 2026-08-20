@@ -87,6 +87,74 @@ test('deepDiff: preserves original depth-first, left-to-right ordering of result
   );
 });
 
+// --- CR#7 (Live Interaction, backlog #37): includeUnchanged option ---
+
+test('deepDiff: includeUnchanged defaults to off, matching every existing call site', () => {
+  const diffs = JsonToolsLib.deepDiff({ a: 1 }, { a: 1 }, '', []);
+  assert.equal(diffs.length, 0);
+});
+
+test('deepDiff: includeUnchanged:false explicitly behaves the same as the default', () => {
+  const diffs = JsonToolsLib.deepDiff({ a: 1, b: 2 }, { a: 1, b: 3 }, '', [], { includeUnchanged: false });
+  assert.equal(diffs.length, 1);
+  assert.equal(diffs[0].path, 'b');
+});
+
+test('deepDiff: includeUnchanged:true adds an "unchanged" entry for an identical root', () => {
+  const diffs = JsonToolsLib.deepDiff({ a: 1 }, { a: 1 }, '', [], { includeUnchanged: true });
+  assert.equal(diffs.length, 1);
+  assert.equal(diffs[0].type, 'unchanged');
+  assert.equal(diffs[0].path, 'a');
+  assert.equal(diffs[0].from, 1);
+  assert.equal(diffs[0].to, 1);
+});
+
+test('deepDiff: includeUnchanged:true mixes unchanged rows in among real changes at the same level', () => {
+  const a = { name: 'Ada', age: 30, email: 'ada@example.com' };
+  const b = { name: 'Grace', age: 30, email: 'ada@example.com' };
+  const diffs = JsonToolsLib.deepDiff(a, b, '', [], { includeUnchanged: true });
+  const byPath = Object.fromEntries(diffs.map((d) => [d.path, d.type]));
+  assert.equal(byPath.name, 'changed');
+  assert.equal(byPath.age, 'unchanged');
+  assert.equal(byPath.email, 'unchanged');
+  assert.equal(diffs.length, 3);
+});
+
+test('deepDiff: includeUnchanged:true recurses through a wholly-identical nested subtree down to leaf-level rows', () => {
+  // Two independently-parsed JSON documents never share object references, even when deeply
+  // identical -- so the `a === b` fast path only ever fires for primitive leaves, never for
+  // a whole nested object/array as one unit. includeUnchanged therefore surfaces full
+  // leaf-level context through an unchanged branch (like a real diff view showing every
+  // unchanged line), rather than collapsing the whole branch into one summary row -- that
+  // collapsing is a UI-layer concern (grouping consecutive 'unchanged' rows for display),
+  // not something this pure diffing function does itself.
+  const a = { user: { name: 'Ada', address: { city: 'X', zip: '1' } }, active: true };
+  const b = { user: { name: 'Ada', address: { city: 'X', zip: '1' } }, active: false };
+  const diffs = JsonToolsLib.deepDiff(a, b, '', [], { includeUnchanged: true });
+  assert.deepEqual(
+    diffs.map((d) => d.path),
+    ['user.name', 'user.address.city', 'user.address.zip', 'active']
+  );
+  assert.deepEqual(diffs.map((d) => d.type), ['unchanged', 'unchanged', 'unchanged', 'changed']);
+});
+
+test('deepDiff: includeUnchanged:true still reports added/removed keys normally (no "unchanged" entry for those)', () => {
+  const diffs = JsonToolsLib.deepDiff({ a: 1, b: 2 }, { a: 1, c: 3 }, '', [], { includeUnchanged: true });
+  assert.equal(diffs.length, 3);
+  const byPath = Object.fromEntries(diffs.map((d) => [d.path, d.type]));
+  assert.equal(byPath.a, 'unchanged');
+  assert.equal(byPath.b, 'removed');
+  assert.equal(byPath.c, 'added');
+});
+
+test('deepDiff: includeUnchanged:true on arrays marks unchanged indices individually', () => {
+  const diffs = JsonToolsLib.deepDiff({ tags: ['a', 'b', 'c'] }, { tags: ['a', 'x', 'c'] }, '', [], { includeUnchanged: true });
+  const byPath = Object.fromEntries(diffs.map((d) => [d.path, d.type]));
+  assert.equal(byPath['tags[0]'], 'unchanged');
+  assert.equal(byPath['tags[1]'], 'changed');
+  assert.equal(byPath['tags[2]'], 'unchanged');
+});
+
 test('shortVal: truncates long values and labels undefined', () => {
   assert.equal(JsonToolsLib.shortVal(undefined), '(none)');
   const long = 'x'.repeat(100);

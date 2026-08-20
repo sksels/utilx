@@ -737,6 +737,44 @@ table.ref-table th, table.ref-table td {
 }
 table.ref-table th { color: var(--text-dim); font-weight: 600; }
 table.ref-table tr:hover td { background: var(--accent-soft); }
+
+/* CR#7 (Live Interaction, backlog #37): collapsible unchanged-line groups in the JSON diff
+   view (json-formatter.astro's compareJson). A run of consecutive unchanged paths collapses
+   into one summary row -- collapsed by default, so the eye goes straight to what actually
+   changed, similar to a git diff's collapsed context lines -- and expands on click to show
+   the individual unchanged rows it's standing in for. Full property/value overrides here
+   because the plain `button` element it's built from otherwise inherits the site's big
+   filled-accent action-button styling (padding, box-shadow glow, scale-on-active), which
+   would look completely out of place as a quiet, full-width row toggle inside a table. */
+.diff-group-toggle td {
+  padding: 2px 0;
+}
+.diff-group-toggle-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--code-bg);
+  color: var(--text-dim);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .1s ease, color .1s ease, border-color .1s ease;
+}
+.diff-group-toggle-btn:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+.diff-group-toggle-btn:active {
+  transform: none;
+}
+
 code {
   background: var(--code-bg);
   padding: 2px 6px;

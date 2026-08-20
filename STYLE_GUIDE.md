@@ -121,6 +121,28 @@ When a tool does qualify, `msg`/status divs move to sit *below* the whole `.spli
 width) rather than between the input and output, since with the two panes side-by-side there
 is no longer a single "between input and output" position for them.
 
+## Collapsible diff context rows (CR#7, backlog #37)
+
+JSON Formatter's Compare view (`compareJson()`) calls `JsonToolsLib.deepDiff(a, b, path,
+results, { includeUnchanged: true })` -- the 5th `options` param is opt-in and every other
+call site (and every existing test) omits it, so default behavior is unchanged. With it on,
+the diff includes `type: 'unchanged'` rows alongside `added`/`removed`/`changed`, giving
+full leaf-level context like a real diff view rather than just a changes list. Note this
+does *not* collapse a whole matching nested object/array into one row inside `deepDiff`
+itself -- two independently-parsed JSON documents never share object references even when
+deeply identical, so the `a === b` fast path only fires for primitive leaves, and traversal
+always continues into nested objects/arrays regardless of `includeUnchanged`. The visible
+"N differences found" count and the "No differences" empty state still only count non-
+`unchanged` rows, matching pre-#37 behavior exactly.
+
+Grouping/collapsing is purely a rendering concern (`renderDiffTable` in json-formatter.astro):
+consecutive `unchanged` rows in the flat results array get grouped into one
+`.diff-group-toggle` summary row, collapsed by default, expandable on click. Build table rows
+with `createElement`/`textContent`, never `innerHTML` string-concatenation -- a JSON key or
+value that happens to contain HTML-looking text must never be interpreted as markup (this
+was in fact a latent gap in the pre-#37 version of this exact code, fixed while rewriting it
+for the new grouping).
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).
