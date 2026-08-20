@@ -53,6 +53,12 @@ const tools = defineCollection({
 const guides = defineCollection({
   loader: file('src/data/guides.json'),
   schema: z.object({
+    // Same order gotcha as tools' order field above -- confirmed while building the palette
+    // (backlog #236) that guides.json came back from getCollection() sorted alphabetically by
+    // id (cron-syntax-guide, regex-cheatsheet, understanding-base64, what-is-json) instead of
+    // the source array's order. Added here too so the palette's default (no-query) listing is
+    // deliberate, not incidental.
+    order: z.number(),
     label: z.string(),
     description: z.string(),
     url: z.string(),

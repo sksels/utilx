@@ -1,24 +1,28 @@
 [
   {
     "id": "what-is-json",
+    "order": 1,
     "label": "JSON Basics",
     "description": "A plain-English guide to JSON syntax, the most common validation errors (trailing commas, unquoted keys, single quotes), and how to fix them.",
     "url": "/guides/what-is-json.html"
   },
   {
     "id": "regex-cheatsheet",
+    "order": 2,
     "label": "Regex Cheat Sheet",
     "description": "A practical regular expression cheat sheet covering character classes, quantifiers, anchors, groups, and lookaheads, with plain-English explanations.",
     "url": "/guides/regex-cheatsheet.html"
   },
   {
     "id": "cron-syntax-guide",
+    "order": 3,
     "label": "Cron Syntax Guide",
     "description": "A field-by-field explanation of cron syntax, with common scheduling examples for cron jobs, crontab, and cron-based CI/CD schedules.",
     "url": "/guides/cron-syntax-guide.html"
   },
   {
     "id": "understanding-base64",
+    "order": 4,
     "label": "Understanding Base64",
     "description": "Base64 explained in plain English: why it exists, how it works, common use cases (data URIs, email attachments, JWTs), and why it is not encryption.",
     "url": "/guides/understanding-base64.html"

@@ -280,6 +280,111 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
 :root[data-theme="light"] .theme-toggle .icon-sun { display: none; }
 :root[data-theme="light"] .theme-toggle .icon-moon { display: inline-flex; }
 
+/* CR#8 #35: command palette. Header trigger button is always in the static HTML (cheap;
+   see BaseLayout.astro) -- the overlay/results markup below only becomes visually
+   meaningful once public/command-palette.js is lazily loaded on first Cmd/Ctrl+K or click
+   (backlog #70), but its CSS ships normally since it's zero-cost until `hidden` is removed. */
+.palette-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 8px;
+  height: 34px;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.palette-trigger:hover { background: var(--bg-card); border-color: var(--accent); color: var(--text); box-shadow: none; }
+.palette-trigger .icon-search { width: 16px; height: 16px; flex-shrink: 0; }
+.palette-trigger-kbd {
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.4;
+}
+
+.utilx-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- a translucent
+     black scrim over the whole page needs to work identically in both themes; it isn't one of
+     the theme's own surface colors and reusing --text or --bg here would misrepresent what
+     this value means (a fixed dimming overlay, not a themed surface). */
+  background: rgba(10, 12, 18, 0.55);
+}
+.utilx-palette {
+  width: 100%;
+  max-width: 560px;
+  max-height: min(60vh, 480px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  animation: fadeInUp .2s var(--ease);
+}
+.utilx-palette-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.utilx-palette-search-icon { width: 18px; height: 18px; color: var(--text-dim); flex-shrink: 0; }
+.utilx-palette-input-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.98rem;
+}
+.utilx-palette-input-row input:focus { outline: none; box-shadow: none; }
+.utilx-palette-esc {
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+.utilx-palette-results { overflow-y: auto; padding: 6px; }
+.utilx-palette-empty { color: var(--text-dim); font-size: 0.9rem; text-align: center; padding: 24px 12px; margin: 0; }
+.utilx-palette-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.utilx-palette-row[aria-selected="true"] { background: var(--accent-soft); }
+.utilx-palette-row .tool-icon-chip { width: 28px; height: 28px; border-radius: 8px; margin-bottom: 0; flex-shrink: 0; box-shadow: none; }
+.utilx-palette-row .tool-icon-chip .tool-icon { width: 15px; height: 15px; }
+.utilx-palette-guide-chip { background: var(--accent); }
+.utilx-palette-row-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.utilx-palette-row-label { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.utilx-palette-row-desc { font-size: 0.8rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.utilx-palette-row-kind { font-size: 0.72rem; color: var(--text-dim); flex-shrink: 0; }
+
 main { padding: 20px 0 60px; }
 
 h1 { font-size: 2.05rem; font-weight: 750; margin: 0 0 10px; letter-spacing: -0.03em; line-height: 1.2; }

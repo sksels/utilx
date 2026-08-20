@@ -69,3 +69,24 @@
   for = "/*.js"
   [headers.values]
     Cache-Control = "no-cache"
+
+# Narrow overrides for the two command-palette static assets (CR#8 #35/#70). Deliberately NOT
+# folded into the sitewide no-cache policy above -- that policy exists for *application* JS
+# that changes on every deploy (see the incident note above it); these two files have a
+# fundamentally different, low change-cadence: fuse.min.js is a vendored third-party library
+# only touched when manually upgraded, and palette-data.json only changes when
+# src/data/tools.json does. Netlify applies the later-declared block's value when multiple
+# [[headers]] blocks match the same path, so these must stay below the generic /*.js rule
+# above to actually take effect. Goal: the palette's lazy dynamic-import (#70) shouldn't pay a
+# revalidation round-trip on every single page it's reopened on, without reintroducing the
+# stale-edge-cache risk a longer/immutable max-age would carry for files that do occasionally
+# change.
+[[headers]]
+  for = "/tools/lib/fuse.min.js"
+  [headers.values]
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/palette-data.json"
+  [headers.values]
+    Cache-Control = "public, max-age=300"

@@ -436,6 +436,20 @@ data-entry pass later. Not read by any code yet.
 `order`) — no `index.astro` changes needed, and once #35 ships reading from this same
 collection, no palette changes either.
 
+## Command palette (CR#8, backlog #35/#236)
+
+`Cmd/Ctrl+K` or the header's search button opens a global palette (`src/components/CommandPalette.astro`, `public/command-palette.js`) listing all tools/guides from the Content Collections built for this (backlog #69) -- fuzzy search via a vendored Fuse.js (`public/tools/lib/fuse.min.js`, Apache 2.0), arrow-key navigation, Enter to navigate, Escape/backdrop-click to close.
+
+**Lazy-loaded, not eager (backlog #70).** The only thing that runs on every page load is a tiny inline script in `CommandPalette.astro` registering the keydown listener and the trigger button's click handler. `public/command-palette.js`, Fuse.js, and `/palette-data.json` are only fetched the first time a visitor actually opens the palette (`import('/command-palette.js')` inside the trigger handler), with a `requestIdleCallback` prefetch (Safari fallback: `setTimeout`) to warm the module in the background once the page has settled -- so the first real keypress feels instant without costing every visitor bytes for a feature most won't use that session.
+
+**`/palette-data.json` is a build-time-generated static file** (`src/pages/palette-data.json.ts`, an Astro endpoint), not inlined into every page's HTML -- fetched lazily alongside Fuse.js for the same reason. `netlify.toml` gives it and `fuse.min.js` their own `Cache-Control` (a real `max-age`), scoped separately from the sitewide `/*.js` no-cache rule (which exists for *application* JS that changes every deploy -- these two files don't).
+
+**Global by default.** `BaseLayout.astro`'s `includeCommandPalette` prop defaults to `header === 'full'`, so every normal page gets it without per-page wiring; the admin dashboard (`header: 'minimal'`) opts out the same way it already skips theme.js/ads/analytics/footer.
+
+**Both `tools` and `guides` collections need an explicit `order` field** -- same Astro `file()`-loader gotcha as #69 (alphabetical-by-id, not source array order). Caught once already for tools; guides needed the same fix during this build.
+
+**Scope note.** This first pass is search + keyboard nav + navigate only. Recently-used-first ordering, "Paste & go" clipboard tie-in, output-side quick actions, a theme-toggle command, and alias-boosted ranking are logged as CR#8 backlog sub-items (#64-#68), deliberately deferred for gradual follow-up. Tool-page quick actions (mirroring each tool's own input-toolbar buttons) are also out of this pass -- every tool wires a different, bespoke set of global functions (`encode()`/`formatJson()`/`generatePassword()`/...), and wiring six tool-specific integrations deserves its own pass and tests.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).

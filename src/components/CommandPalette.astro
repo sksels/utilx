@@ -1,0 +1,54 @@
+---
+// CR#8 #35: overlay dialog shell only -- static HTML at build time, zero client JS cost until
+// a visitor actually opens it. The inline script below is the ONLY thing that runs
+// unconditionally on every page that includes this component: it registers the Cmd/Ctrl+K
+// shortcut and the header trigger button's click handler, and lazily imports
+// public/command-palette.js (which itself lazily imports Fuse.js + fetches
+// palette-data.json -- see backlog #70 and STYLE_GUIDE.md) only on first trigger. A
+// requestIdleCallback prefetch warms the module in the background once the page has settled,
+// so the first real keypress doesn't pay the network/parse cost, without costing visitors who
+// never open the palette anything at page-load time.
+---
+<div id="utilx-palette-backdrop" class="utilx-palette-backdrop" hidden>
+  <div id="utilx-palette" class="utilx-palette" role="dialog" aria-modal="true" aria-label="Command palette">
+    <div class="utilx-palette-input-row">
+      <svg class="utilx-palette-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10" cy="10" r="6"/><line x1="20" y1="20" x2="14.5" y2="14.5"/></svg>
+      <input id="utilx-palette-input" type="text" placeholder="Search tools and guides&hellip;" autocomplete="off" spellcheck="false" aria-label="Search tools and guides" />
+      <kbd class="utilx-palette-esc">Esc</kbd>
+    </div>
+    <div id="utilx-palette-results" class="utilx-palette-results" role="listbox" aria-label="Results"></div>
+  </div>
+</div>
+
+<script is:inline>
+(function () {
+  var modPromise = null;
+
+  function loadPalette() {
+    if (!modPromise) modPromise = import('/command-palette.js');
+    return modPromise;
+  }
+
+  // Warm the module in the background once the page has gone idle -- not on load, since that
+  // would cost every visitor bytes whether or not they ever use the palette (backlog #70).
+  // Safari has no requestIdleCallback, hence the setTimeout fallback.
+  var idle = window.requestIdleCallback || function (fn) { setTimeout(fn, 1500); };
+  idle(function () { loadPalette(); });
+
+  function open() {
+    loadPalette().then(function (m) { m.openPalette(); });
+  }
+
+  document.addEventListener('keydown', function (e) {
+    var isMac = /Mac|iPhone|iPad/.test(navigator.platform || '');
+    var modKey = isMac ? e.metaKey : e.ctrlKey;
+    if (modKey && e.key.toLowerCase() === 'k') {
+      e.preventDefault();
+      open();
+    }
+  });
+
+  var trigger = document.getElementById('utilx-palette-trigger');
+  if (trigger) trigger.addEventListener('click', open);
+})();
+</script>
