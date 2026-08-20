@@ -68,18 +68,7 @@ const jsonLd = JSON.stringify({
           </div>
           <div class="input-box-row">
             <div class="input-box">
-              <div class="input-target">
-                <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
-              </div>
-
-              <div class="input-secondary">
-                <label for="indent">Indent size</label>
-                <select id="indent">
-                  <option value="2">2 spaces</option>
-                  <option value="4">4 spaces</option>
-                  <option value="tab">Tab</option>
-                </select>
-              </div>
+              <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
             </div>
             <!-- CR#8 backlog #50: "Format / Beautify" removed -- #input already auto-formats
                  on every keystroke (see autoFormat below) and Ctrl+Enter formats immediately,
@@ -95,6 +84,23 @@ const jsonLd = JSON.stringify({
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
               </button>
             </InputToolbar>
+          </div>
+          <!-- CR#8 #48/#53 follow-up: this used to be nested *inside* .input-box, alongside the
+               textarea, in one shared bordered panel -- which meant .input-toolbar (a flex
+               sibling of .input-box, centered via align-items:center) centered against the
+               *combined* textarea+indent-picker height, not the textarea alone. Visually that
+               put the 3-button toolbar noticeably below the textarea's own center. Moving
+               .input-secondary out to a sibling of .input-box-row (rather than a child of
+               .input-box) means .input-box now wraps only the textarea, so the toolbar centers
+               against exactly that -- and style.css re-joins the two boxes visually (flattened
+               shared border, no gap) so the on-screen look is unchanged. -->
+          <div class="input-secondary">
+            <label for="indent">Indent size</label>
+            <select id="indent">
+              <option value="2">2 spaces</option>
+              <option value="4">4 spaces</option>
+              <option value="tab">Tab</option>
+            </select>
           </div>
           <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
         </div>

@@ -170,3 +170,94 @@ test('JSON Formatter -- indent-size select shrinks to content, does not stretch 
       `STYLE_GUIDE.md's CR#8 #49 section.`
   ).toBeLessThan(160);
 });
+
+// CR#8 backlog #48/#53, second re-fix: .input-secondary used to live *inside* .input-box, so
+// the input-toolbar (a flex sibling of .input-box, centered via align-items:center) centered
+// against the combined textarea+indent-picker height instead of the textarea alone -- visibly
+// pulling the 3-button toolbar below the textarea's true center. Neither test above would catch
+// this: the split-pane-alignment test only compares the *first* child of each pane (field-header
+// vs output-box), and the #49 test only checks the select's width, not the toolbar's position.
+// .input-secondary now sits outside .input-box-row entirely (see json-formatter.astro), so this
+// compares the toolbar's own center directly against .input-box's (textarea-only) center.
+test('JSON Formatter -- input toolbar centers against the textarea, not the textarea+indent-picker combined', async ({ page }) => {
+  await page.goto('/tools/json-formatter.html');
+
+  const toolbar = page.locator('.input-box-row > .input-toolbar');
+  const inputBox = page.locator('.input-box-row > .input-box');
+  const toolbarBox = await toolbar.boundingBox();
+  const inputBoxBox = await inputBox.boundingBox();
+  expect(toolbarBox, 'input toolbar has no bounding box').not.toBeNull();
+  expect(inputBoxBox, '.input-box has no bounding box').not.toBeNull();
+
+  const toolbarCenterY = toolbarBox.y + toolbarBox.height / 2;
+  const inputBoxCenterY = inputBoxBox.y + inputBoxBox.height / 2;
+
+  expect(
+    Math.abs(toolbarCenterY - inputBoxCenterY),
+    `input toolbar center y=${toolbarCenterY}, .input-box (textarea) center y=${inputBoxCenterY} -- ` +
+      `these should match. If .input-secondary has drifted back inside .input-box (or a new ` +
+      `secondary panel was added the same way), the toolbar will center against the combined ` +
+      `height instead, per STYLE_GUIDE.md's CR#8 #48/#53 section.`
+  ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
+});
+
+// CR#8 backlog #48/#53, second re-fix: neither .split-pane-left nor .split-pane-right had any
+// horizontal padding before the divider -- content on both sides sat flush against the pane's
+// own edge, right next to a divider already pulled 5px closer by its own negative margin,
+// reading as "stuck" to the bar. Checks actual rendered spacing, not just that a padding
+// declaration exists in the stylesheet (which wouldn't catch it being overridden elsewhere).
+test('JSON Formatter -- input toolbar and output box both keep real breathing room from the split divider', async ({ page }) => {
+  await page.goto('/tools/json-formatter.html');
+
+  const divider = page.locator('#mainSplitDivider');
+  const toolbar = page.locator('.input-box-row > .input-toolbar');
+  const outputTarget = page.locator('.split-pane-right .output-target');
+
+  const dividerBox = await divider.boundingBox();
+  const toolbarBox = await toolbar.boundingBox();
+  const outputBox = await outputTarget.boundingBox();
+  expect(dividerBox, 'split divider has no bounding box').not.toBeNull();
+  expect(toolbarBox, 'input toolbar has no bounding box').not.toBeNull();
+  expect(outputBox, 'output-target has no bounding box').not.toBeNull();
+
+  const MIN_GAP_PX = 6;
+  const leftGap = dividerBox.x - (toolbarBox.x + toolbarBox.width);
+  const rightGap = outputBox.x - (dividerBox.x + dividerBox.width);
+
+  expect(
+    leftGap,
+    `only ${leftGap}px between the input toolbar's right edge and the split divider -- expected ` +
+      `at least ${MIN_GAP_PX}px. Check .split-pane-left's padding-right, per STYLE_GUIDE.md's ` +
+      `CR#8 #48/#53 section.`
+  ).toBeGreaterThanOrEqual(MIN_GAP_PX);
+  expect(
+    rightGap,
+    `only ${rightGap}px between the split divider and the output box's left edge -- expected at ` +
+      `least ${MIN_GAP_PX}px. Check .split-pane-right's padding-left, per STYLE_GUIDE.md's CR#8 ` +
+      `#48/#53 section.`
+  ).toBeGreaterThanOrEqual(MIN_GAP_PX);
+});
+
+// CR#8 backlog #48/#53, second re-fix: .field-header's label never had its sitewide 14px
+// margin-top zeroed the way every other first-in-pane label did -- as a flex item, that margin
+// doesn't collapse out through .field-header (a flex container), so it inflated .field-header's
+// own rendered height by 14px versus the equivalent spacing on the output side. The existing
+// split-pane-alignment test above only compares .field-header's/.output-box's own top edges
+// (which matched even with this bug present) -- it never checked what's *below* them.
+test('JSON Formatter -- input-box top border aligns with the output textarea top border', async ({ page }) => {
+  await page.goto('/tools/json-formatter.html');
+
+  const inputBox = page.locator('.input-box-row > .input-box');
+  const outputTextarea = page.locator('.split-pane-right #output');
+  const inputBoxBox = await inputBox.boundingBox();
+  const outputBox = await outputTextarea.boundingBox();
+  expect(inputBoxBox, '.input-box has no bounding box').not.toBeNull();
+  expect(outputBox, '#output textarea has no bounding box').not.toBeNull();
+
+  expect(
+    Math.abs(inputBoxBox.y - outputBox.y),
+    `.input-box starts at y=${inputBoxBox.y}, #output textarea starts at y=${outputBox.y} -- ` +
+      `these should match. Check .split-pane-left .field-header label's margin-top is still ` +
+      `zeroed, per STYLE_GUIDE.md's CR#8 #48/#53 section.`
+  ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
+});

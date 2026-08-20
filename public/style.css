@@ -763,11 +763,32 @@ div:has(> .output-toolbar) {
 .input-box select:focus {
   box-shadow: none;
 }
-.input-box .input-secondary {
-  padding: 10px 12px;
-  border-top: 1px solid var(--border);
+/* CR#8 #48/#53 follow-up: .input-secondary (JSON Formatter's indent-size picker) used to live
+   *inside* .input-box, alongside the textarea, sharing one bordered panel. That made
+   .input-box-row's toolbar -- a flex sibling of .input-box, vertically centered via
+   align-items:center (see div:has(> .input-toolbar) above) -- center against the *combined*
+   textarea+indent-picker height instead of the textarea alone, visibly pulling the 3-button
+   toolbar below the textarea's own center (confirmed against the live page, not just reasoned
+   about -- see STYLE_GUIDE.md). .input-secondary is now a sibling of .input-box-row instead
+   (see json-formatter.astro), so .input-box wraps only the textarea and the toolbar centers
+   against exactly that. These two rules re-join the now-separate boxes so they still read as
+   one continuous panel: .input-box's bottom corners flatten and lose their bottom border where
+   an .input-secondary follows, and .input-secondary below picks up its own full border
+   (1px negative margin-top so the shared edge doesn't double up to 2px) and rounds the bottom
+   corners it now owns alone. */
+.input-box-row:has(+ .input-secondary) .input-box {
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
-.input-box .input-secondary label {
+.input-box-row + .input-secondary {
+  margin-top: -1px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--code-bg);
+}
+.input-secondary label {
   margin-top: 0;
 }
 /* This select only ever holds a couple of short options ("2 spaces", "Tab") -- the global
@@ -791,7 +812,7 @@ div:has(> .output-toolbar) {
    "2 spaces" -- both the label-to-select gap and the select-to-panel-border gap looked
    bloated because the select's own box was taller than it needed to be. Tightened to match
    .recent-select's already-compact padding (4px 8px) rather than inventing a third scale. */
-.input-box .input-secondary select {
+.input-secondary select {
   display: inline-block;
   width: auto;
   min-width: 96px;
@@ -807,6 +828,23 @@ div:has(> .output-toolbar) {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+/* CR#8 #48/#53 follow-up: every other first-in-pane label on this page got its 14px
+   margin-top explicitly zeroed by the #53 fix (.split-pane-right's output label, .split-pane-
+   left's own first-child) -- this one didn't, because it's not the direct first-child itself,
+   it's nested one level inside .field-header. As a flex item, the label's own uncorrected 14px
+   margin-top doesn't get absorbed into .field-header's outer box (margins don't collapse
+   through a flex container -- the exact mechanism the #53 fix above is built around), so it
+   was inflating .field-header's own rendered height by 14px versus the equivalent spacing on
+   the output side. Confirmed against the live page: the .input-box below .field-header started
+   about 14px lower than .output-target's textarea, even though .field-header's own top edge
+   (what the Playwright split-pane-alignment test measures) matched .output-box's exactly --
+   the drift was inside .field-header's height, not its position. Scoped to .split-pane-left
+   specifically (not every .field-header site-wide, e.g. Cron Builder's/Color Converter's,
+   which aren't a split-pane's first child and haven't been flagged) so this fix touches only
+   the pages/spots it's actually verified against. */
+.split-pane-left .field-header label {
+  margin-top: 0;
 }
 
 .recent-select {
@@ -866,10 +904,22 @@ div:has(> .output-toolbar) {
    .output-box's own child <label> (which still collapses with .output-box in the normal way,
    since .output-box itself isn't a flex container -- so it needs zeroing too, or it'd add its
    14px on top of the pane's 14px padding). */
+/* CR#8 #48/#53 follow-up: neither pane had any horizontal padding at all before the divider --
+   content on both sides (the input toolbar on the left, the output box on the right) sat flush
+   against the pane's own edge, which is already pulled 5px closer to center by .split-divider's
+   own negative margin (below). The two effects combined made both sides read as "stuck" to the
+   bar instead of separated by it. 12px on each inner edge restores real, deliberate breathing
+   room independent of the divider's own width/margin tuning. */
 .split-pane-left,
 .split-pane-right {
   min-width: 0;
   padding-top: 14px;
+}
+.split-pane-left {
+  padding-right: 12px;
+}
+.split-pane-right {
+  padding-left: 12px;
 }
 .split-pane-left > *:first-child {
   margin-top: 0;
