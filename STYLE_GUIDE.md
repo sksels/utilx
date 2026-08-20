@@ -63,6 +63,39 @@ Every field that has action buttons (Generate, Format, Copy, Clear, etc.) follow
 - `.input-box` — the bordered grouping panel for the two multi-control clusters (see above). Not a generic field wrapper.
 - `.card` — the outer bordered section container every tool's major blocks live in.
 
+## Interaction model: auto-process vs. click-to-run (CR#7, backlog #31)
+
+Most tools now run their primary action live as the user types instead of waiting for a
+Format/Test/Build button click. This isn't a blanket rule, though — apply it per field using
+this test, not by default:
+
+- **Auto-process when the output is a pure, deterministic function of the current input** —
+  JSON Formatter (format/compare), Regex Tester (test), Cron Builder (build/decode), and the
+  Base64 tool's JWT decoder all qualify: given the same input, there's exactly one correct
+  output, and re-running it live just keeps the output honestly reflecting what's currently
+  typed. Wire it via `document.getElementById(...).addEventListener('input', debounced)`,
+  where `debounced` wraps the *existing* click-handler function using `DebounceLib.debounce`
+  (`public/debounce.js`, ~400ms) — never bypass or duplicate that function's logic.
+- **Stay click-triggered when the action is ambiguous or non-deterministic given the current
+  input** — two concrete exceptions on this site, both deliberate, not oversights:
+  - Base64 tool's main Encode/Decode box: the same input text is equally valid as "please
+    encode this" or "please decode this" — only the user knows which they mean, so guessing
+    would be wrong roughly half the time. Stays click/shortcut-triggered.
+  - Password/UUID Generator: `generatePassword()`/`generateUuid()` are non-deterministic (a
+    fresh cryptographically random value every call) — there's no "the currently-correct
+    output for this input" to keep in sync, only "give me a new one now." Here, auto-firing
+    on every *option* change (a checkbox, a dropdown, a released slider — via `'change'`, not
+    `'input'`, and no debounce needed since those are already discrete events) still makes
+    sense, since a user who just unchecked "Symbols" clearly wants a fresh symbol-free value,
+    not the old one sitting there unchanged. What stays click-only is the *bulk* UUID
+    generation (10×/100×) — an explicit, deliberate bulk action, not something that should
+    fire from a dropdown change.
+- **The button/keyboard-shortcut path must keep working unchanged** either way — auto-run is
+  additive, not a replacement. Never remove a `.toolbar-btn` or its `onclick` handler when
+  adding an `input`/`change` listener; both should call the exact same function.
+- Debounce every `input`-event auto-run (typing is a burst of events); never debounce a
+  `change`-event auto-run (already one discrete event per user action).
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).

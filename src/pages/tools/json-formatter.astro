@@ -39,6 +39,7 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/html-escape.js"></script>
 <script is:inline src="/output-toolbar.js"></script>
 <script is:inline src="/local-state.js"></script>
+<script is:inline src="/debounce.js"></script>
 </Fragment>
 
 <main>
@@ -83,7 +84,7 @@ const jsonLd = JSON.stringify({
           </button>
         </InputToolbar>
       </div>
-      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format.</p>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
 
       <div id="msg"></div>
 
@@ -216,6 +217,24 @@ document.addEventListener('keydown', (e) => {
 
 OutputToolbarLib.init();
 
+// CR#7 (Live Interaction, backlog #31): no-click auto-processing -- format as the user
+// types instead of requiring an explicit click/shortcut. Debounced (see public/debounce.js)
+// so a fast typist doesn't re-parse on every single keystroke; the toolbar button and
+// Ctrl+Enter shortcut above still work unchanged for an immediate, un-debounced run.
+// Deliberately does NOT auto-run minifyJson() -- format is the sensible "just show me
+// something" default; minify is a distinct, opt-in transform the user reaches for
+// on purpose, not something that should silently replace what they were just looking at.
+const autoFormat = DebounceLib.debounce(function () {
+  const input = document.getElementById('input');
+  if (input.value.trim() === '') {
+    document.getElementById('output').value = '';
+    document.getElementById('msg').innerHTML = '';
+    return;
+  }
+  formatJson();
+}, 400);
+document.getElementById('input').addEventListener('input', autoFormat);
+
 // Persist the indent-size choice across visits (URL-shared state, when present, still wins
 // -- see restoreFromUrl below, which runs after this and overrides it).
 (function restoreIndentPref() {
@@ -224,6 +243,9 @@ OutputToolbarLib.init();
 })();
 document.getElementById('indent').addEventListener('change', (e) => {
   LocalStateLib.savePref(INDENT_KEY, e.target.value);
+  // Re-format immediately (not debounced -- a <select> change is already a single discrete
+  // event, not a burst of keystrokes) so switching indent size updates visible output live.
+  if (document.getElementById('input').value.trim()) formatJson();
 });
 
 refreshRecentSelect();
@@ -301,5 +323,23 @@ function compareJson() {
   });
   box.style.display = 'block';
 }
+
+// CR#7 (Live Interaction, backlog #31): auto-compare as both fields fill in, debounced.
+// Guarded so it only fires once BOTH A and B have real content -- otherwise every keystroke
+// in field A alone would flash a premature "JSON B is invalid: Unexpected end of JSON
+// input" error just because B hasn't been touched yet, which reads as broken, not helpful.
+// The Compare button stays as an explicit, immediate re-trigger.
+const autoCompare = DebounceLib.debounce(function () {
+  const a = document.getElementById('diffA').value.trim();
+  const b = document.getElementById('diffB').value.trim();
+  if (!a || !b) {
+    document.getElementById('diffMsg').innerHTML = '';
+    document.getElementById('diffResultBox').style.display = 'none';
+    return;
+  }
+  compareJson();
+}, 400);
+document.getElementById('diffA').addEventListener('input', autoCompare);
+document.getElementById('diffB').addEventListener('input', autoCompare);
 </script>
 </BaseLayout>

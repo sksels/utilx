@@ -40,6 +40,7 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/regex-run.js"></script>
 <script is:inline src="/output-toolbar.js"></script>
 <script is:inline src="/local-state.js"></script>
+<script is:inline src="/debounce.js"></script>
 </Fragment>
 
 <main>
@@ -78,7 +79,7 @@ const jsonLd = JSON.stringify({
           </button>
         </InputToolbar>
       </div>
-      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to test.</p>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tests automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to test immediately.</p>
 
       <div id="msg"></div>
 
@@ -322,6 +323,28 @@ document.addEventListener('keydown', (e) => {
     runRegex();
   }
 });
+
+// CR#7 (Live Interaction, backlog #31): no-click auto-processing -- test the pattern as the
+// user types instead of requiring an explicit click/shortcut. Debounced so a burst of
+// keystrokes doesn't spin up a fresh Web Worker request per character; the toolbar button
+// and Ctrl+Enter shortcut above still work unchanged for an immediate, un-debounced run.
+// Skips entirely on an empty pattern (mirrors explainPattern()'s own early-return) rather
+// than auto-running a technically-valid-but-meaningless empty-pattern match while the user
+// hasn't typed anything into that field yet.
+const autoTest = DebounceLib.debounce(function () {
+  const pattern = document.getElementById('pattern').value;
+  if (!pattern) {
+    document.getElementById('msg').innerHTML = '';
+    document.getElementById('highlighted').innerHTML = '';
+    document.getElementById('matches').value = '';
+    return;
+  }
+  runRegex();
+  explainPattern();
+}, 400);
+document.getElementById('pattern').addEventListener('input', autoTest);
+document.getElementById('flags').addEventListener('input', autoTest);
+document.getElementById('testtext').addEventListener('input', autoTest);
 
 (function restoreFromUrl() {
   const state = UrlStateLib.decodeState(location.search);

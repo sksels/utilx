@@ -38,6 +38,7 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/url-state.js"></script>
 <script is:inline src="lib/html-escape.js"></script>
 <script is:inline src="/output-toolbar.js"></script>
+<script is:inline src="/debounce.js"></script>
 </Fragment>
 
 <main>
@@ -69,7 +70,7 @@ const jsonLd = JSON.stringify({
           </button>
         </InputToolbar>
       </div>
-      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to encode. In the JWT box below, it decodes instead.</p>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to encode. In the JWT box below, it decodes instead. (Encode/Decode stay click-triggered here on purpose -- with the same input, only you know which direction you mean.)</p>
 
       <div id="msg"></div>
 
@@ -97,6 +98,7 @@ const jsonLd = JSON.stringify({
           </button>
         </InputToolbar>
       </div>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Decodes automatically as you paste/type -- unlike the box above, there's only one sensible action for a JWT.</p>
       <div id="jwtMsg"></div>
       <div class="output-box">
         <label for="jwtHeader">Header</label>
@@ -228,6 +230,23 @@ document.addEventListener('keydown', (e) => {
   if (!state || typeof state.input !== 'string') return;
   document.getElementById('input').value = state.input;
 })();
+
+// CR#7 (Live Interaction, backlog #31): no-click auto-processing for the JWT decoder --
+// unlike the Encode/Decode box above (which is deliberately left click-triggered: the same
+// input text is ambiguous between the two directions, only the user knows which they mean),
+// a pasted JWT has exactly one sensible action, so it decodes live as you type/paste.
+// Debounced; the toolbar button and Ctrl+Enter shortcut above still work unchanged.
+const autoDecodeJwt = DebounceLib.debounce(function () {
+  if (!document.getElementById('jwtInput').value.trim()) {
+    document.getElementById('jwtHeader').value = '';
+    document.getElementById('jwtPayload').value = '';
+    document.getElementById('jwtSignature').value = '';
+    document.getElementById('jwtMsg').innerHTML = '';
+    return;
+  }
+  decodeJwt();
+}, 400);
+document.getElementById('jwtInput').addEventListener('input', autoDecodeJwt);
 
 OutputToolbarLib.init();
 </script>
