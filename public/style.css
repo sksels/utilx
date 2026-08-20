@@ -318,7 +318,28 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
 .chip-password { background: linear-gradient(135deg, #f87171, #ef4444); }
 .chip-base64 { background: linear-gradient(135deg, #34d399, #10b981); }
 .chip-color { background: linear-gradient(135deg, #f472b6, #a855f7, #3b82f6); }
-.tool-card h3 { margin: 0 0 6px; color: var(--text); font-size: 1.05rem; font-weight: 650; }
+
+/* CR#8 backlog #55: icon and title used to stack (icon above, h3 below) -- user feedback:
+   "the icon and the title should be adjacent to each other and not one below the other".
+   .tool-card-header wraps just those two elements in a row; the description <p> stays below
+   the row, unaffected. h3's old margin:0 0 6px and .tool-icon-chip's margin-bottom:14px both
+   existed specifically to create vertical spacing in the old *stacked* layout -- inside this
+   row they'd only misalign align-items:center, so h3's margin is reset to 0 in its own rule
+   below and .tool-icon-chip's is reset here (scoped to `.tool-card-header .tool-icon-chip`,
+   not the base .tool-icon-chip rule, so any future standalone use elsewhere -- e.g. backlog
+   #58's planned icon-chip-inside-the-tool-popup -- keeps its normal 14px). The row itself owns
+   the spacing before the paragraph instead, via its own margin-bottom. */
+.tool-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.tool-card-header .tool-icon-chip {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+.tool-card h3 { margin: 0; color: var(--text); font-size: 1.05rem; font-weight: 650; }
 .tool-card p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
 
 /* Restructured tool cards (JSON Formatter, Regex Tester, Cron Builder, Base64) that fold
