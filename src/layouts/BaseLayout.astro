@@ -31,6 +31,8 @@ interface Props {
   includePopupNav?: boolean;
   /** Homepage only. */
   includeTileOrder?: boolean;
+  /** Homepage only. CR#8 backlog #32: clipboard-based tool suggestion toast. */
+  includeClipboardSuggest?: boolean;
   /** 'full' = brand + trust badge + nav + theme toggle. 'minimal' = brand link only (admin). */
   header?: 'full' | 'minimal';
   showFooter?: boolean;
@@ -49,6 +51,7 @@ const {
   includeAdsAndAnalytics = true,
   includePopupNav = false,
   includeTileOrder = false,
+  includeClipboardSuggest = false,
   header = 'full',
   showFooter = true,
   noindex = false,
@@ -116,6 +119,15 @@ if (window.opener) document.documentElement.classList.add('popup-mode');
   </>
 )}
 {includeTileOrder && <script is:inline src="/tile-order.js"></script>}
+{includeClipboardSuggest && (
+  <>
+    <script is:inline src="/tools/lib/cron.js"></script>
+    <script is:inline src="/tools/lib/color.js"></script>
+    <script is:inline src="/tools/lib/base64.js"></script>
+    <script is:inline src="/tools/lib/clipboard-detect.js"></script>
+    <script is:inline defer src="/clipboard-suggest.js"></script>
+  </>
+)}
 <slot name="head-extra" />
 {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
 </head>

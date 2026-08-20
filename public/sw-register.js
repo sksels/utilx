@@ -27,6 +27,9 @@
 
     var bar = document.createElement('div');
     bar.id = 'utilx-install-prompt';
+    // CR#8 backlog #32: box/position CSS now lives on the shared .utilx-toast class (also
+    // used by the clipboard-suggestion toast) -- see style.css.
+    bar.className = 'utilx-toast';
     bar.setAttribute('role', 'status');
 
     var label = document.createElement('span');

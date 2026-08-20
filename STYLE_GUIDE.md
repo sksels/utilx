@@ -340,6 +340,60 @@ Related but explicitly out of scope here: the octopus mascot/logo work (backlog 
 separate, still-open thread toward the same "give UtilX a visual identity" goal — this item is
 just the background treatment, not a logo.
 
+## Smart clipboard injection (CR#8, backlog #32)
+
+Homepage-only: on load and whenever the tab becomes visible again, checks whether the
+clipboard already contains something that looks like a tool's input (JSON, a cron expression,
+a hex color, a JWT, or a generic Base64 token) and — if so — shows a small dismissible toast
+("Your clipboard looks like JSON — open it in JSON Formatter?"). Confirmed choice, asked
+directly: shows a suggestion, never auto-navigates. Split across three files, same separation
+this project already uses for every tool's own logic:
+
+- `public/tools/lib/clipboard-detect.js` — pure pattern matching (`detectToolForText(text)` →
+  `{ toolId, url, label } | null`), no DOM/clipboard access, tested head-on in
+  `tests/clipboard-detect.test.js`. Reuses existing lib functions rather than reimplementing
+  validation (`CronLib.validateBuildFields`, `ColorLib.hexToRgb`, `Base64Lib.decodeJwt` /
+  `decodeBase64ToUtf8`) — the matchers are thin wrappers around logic that was already correct
+  and already tested elsewhere.
+- `public/clipboard-suggest.js` — the actual `navigator.clipboard.readText()` call, permission
+  handling, de-duplication (won't re-show the same dismissed clipboard content again this tab
+  session — `sessionStorage`), and the toast DOM, reusing the shared `.utilx-toast` CSS class
+  (see below).
+- `src/layouts/BaseLayout.astro` — new `includeClipboardSuggest` prop (homepage-only, like
+  `includeTileOrder`/`includePopupNav`), loads the four scripts above in dependency order.
+
+**Deliberately precision-over-recall matching.** Every pattern in `clipboard-detect.js` is
+chosen to have a low false-positive rate even at the cost of missing some real matches — a
+wrong suggestion is worse than a missed one, since it's shown unprompted before the user has
+indicated they want anything from the site at all. Concretely: hex-color detection requires a
+leading `#` (a bare 6-hex-digit string is exactly as likely to be a truncated git SHA as a
+color); Base64 detection requires no internal whitespace and a real minimum length; a shared
+`MIN_LENGTH`/`MAX_LENGTH` gate rejects short-coincidence and huge-paste cases before running
+any matcher. The one exception is hex color, checked *ahead of* that length gate — `#fff` is a
+fully legitimate 4-character color that `MIN_LENGTH` would otherwise wrongly reject, and
+`ColorLib.hexToRgb()` already fully constrains valid hex lengths on its own.
+
+**Never requests clipboard permission itself.** `navigator.clipboard.readText()` is gated
+behind the `'clipboard-read'` permission in every browser implementing the Async Clipboard
+API; calling it without that permission already granted triggers the browser's own native
+"Allow this site to see your clipboard?" prompt. Popping that dialog unprompted, the instant
+someone lands on the homepage, is exactly the kind of intrusive behavior this feature exists
+to avoid (the same reasoning behind the suggestion-toast-not-auto-navigate choice above). So
+`clipboard-suggest.js` only calls `readText()` when `navigator.permissions.query({name:
+'clipboard-read'})` reports the permission state is already `'granted'` — never requesting it.
+In practice this means the feature is a silent no-op on a freshly-visited browser, and on any
+browser (Firefox, notably) that doesn't support querying this permission at all. That's the
+intended trade-off, not a gap to "fix" by requesting permission anyway.
+
+**Shared toast CSS.** `.utilx-toast` (position/box/border/shadow) was factored out of what used
+to be `#utilx-install-prompt`-only CSS, since this is the second near-identical toast on the
+site (the PWA install prompt, `public/sw-register.js`, was the first). Position is set
+per-toast, not on the shared class: `#utilx-install-prompt` anchors `bottom: 20px`,
+`#utilx-clipboard-toast` anchors `top: 20px` — opposite viewport edges, so the rare case of
+both showing at once (a returning visitor with an installable PWA *and* granted clipboard
+permission) can never visually stack or overlap, without needing any z-index/offset-stacking
+logic for a combination this uncommon.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).
