@@ -35,9 +35,19 @@
     return ((clientX - containerLeft) / containerWidth) * 100;
   }
 
-  function applyRatio(leftEl, rightEl, ratio) {
+  // CR#7 accessibility fix (caught by the axe-core CI check, aria-required-attr, critical):
+  // role="separator" only skips the ARIA "range" attributes when it's a purely static,
+  // non-focusable divider. This one is focusable (tabindex="0") and keyboard-operable
+  // (arrow keys / Home / End resize it), which makes it a *focusable* separator -- and per
+  // the WAI-ARIA spec, a focusable separator MUST expose aria-valuenow (and should expose
+  // aria-valuemin/aria-valuemax), the same "Window Splitter" pattern a slider uses. Missed
+  // this when the divider was first built; applyRatio is the one place every ratio change
+  // (init, drag, keyboard) already flows through, so updating aria-valuenow here guarantees
+  // it can never drift out of sync with the actual split.
+  function applyRatio(leftEl, rightEl, dividerEl, ratio) {
     leftEl.style.flexBasis = ratio + '%';
     rightEl.style.flexBasis = (100 - ratio) + '%';
+    dividerEl.setAttribute('aria-valuenow', String(Math.round(ratio)));
   }
 
   // Parses whatever public/local-state.js's loadPref() handed back into a valid starting
@@ -62,11 +72,14 @@
   function init(container, leftEl, rightEl, dividerEl, storageKey) {
     if (!container || !leftEl || !rightEl || !dividerEl) return;
 
+    dividerEl.setAttribute('aria-valuemin', String(MIN_RATIO));
+    dividerEl.setAttribute('aria-valuemax', String(MAX_RATIO));
+
     var loaded = (typeof LocalStateLib !== 'undefined' && storageKey)
       ? LocalStateLib.loadPref(storageKey)
       : null;
     var ratio = parseSavedRatio(loaded);
-    applyRatio(leftEl, rightEl, ratio);
+    applyRatio(leftEl, rightEl, dividerEl, ratio);
 
     function persist() {
       if (typeof LocalStateLib !== 'undefined' && storageKey) {
@@ -76,7 +89,7 @@
 
     function setRatio(next) {
       ratio = clamp(next, MIN_RATIO, MAX_RATIO);
-      applyRatio(leftEl, rightEl, ratio);
+      applyRatio(leftEl, rightEl, dividerEl, ratio);
     }
 
     var dragging = false;
