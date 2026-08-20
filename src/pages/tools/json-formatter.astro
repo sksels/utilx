@@ -39,6 +39,10 @@ const jsonLd = JSON.stringify({
 <script is:inline src="lib/html-escape.js"></script>
 <script is:inline src="/output-toolbar.js"></script>
 <script is:inline src="/local-state.js"></script>
+<script is:inline src="/debounce.js"></script>
+<script is:inline src="/error-location.js"></script>
+<script is:inline src="/field-flash.js"></script>
+<script is:inline src="/split-pane.js"></script>
 </Fragment>
 
 <main>
@@ -49,51 +53,57 @@ const jsonLd = JSON.stringify({
     <div><LocalBadge /></div>
 
     <div class="card">
-      <div class="field-header">
-        <label for="input">Input JSON</label>
-        <select id="inputRecent" class="recent-select" title="Load a recent input" disabled></select>
-      </div>
-      <div class="input-box-row">
-        <div class="input-box">
-          <div class="input-target">
-            <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
+      <div class="split-pane" id="mainSplitPane">
+        <div class="split-pane-left">
+          <div class="field-header">
+            <label for="input">Input JSON</label>
+            <select id="inputRecent" class="recent-select" title="Load a recent input" disabled></select>
           </div>
+          <div class="input-box-row">
+            <div class="input-box">
+              <div class="input-target">
+                <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
+              </div>
 
-          <div class="input-secondary">
-            <label for="indent">Indent size</label>
-            <select id="indent">
-              <option value="2">2 spaces</option>
-              <option value="4">4 spaces</option>
-              <option value="tab">Tab</option>
-            </select>
+              <div class="input-secondary">
+                <label for="indent">Indent size</label>
+                <select id="indent">
+                  <option value="2">2 spaces</option>
+                  <option value="4">4 spaces</option>
+                  <option value="tab">Tab</option>
+                </select>
+              </div>
+            </div>
+            <InputToolbar>
+              <button class="toolbar-btn" onclick="formatJson()" title="Format / Beautify">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="minifyJson()" title="Minify">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="clearAll()" title="Clear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </InputToolbar>
+          </div>
+          <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
+        </div>
+        <div class="split-divider" id="mainSplitDivider" role="separator" aria-orientation="vertical" aria-label="Resize input and output panes" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" tabindex="0"></div>
+        <div class="split-pane-right">
+          <div class="output-box">
+            <label for="output">Output</label>
+            <div class="output-target">
+              <textarea id="output" rows="12" readonly></textarea>
+              <OutputToolbar targetId="output" download={true} downloadFilename="formatted.json" />
+            </div>
           </div>
         </div>
-        <InputToolbar>
-          <button class="toolbar-btn" onclick="formatJson()" title="Format / Beautify">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="minifyJson()" title="Minify">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="clearAll()" title="Clear">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </InputToolbar>
       </div>
-      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format.</p>
 
       <div id="msg"></div>
-
-      <div class="output-box">
-        <label for="output">Output</label>
-        <div class="output-target">
-          <textarea id="output" rows="12" readonly></textarea>
-          <OutputToolbar targetId="output" download={true} downloadFilename="formatted.json" />
-        </div>
-      </div>
     </div>
 
     <div class="card">
@@ -140,9 +150,30 @@ function getIndent() {
 // link. Always escape before inserting into innerHTML, never trust "just an error message."
 const escapeHtml = HtmlEscapeLib.escapeHtml;
 
+// CR#7 (Live Interaction, backlog #40): inline error-location mapping -- besides showing
+// JSON.parse's message text, points at exactly where the problem is: flashes the field's
+// border (public/error-location.js + style.css) and, when safe, moves the cursor/selection
+// there (public/field-flash.js). "When safe" matters: jumping the selection while the field
+// is the one currently focused would select one character right where the user's very next
+// keystroke lands, silently overwriting it mid-typing -- so the cursor jump only fires once
+// the field has lost focus (e.g. after a button click), never during live auto-format typing.
+// The border flash alone still fires either way, so there's always some signal.
+function jsonErrorText(e, fieldEl) {
+  let text = escapeHtml(e.message);
+  const loc = ErrorLocationLib.locateJsonError(e.message, fieldEl.value);
+  if (loc) {
+    text += ' (line ' + loc.line + ', column ' + loc.column + ')';
+    FieldFlashLib.flashError(fieldEl);
+    if (document.activeElement !== fieldEl) {
+      FieldFlashLib.jumpToPosition(fieldEl, loc.index);
+    }
+  }
+  return text;
+}
+
 function showError(e) {
   const msg = document.getElementById('msg');
-  msg.innerHTML = '<div class="error-msg">Invalid JSON: ' + escapeHtml(e.message) + '</div>';
+  msg.innerHTML = '<div class="error-msg">Invalid JSON: ' + jsonErrorText(e, document.getElementById('input')) + '</div>';
 }
 
 function showSuccess(text) {
@@ -216,6 +247,34 @@ document.addEventListener('keydown', (e) => {
 
 OutputToolbarLib.init();
 
+// CR#7 (Live Interaction, backlog #36): resizable input/output split panes (desktop only --
+// see style.css's 700px fallback). Ratio persists across visits under its own local-state key.
+SplitPaneLib.init(
+  document.getElementById('mainSplitPane'),
+  document.querySelector('#mainSplitPane .split-pane-left'),
+  document.querySelector('#mainSplitPane .split-pane-right'),
+  document.getElementById('mainSplitDivider'),
+  'utilx-json-formatter-split-ratio'
+);
+
+// CR#7 (Live Interaction, backlog #31): no-click auto-processing -- format as the user
+// types instead of requiring an explicit click/shortcut. Debounced (see public/debounce.js)
+// so a fast typist doesn't re-parse on every single keystroke; the toolbar button and
+// Ctrl+Enter shortcut above still work unchanged for an immediate, un-debounced run.
+// Deliberately does NOT auto-run minifyJson() -- format is the sensible "just show me
+// something" default; minify is a distinct, opt-in transform the user reaches for
+// on purpose, not something that should silently replace what they were just looking at.
+const autoFormat = DebounceLib.debounce(function () {
+  const input = document.getElementById('input');
+  if (input.value.trim() === '') {
+    document.getElementById('output').value = '';
+    document.getElementById('msg').innerHTML = '';
+    return;
+  }
+  formatJson();
+}, 400);
+document.getElementById('input').addEventListener('input', autoFormat);
+
 // Persist the indent-size choice across visits (URL-shared state, when present, still wins
 // -- see restoreFromUrl below, which runs after this and overrides it).
 (function restoreIndentPref() {
@@ -224,6 +283,9 @@ OutputToolbarLib.init();
 })();
 document.getElementById('indent').addEventListener('change', (e) => {
   LocalStateLib.savePref(INDENT_KEY, e.target.value);
+  // Re-format immediately (not debounced -- a <select> change is already a single discrete
+  // event, not a burst of keystrokes) so switching indent size updates visible output live.
+  if (document.getElementById('input').value.trim()) formatJson();
 });
 
 refreshRecentSelect();
@@ -245,6 +307,102 @@ document.getElementById('inputRecent').addEventListener('change', (e) => {
 const shortVal = JsonToolsLib.shortVal;
 const deepDiff = JsonToolsLib.deepDiff;
 
+// CR#7 (Live Interaction, backlog #37): renders the diff as a git-diff-style table --
+// changed/added/removed rows always visible, consecutive runs of unchanged (context) rows
+// collapsed by default behind a single toggle row so the eye goes straight to what changed.
+// Every cell is built via createElement + textContent, never innerHTML string-concatenation
+// -- a JSON key or value that happens to contain HTML-looking text can then never be
+// interpreted as markup. The previous version of this code built rows via innerHTML string
+// concatenation without escaping d.path/shortVal(d.from)/shortVal(d.to) at all; caught and
+// fixed here while rewriting this function for the new collapsible grouping, matching the
+// "never trust user-controlled text going into the DOM" rule this codebase already applies
+// to error messages elsewhere (see jsonErrorText above). Also switched the row-type colors
+// from hardcoded hex to the --success/--danger/--accent tokens (the hardcoded '#5b8cff' was
+// always the dark-theme accent color specifically, so a "changed" row's color didn't actually
+// adapt in light mode -- var(--accent) does.
+function buildDiffRow(d) {
+  const tr = document.createElement('tr');
+
+  const pathTd = document.createElement('td');
+  const code = document.createElement('code');
+  code.textContent = d.path;
+  pathTd.appendChild(code);
+
+  const typeTd = document.createElement('td');
+  typeTd.textContent = d.type;
+  typeTd.style.color = d.type === 'added' ? 'var(--success)'
+    : d.type === 'removed' ? 'var(--danger)'
+    : d.type === 'unchanged' ? 'var(--text-dim)'
+    : 'var(--accent)';
+
+  const beforeTd = document.createElement('td');
+  beforeTd.textContent = shortVal(d.from);
+
+  const afterTd = document.createElement('td');
+  afterTd.textContent = shortVal(d.to);
+
+  tr.append(pathTd, typeTd, beforeTd, afterTd);
+  return tr;
+}
+
+function buildDiffGroupToggleRow(count, groupId) {
+  const tr = document.createElement('tr');
+  tr.className = 'diff-group-toggle';
+  const td = document.createElement('td');
+  td.colSpan = 4;
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'diff-group-toggle-btn';
+  btn.setAttribute('aria-expanded', 'false');
+  const label = count + ' unchanged line' + (count === 1 ? '' : 's');
+  btn.textContent = '▸ ' + label;
+  btn.addEventListener('click', function () {
+    const willExpand = btn.getAttribute('aria-expanded') !== 'true';
+    btn.setAttribute('aria-expanded', String(willExpand));
+    btn.textContent = (willExpand ? '▾ ' : '▸ ') + label;
+    document.querySelectorAll('#diffTable tr[data-diff-group="' + groupId + '"]').forEach(function (row) {
+      row.style.display = willExpand ? 'table-row' : 'none';
+    });
+  });
+
+  td.appendChild(btn);
+  tr.appendChild(td);
+  return tr;
+}
+
+function renderDiffTable(table, diffs) {
+  table.innerHTML = '';
+  const headerRow = document.createElement('tr');
+  ['Path', 'Change', 'Before', 'After'].forEach(function (h) {
+    const th = document.createElement('th');
+    th.textContent = h;
+    headerRow.appendChild(th);
+  });
+  table.appendChild(headerRow);
+
+  let i = 0;
+  let groupId = 0;
+  while (i < diffs.length) {
+    if (diffs[i].type === 'unchanged') {
+      const start = i;
+      while (i < diffs.length && diffs[i].type === 'unchanged') i++;
+      const run = diffs.slice(start, i);
+      groupId++;
+      table.appendChild(buildDiffGroupToggleRow(run.length, groupId));
+      run.forEach(function (d) {
+        const row = buildDiffRow(d);
+        row.dataset.diffGroup = String(groupId);
+        row.style.display = 'none';
+        table.appendChild(row);
+      });
+      continue;
+    }
+    table.appendChild(buildDiffRow(diffs[i]));
+    i++;
+  }
+}
+
 function compareJson() {
   const msg = document.getElementById('diffMsg');
   const box = document.getElementById('diffResultBox');
@@ -255,21 +413,24 @@ function compareJson() {
   try {
     a = JSON.parse(document.getElementById('diffA').value);
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">JSON A is invalid: ' + escapeHtml(e.message) + '</div>';
+    msg.innerHTML = '<div class="error-msg">JSON A is invalid: ' + jsonErrorText(e, document.getElementById('diffA')) + '</div>';
     box.style.display = 'none';
     return;
   }
   try {
     b = JSON.parse(document.getElementById('diffB').value);
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">JSON B is invalid: ' + escapeHtml(e.message) + '</div>';
+    msg.innerHTML = '<div class="error-msg">JSON B is invalid: ' + jsonErrorText(e, document.getElementById('diffB')) + '</div>';
     box.style.display = 'none';
     return;
   }
 
   let diffs;
   try {
-    diffs = deepDiff(a, b, '', []);
+    // CR#7 (Live Interaction, backlog #37): includeUnchanged:true so the rendered table can
+    // show full context (git-diff-style), not just the changed rows -- see renderDiffTable
+    // above, which collapses consecutive unchanged rows behind a toggle by default.
+    diffs = deepDiff(a, b, '', [], { includeUnchanged: true });
   } catch (e) {
     // Tech debt fix: deepDiff used to recurse once per nesting level and could hit the call-
     // stack limit on very deeply nested (but perfectly valid) JSON -- confirmed around ~5,000
@@ -281,25 +442,40 @@ function compareJson() {
     box.style.display = 'none';
     return;
   }
-  table.innerHTML = '<tr><th>Path</th><th>Change</th><th>Before</th><th>After</th></tr>';
 
-  if (diffs.length === 0) {
+  // The "N differences found" / "No differences" messaging is still driven purely by real
+  // changes, exactly as before this feature -- 'unchanged' rows are display-only context,
+  // not something that should count toward or ever produce a nonzero "differences found".
+  const changeCount = diffs.filter(function (d) { return d.type !== 'unchanged'; }).length;
+
+  if (changeCount === 0) {
     msg.innerHTML = '<div class="success-msg">No differences — both are equivalent.</div>';
+    table.innerHTML = '<tr><th>Path</th><th>Change</th><th>Before</th><th>After</th></tr>';
     box.style.display = 'block';
     return;
   }
 
-  msg.innerHTML = '<div class="success-msg">' + diffs.length + ' difference' + (diffs.length === 1 ? '' : 's') + ' found.</div>';
-  diffs.forEach(function (d) {
-    const tr = document.createElement('tr');
-    const color = d.type === 'added' ? '#4ade80' : d.type === 'removed' ? '#ff6b6b' : '#5b8cff';
-    tr.innerHTML = '<td><code>' + d.path + '</code></td>' +
-      '<td style="color:' + color + ';">' + d.type + '</td>' +
-      '<td>' + shortVal(d.from) + '</td>' +
-      '<td>' + shortVal(d.to) + '</td>';
-    table.appendChild(tr);
-  });
+  msg.innerHTML = '<div class="success-msg">' + changeCount + ' difference' + (changeCount === 1 ? '' : 's') + ' found.</div>';
+  renderDiffTable(table, diffs);
   box.style.display = 'block';
 }
+
+// CR#7 (Live Interaction, backlog #31): auto-compare as both fields fill in, debounced.
+// Guarded so it only fires once BOTH A and B have real content -- otherwise every keystroke
+// in field A alone would flash a premature "JSON B is invalid: Unexpected end of JSON
+// input" error just because B hasn't been touched yet, which reads as broken, not helpful.
+// The Compare button stays as an explicit, immediate re-trigger.
+const autoCompare = DebounceLib.debounce(function () {
+  const a = document.getElementById('diffA').value.trim();
+  const b = document.getElementById('diffB').value.trim();
+  if (!a || !b) {
+    document.getElementById('diffMsg').innerHTML = '';
+    document.getElementById('diffResultBox').style.display = 'none';
+    return;
+  }
+  compareJson();
+}, 400);
+document.getElementById('diffA').addEventListener('input', autoCompare);
+document.getElementById('diffB').addEventListener('input', autoCompare);
 </script>
 </BaseLayout>

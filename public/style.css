@@ -607,11 +607,94 @@ div:has(> .output-toolbar) {
   .two-col { grid-template-columns: 1fr; }
 }
 
+/* CR#7 (Live Interaction, backlog #36): resizable side-by-side input/output split panes.
+   Desktop-only (see the 700px fallback below, matching .two-col's existing breakpoint --
+   this site has exactly one narrow-viewport cutoff, reused here rather than inventing a
+   second one). flex-basis on the two panes is set inline by public/split-pane.js (the
+   user's chosen/restored split ratio); this stylesheet only owns the divider's look and the
+   narrow-viewport fallback back to stacked. */
+.split-pane {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.split-pane-left,
+.split-pane-right {
+  min-width: 0;
+}
+/* A generous 14px hit target for a precise 2px visible line -- narrower would make the
+   divider hard to grab, especially on touch, without needing to look wide itself. */
+.split-divider {
+  flex: 0 0 auto;
+  width: 14px;
+  margin: 0 -4px;
+  position: relative;
+  cursor: col-resize;
+  background: transparent;
+  border: none;
+  z-index: 1;
+}
+.split-divider::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  border-radius: 1px;
+  background: var(--border);
+  transition: background .15s ease;
+}
+.split-divider:hover::after,
+.split-divider:focus-visible::after,
+.split-divider.dragging::after {
+  background: var(--accent);
+}
+.split-divider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+@media (max-width: 700px) {
+  .split-pane {
+    display: block;
+  }
+  /* The ratio is still saved for next time on a wide viewport, but a phone-width screen
+     shouldn't render two independently-narrow, barely-usable columns -- override the
+     JS-set inline flex-basis back to a normal stacked block layout. */
+  .split-pane-left,
+  .split-pane-right {
+    flex-basis: auto !important;
+  }
+  .split-divider {
+    display: none;
+  }
+}
+
 .error-msg {
   color: var(--danger);
   font-size: 0.85rem;
   margin-top: 8px;
   animation: fadeInUp .25s var(--ease);
+}
+
+/* CR#7 (Live Interaction, backlog #40): inline error-location mapping -- briefly flashes a
+   field's border when a live auto-process run finds a syntax error, so the eye is drawn to
+   *which* field has the problem (see public/field-flash.js for the JS side, which also
+   jumps the text cursor to the exact character offset via setSelectionRange). Reuses
+   --danger rather than introducing a separate "amber" token: the field's error text right
+   below it is already --danger-colored, and a red border + red text reads as one consistent
+   signal, where red-text-plus-amber-border would read as two different, competing signals
+   for the same single problem. --danger already clears WCAG 1.4.11's 3:1 non-text contrast
+   minimum in both themes (it was tuned to clear the stricter 4.5:1 *text* minimum for
+   .error-msg), so no separate contrast check was needed for this border-only use. */
+.field-error-flash {
+  animation: fieldErrorFlash 1s ease-out;
+}
+@keyframes fieldErrorFlash {
+  0% { border-color: var(--danger); }
+  100% { border-color: var(--border); }
 }
 .success-msg {
   color: var(--success);
@@ -654,6 +737,44 @@ table.ref-table th, table.ref-table td {
 }
 table.ref-table th { color: var(--text-dim); font-weight: 600; }
 table.ref-table tr:hover td { background: var(--accent-soft); }
+
+/* CR#7 (Live Interaction, backlog #37): collapsible unchanged-line groups in the JSON diff
+   view (json-formatter.astro's compareJson). A run of consecutive unchanged paths collapses
+   into one summary row -- collapsed by default, so the eye goes straight to what actually
+   changed, similar to a git diff's collapsed context lines -- and expands on click to show
+   the individual unchanged rows it's standing in for. Full property/value overrides here
+   because the plain `button` element it's built from otherwise inherits the site's big
+   filled-accent action-button styling (padding, box-shadow glow, scale-on-active), which
+   would look completely out of place as a quiet, full-width row toggle inside a table. */
+.diff-group-toggle td {
+  padding: 2px 0;
+}
+.diff-group-toggle-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: var(--code-bg);
+  color: var(--text-dim);
+  border: 1px dashed var(--border);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.82rem;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background .1s ease, color .1s ease, border-color .1s ease;
+}
+.diff-group-toggle-btn:hover {
+  background: var(--accent-soft);
+  color: var(--text);
+  border-color: var(--accent);
+  box-shadow: none;
+}
+.diff-group-toggle-btn:active {
+  transform: none;
+}
+
 code {
   background: var(--code-bg);
   padding: 2px 6px;
