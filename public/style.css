@@ -723,12 +723,34 @@ div:has(> .output-toolbar) {
 .split-pane-right {
   min-width: 0;
 }
-/* A generous 14px hit target for a precise 2px visible line -- narrower would make the
-   divider hard to grab, especially on touch, without needing to look wide itself. */
+/* CR#8 backlog #53: user feedback the output side "is not well spaced... vertically", tracked
+   down to the two panes starting at different offsets from the top of .split-pane. The left
+   pane's first element is always a <label> (bare, or inside .field-header) -- its own
+   margin-top:14px is what actually sets that visible offset, since a flex item establishes a
+   new block-formatting context for its own children (their margins don't collapse through the
+   flex item's box edge, but they also don't add on top of a zero-margin flex item itself). The
+   right pane's first element is .output-box, whose global 16px margin-top DOES collapse with
+   its own first child <label>'s 14px (no border/padding on .output-box to block that) --
+   giving max(16,14) = 16px, 2px more than the left pane's 14px. Overriding to 6px here still
+   collapses the same way, but to max(6,14) = 14px -- matching the left pane exactly, without
+   touching .output-box's own rule (which stays 16px for its normal standalone use elsewhere --
+   Password Generator, Cron Builder, etc.). Scoped to just the *first* .output-box in the pane
+   (:first-child, not a bare > .output-box) since Regex Tester's split-pane-right stacks three
+   separate .output-box sections (highlighted matches / match details / plain-English
+   breakdown) that still want their normal 16px separation from each other for visual grouping
+   -- only the first one's offset from the pane's own top needed to change. */
+.split-pane-right > .output-box:first-child {
+  margin-top: 6px;
+}
+/* CR#8 backlog #53: "the vertical splitter needs to be thicker" -- visible bar 2px -> 4px.
+   Widened the hit-target box to match (14px -> 16px) and its negative margin to match (-4px ->
+   -5px) so the *added* visible gap between panes stays the same proportion as before (roughly
+   6px of breathing room on each side of the bar) rather than the panes suddenly sitting
+   further apart just because the bar itself got thicker. */
 .split-divider {
   flex: 0 0 auto;
-  width: 14px;
-  margin: 0 -4px;
+  width: 16px;
+  margin: 0 -5px;
   position: relative;
   cursor: col-resize;
   background: transparent;
@@ -741,9 +763,9 @@ div:has(> .output-toolbar) {
   top: 8px;
   bottom: 8px;
   left: 50%;
-  width: 2px;
+  width: 4px;
   transform: translateX(-50%);
-  border-radius: 1px;
+  border-radius: 2px;
   background: var(--border);
   transition: background .15s ease;
 }

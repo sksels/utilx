@@ -124,6 +124,24 @@ When a tool does qualify, `msg`/status divs move to sit *below* the whole `.spli
 width) rather than between the input and output, since with the two panes side-by-side there
 is no longer a single "between input and output" position for them.
 
+**Vertical alignment between panes (CR#8, backlog #53):** the left pane's top-of-pane offset
+comes from its first `<label>`'s own `margin-top: 14px` (trapped inside the pane by the flex
+item's implicit block-formatting context, not collapsed away). The right pane's first element
+is always `.output-box`, whose *global* `margin-top: 16px` (for its normal standalone use
+elsewhere) collapses with that same first-child `<label>`'s 14px into `max(16, 14) = 16px` --
+2px more than the left pane. `.split-pane-right > .output-box:first-child` overrides that to
+`margin-top: 6px`, which still collapses with the label the same way, but resolves to
+`max(6, 14) = 14px` -- matching the left pane exactly. `:first-child` matters: Regex Tester's
+split-pane-right stacks three separate `.output-box` sections, and only the first one's offset
+from the pane's own top needed to change -- the other two keep their normal 16px separation
+from each other. Don't touch `.output-box`'s own rule to "fix" this globally; that 16px is
+correct for every non-split-pane use of `.output-box` on the site.
+
+The divider's visible bar is 4px (was 2px, CR#8 #53 -- "the vertical splitter needs to be
+thicker"). Its hit-target box is 16px with a `-5px` margin (was 14px/`-4px`), scaled to keep
+the same ~6px of breathing room on each side of the bar rather than the panes suddenly sitting
+further apart just because the bar itself got thicker.
+
 ## Collapsible diff context rows (CR#7, backlog #37)
 
 JSON Formatter's Compare view (`compareJson()`) calls `JsonToolsLib.deepDiff(a, b, path,
