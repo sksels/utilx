@@ -285,6 +285,31 @@ gradient, add one more `:root.popup-mode[data-tool-id="..."] body` rule, and pas
 on its `<BaseLayout>` — skipping any one of these four leaves the popup unbordered for that tool
 rather than erroring, so it's easy to silently miss; check all four together.
 
+## Tool icon in the page's own `<h1>` (CR#8, backlog #58)
+
+The colored icon chip used to exist only on the homepage tile — once a tool was actually opened
+(in a normal tab, or the backlog #57 popup that now borders itself in that same color), the icon
+disappeared and the page was plain text. `.tool-page-header` wraps a tool page's `<h1>` with the
+exact same `.tool-icon-chip`/`.chip-*` markup already used on that tool's homepage tile (copy the
+matching `<div class="tool-icon-chip chip-*">...</div>` block from `index.astro` verbatim — same
+SVG, same chip class — rather than inventing a second icon per tool). `.tool-page-header` moves
+`h1`'s own `margin-bottom` onto the row itself and resets `h1`'s margin to 0, so the row+h1 pair
+occupies the same vertical space `h1` alone used to.
+
+```astro
+<div class="breadcrumb"><a href="/index.html">Tools</a> / JSON Formatter</div>
+<div class="tool-page-header">
+  <div class="tool-icon-chip chip-json">
+    <svg class="tool-icon" ...>...</svg>
+  </div>
+  <h1>JSON Formatter &amp; Validator</h1>
+</div>
+```
+
+This is unrelated to the homepage's `.tool-card-header` (item #55) beyond sharing the same
+`.tool-icon-chip`/`.chip-*` building blocks — one lives in a homepage tile, one in a tool page's
+own header, and each has its own margin rules scoped to its own class so they don't interfere.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).

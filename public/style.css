@@ -382,6 +382,21 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
 .tool-card h3 { margin: 0; color: var(--text); font-size: 1.05rem; font-weight: 650; }
 .tool-card p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
 
+/* CR#8 backlog #58: every tool page's <h1> used to be plain text -- the colored icon chip only
+   existed on the homepage tile, so it never appeared once a tool was actually opened (in a
+   normal tab or, especially, the backlog #57 popup that now borders itself in that same color).
+   Reuses the exact same .tool-icon-chip/.chip-* markup already used on the homepage tile (see
+   index.astro) rather than inventing a second icon system. h1's own margin-bottom moves onto
+   the row so the row+h1 pair takes up the same vertical space h1 alone used to. */
+.tool-page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.tool-page-header h1 { margin: 0; }
+.tool-page-header .tool-icon-chip { flex-shrink: 0; margin-bottom: 0; }
+
 /* Restructured tool cards (JSON Formatter, Regex Tester, Cron Builder, Base64) that fold
    a "related guide" link into the tile: the outer .tool-card is now a plain container
    (not itself a link, since a link can't be nested inside another link), the inner
