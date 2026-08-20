@@ -143,6 +143,23 @@ value that happens to contain HTML-looking text must never be interpreted as mar
 was in fact a latent gap in the pre-#37 version of this exact code, fixed while rewriting it
 for the new grouping).
 
+## Minimum field height vs. toolbar button count (CR#8, backlog #48)
+
+A column (non-`.inline`) toolbar's own height is fixed by its button count: `N * 30px + (N-1)
+* 4px` of gap. The field it sits beside is centered against it (`align-items: center` on the
+`div:has(> .input-toolbar)` row), not stretched, so if the field's natural height falls short
+of the toolbar's, the top/bottom buttons hang past the field's own border instead of reading as
+contained within it -- this was live on Base64 Tool's 8-row input textarea next to its 5-button
+toolbar (166px of buttons vs. ~158px of textarea). Fixed with `:has()` + `:nth-child(N)` rules
+in style.css that count a toolbar's actual button children and floor the paired field's
+`min-height` to match, for N = 2 through 5 (the current max). No changes needed in any `.astro`
+page -- this is pure CSS structural counting, so it stays correct automatically as buttons are
+added/removed/rolled out to new tools. `.input-box` composite panels (Password Generator's
+slider + checkboxes) are deliberately excluded -- they're already far taller than any 2-5
+button toolbar, so a floor would never engage there. If a future toolbar ever needs a 6th
+button, add one more `:nth-child(6)` block (198px) after the existing ones -- order matters,
+since same-specificity rules cascade by source order and a later, larger-N block must win.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).

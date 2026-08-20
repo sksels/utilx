@@ -432,6 +432,54 @@ div:has(> .output-toolbar) {
   min-width: 0;
   width: auto;
 }
+
+/* CR#8 (backlog #48): a *column* toolbar (the default, un-.inline layout -- see
+   .input-toolbar.inline below) is only ever as tall as its own buttons: N * 30px of button
+   plus (N-1) * 4px of gap. Since the field next to it is centered, not stretched
+   (align-items:center on the row above, not stretch), a field whose own natural height falls
+   short of that -- e.g. the Base64 tool's 8-row input textarea next to its 5-button toolbar,
+   150px + 16px gap = 166px of buttons against a ~158px textarea -- gets vertically centered
+   inside a row taller than itself, so the top and bottom buttons hang a few px past the
+   field's own border instead of reading as contained within it. Rather than hand-tune a
+   min-height per field (fragile -- breaks again the next time a button's added or removed),
+   :has()+:nth-child count the toolbar's actual button children at render time and floor the
+   field to match. Ordered smallest N first so same-specificity cascade lets a larger count
+   override a smaller one for toolbars that clear multiple thresholds at once. Only .input-box
+   (composite panels, e.g. Password Generator's slider+checkboxes) intentionally has no floor
+   here -- those are already far taller than any 2-5 button toolbar could be undersized against,
+   so a min-height would never engage there anyway. */
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > input,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > select,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > input,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > pre {
+  min-height: 64px;
+}
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > input,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > select,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > input,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > pre {
+  min-height: 98px;
+}
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > input,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > select,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > input,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > pre {
+  min-height: 132px;
+}
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > input,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > select,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > input,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > pre {
+  min-height: 166px;
+}
 /* Multi-line fields are tall enough that a column of buttons reads naturally down their
    side (like an editor's icon rail) -- that's the default. Single-line fields (.inline) are
    too short for a column to make sense, so those lay the buttons out in a row instead. */
