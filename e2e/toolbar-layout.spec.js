@@ -261,3 +261,33 @@ test('JSON Formatter -- input-box top border aligns with the output textarea top
       `zeroed, per STYLE_GUIDE.md's CR#8 #48/#53 section.`
   ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
 });
+
+// CR#8 backlog #48/#53, third re-fix: at the site owner's explicit request (after being shown
+// the alternative -- leaving the natural height difference alone), the output box now grows via
+// .split-pane-right-fill/.output-box-fill to match the input side's *total* height (textarea +
+// indent-size picker combined), so its bottom border lines up with .input-secondary's bottom
+// border. This only works because the "Formats automatically..." tip paragraph was moved OUT of
+// .split-pane-left's flow (it used to sit below .input-secondary, inside the pane) -- otherwise
+// .split-pane's align-items:stretch would size both panes to include that paragraph too, and the
+// output box would overshoot past .input-secondary to match the paragraph's bottom instead.
+test('JSON Formatter -- output box bottom border aligns with the indent-size panel bottom border', async ({ page }) => {
+  await page.goto('/tools/json-formatter.html');
+
+  const inputSecondary = page.locator('.input-secondary');
+  const outputBox = page.locator('.output-box-fill');
+  const secondaryBox = await inputSecondary.boundingBox();
+  const outputBoxBox = await outputBox.boundingBox();
+  expect(secondaryBox, '.input-secondary has no bounding box').not.toBeNull();
+  expect(outputBoxBox, '.output-box-fill has no bounding box').not.toBeNull();
+
+  const secondaryBottom = secondaryBox.y + secondaryBox.height;
+  const outputBottom = outputBoxBox.y + outputBoxBox.height;
+
+  expect(
+    Math.abs(secondaryBottom - outputBottom),
+    `.input-secondary bottom=${secondaryBottom}, .output-box-fill bottom=${outputBottom} -- ` +
+      `these should match. Check that the tip paragraph after .split-pane is still outside ` +
+      `.split-pane-left's flow, and that .output-box-fill/.output-target still stretch to fill ` +
+      `.split-pane-right-fill, per STYLE_GUIDE.md's CR#8 #48/#53 section.`
+  ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
+});

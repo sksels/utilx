@@ -102,11 +102,19 @@ const jsonLd = JSON.stringify({
               <option value="tab">Tab</option>
             </select>
           </div>
-          <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
         </div>
         <div class="split-divider" id="mainSplitDivider" role="separator" aria-orientation="vertical" aria-label="Resize input and output panes" aria-valuemin="20" aria-valuemax="80" aria-valuenow="50" tabindex="0"></div>
-        <div class="split-pane-right">
-          <div class="output-box">
+        <!-- CR#8 #48/#53 follow-up: at the site owner's explicit request, the output box now
+             grows to fill the same total height as the input side (textarea + indent-size
+             picker combined), so its bottom border lines up with .input-secondary's bottom
+             border instead of stopping short at the output textarea's own natural rows=12
+             height. Requires the tip paragraph below (moved out from .split-pane-left, see
+             below) to NOT be part of either pane's flow -- otherwise .split-pane's
+             align-items:stretch would size both panes to include that paragraph's height too,
+             and the output box would overshoot past .input-secondary's bottom to match the
+             paragraph's bottom instead. -->
+        <div class="split-pane-right split-pane-right-fill">
+          <div class="output-box output-box-fill">
             <label for="output">Output</label>
             <div class="output-target">
               <textarea id="output" rows="12" readonly></textarea>
@@ -115,6 +123,7 @@ const jsonLd = JSON.stringify({
           </div>
         </div>
       </div>
+      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
 
       <div id="msg"></div>
     </div>

@@ -972,6 +972,29 @@ div:has(> .output-toolbar) {
   outline-offset: 2px;
   border-radius: 2px;
 }
+/* CR#8 #48/#53 follow-up: opt-in classes (not bare .split-pane-right/.output-box rules) so
+   only JSON Formatter's single output box grows to fill its pane -- Regex Tester's
+   .split-pane-right stacks three separate .output-box sections, and stretching the *first* of
+   those to fill the whole pane would badly break that layout. .split-pane-right-fill switches
+   the pane from block to a column flex container so .output-box-fill (flex:1 1 auto) can claim
+   all the vertical space .split-pane's own align-items:stretch already gives the pane -- that
+   stretch was already sizing the pane correctly, .output-box just wasn't growing to fill it.
+   align-items:stretch on .output-target overrides the sitewide align-items:center (see
+   div:has(> .input-toolbar) above) so the textarea itself -- the actual visible bottom border
+   -- stretches with it, not just its row wrapper. */
+.split-pane-right-fill {
+  display: flex;
+  flex-direction: column;
+}
+.output-box-fill {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+.output-box-fill .output-target {
+  flex: 1 1 auto;
+  align-items: stretch;
+}
 @media (max-width: 700px) {
   .split-pane {
     display: block;
