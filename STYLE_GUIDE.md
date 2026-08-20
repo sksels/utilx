@@ -163,6 +163,38 @@ button toolbar, so a floor would never engage there. If a future toolbar ever ne
 button, add one more `:nth-child(6)` block (198px) after the existing ones -- order matters,
 since same-specificity rules cascade by source order and a later, larger-N block must win.
 
+## Compact "how this works" links (CR#8, backlog #52)
+
+Every tool page used to carry a full `<h2>` + 1-2 paragraphs explaining how the tool works
+(JSON Formatter's "How this works", Password Generator's "Why local generation matters").
+User feedback: too large, took up too much space on every page. Replaced with
+`InfoLink.astro` (`src/components/`) — a single line with a small info icon, the full
+explanation moved into a native `title` tooltip (same established hover pattern
+`LocalBadge.astro` already uses), and the label itself becomes a real `<a href="/guides/...">`
+link when the tool has a dedicated guide page:
+
+```astro
+<InfoLink
+  href="/guides/what-is-json.html"
+  summary="One or two sentences -- this becomes the hover tooltip."
+/>
+```
+
+When there's no guide page to link to (Password Generator's local-generation explanation has
+no matching `/guides/` page), omit `href` — it renders as a `<button>` instead of an `<a>`,
+still focusable and still shows the tooltip, just doesn't navigate anywhere.
+
+**Don't use this for reference material users actively consult while working** — Regex
+Tester's "Common flags" table and Cron Builder's example patterns (with "Use" buttons) stay
+fully visible. Those are functional lookup/interactive content, not passive prose explaining
+how the tool works internally, and hiding them behind a hover would hurt usability rather than
+declutter it. The "Related tool" cross-link paragraphs (CR#2 backlog #91) also stay as-is —
+different feature, not what this backlog item was about.
+
+`public/popup-nav.js`'s shared `DEFAULT_HEIGHT` (the fixed popup window size every tool opens
+in) came down from 800 to 740 alongside this — see the comment there for why only a partial
+reduction, not the full amount saved on the two pages that actually shrank.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).

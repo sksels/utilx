@@ -19,7 +19,16 @@
   // One shared default size across all 6 tools (960px content width + margin for
   // header/nav/footer chrome), rather than a per-tool size.
   var DEFAULT_WIDTH = 1040;
-  var DEFAULT_HEIGHT = 800;
+  // CR#8 backlog #52: was 800. JSON Formatter and Password Generator each lost a full <h2> +
+  // 1-2 paragraphs of "how this works" prose (replaced with InfoLink.astro's one-line hover/
+  // link), so this shared height came down too -- otherwise every popup would open with extra
+  // empty space at the bottom now that two of the six tools render shorter. Only reduced by
+  // roughly a third of what those two pages actually saved, not the full amount: the other
+  // four tools' content didn't shrink, and this height is shared across all six, so
+  // overcorrecting would make *those* start needing to scroll instead. scrollbars=yes (below)
+  // remains the safety net either way -- this number is a reasonable estimate, not something
+  // verifiable pixel-for-pixel without a real browser in this environment.
+  var DEFAULT_HEIGHT = 740;
   var WINDOW_NAME = 'utilx-tool';
 
   // Pure: centers a popup of (popupWidth, popupHeight) on a screen of

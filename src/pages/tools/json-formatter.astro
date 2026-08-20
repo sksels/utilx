@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
 import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
+import InfoLink from '../../components/InfoLink.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -131,8 +132,10 @@ const jsonLd = JSON.stringify({
     </div>
 
 
-    <h2>How this works</h2>
-    <p>This tool parses your JSON with the browser's built-in <code>JSON.parse</code> and re-serializes it with <code>JSON.stringify</code>. If your JSON is invalid, it tells you exactly where the parser stopped, so you can fix syntax errors like trailing commas, missing quotes, or unescaped characters quickly. See the <a href="/guides/what-is-json.html">JSON basics guide</a> for common mistakes.</p>
+    <InfoLink
+      href="/guides/what-is-json.html"
+      summary="Parses your JSON with the browser's built-in JSON.parse and re-serializes it with JSON.stringify. If it's invalid, it tells you exactly where the parser stopped."
+    />
     <p>Related tool: decoding a JWT? Its payload is Base64-encoded JSON — decode it with the <a href="/tools/base64-tool.html">Base64 Encoder / Decoder</a>, then format the result here.</p>
   </div>
 </main>

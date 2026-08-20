@@ -1,0 +1,37 @@
+---
+// CR#8 (backlog #52): compact "How this works" affordance. Was a full <h2> + 1-2 paragraphs
+// of prose on every tool page -- user feedback: "it large and occupying lot of space in each
+// tool. ... should be a mouse hover or a link leading to guides." This renders as one small
+// line instead: the full explanation moves into a native `title` tooltip (shown on hover, and
+// on keyboard focus in the browsers that support it -- same established pattern LocalBadge.astro
+// already uses for its own tooltip, so this isn't a new convention), and if the tool has a
+// dedicated /guides/ page, the label itself becomes a real, crawlable, keyboard-operable link
+// to it (satisfying "a link leading to guides" even for users/agents that never hover).
+//
+// When there's no guide page to link to (Password Generator's "why local generation matters"
+// has no matching /guides/ page today), href is omitted and this renders as a <button> instead
+// of an <a> -- still focusable and still shows the tooltip on hover/focus, just doesn't
+// navigate anywhere, since a real "how this works" guide doesn't exist for it yet.
+interface Props {
+  /** visible label. Default matches the most common case across tool pages. */
+  text?: string;
+  /** full explanation, shown as a native tooltip on hover/focus. Keep it to 1-2 sentences --
+      long tooltips truncate awkwardly in some browsers. */
+  summary: string;
+  /** dedicated /guides/ page for this tool, if one exists. */
+  href?: string;
+}
+
+const { text = 'How this works', summary, href } = Astro.props;
+---
+{href ? (
+  <a class="info-link" href={href} title={summary}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 17v-5"/><path d="M12 8v-.01"/></svg>
+    {text}
+  </a>
+) : (
+  <button type="button" class="info-link" title={summary}>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 17v-5"/><path d="M12 8v-.01"/></svg>
+    {text}
+  </button>
+)}

@@ -178,6 +178,31 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
 }
 .local-badge svg { width: 13px; height: 13px; color: var(--success); flex-shrink: 0; }
 
+/* CR#8 backlog #52: InfoLink.astro's compact "How this works" affordance -- one line instead
+   of the <h2>+prose block it replaced. Rendered as either <a> (has a /guides/ page) or
+   <button> (doesn't) depending on whether InfoLink got an href, so this styles both by class
+   rather than tag, and resets the <button> case's inherited button chrome (background/padding/
+   margin-top -- see the base `button` rule) back to look identical to the <a> case. */
+.info-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.info-link:hover,
+.info-link:focus-visible {
+  text-decoration: underline;
+}
+.info-link svg { width: 14px; height: 14px; flex-shrink: 0; }
+
 .theme-toggle {
   background: transparent;
   border: 1px solid var(--border);
