@@ -981,7 +981,16 @@ div:has(> .output-toolbar) {
    stretch was already sizing the pane correctly, .output-box just wasn't growing to fill it.
    align-items:stretch on .output-target overrides the sitewide align-items:center (see
    div:has(> .input-toolbar) above) so the textarea itself -- the actual visible bottom border
-   -- stretches with it, not just its row wrapper. */
+   -- stretches with it, not just its row wrapper.
+   That stretch has a second effect that wasn't caught before shipping: align-items:stretch
+   applies to *every* flex item in .output-target, not just the textarea -- it stretches
+   .output-toolbar's own box to the full (now much taller) height too. .output-toolbar is
+   itself display:flex;flex-direction:column with no justify-content set, so its buttons pack
+   at flex-start (the top) of that taller box by default, which is exactly what read as
+   "buttons pinned to the top line instead of centered." align-self:center below overrides the
+   inherited stretch for just the toolbar, putting it back to the same centered-within-its-row
+   behavior every other toolbar on the site has, while the textarea (no override, still
+   inherits stretch) keeps filling the full height. */
 .split-pane-right-fill {
   display: flex;
   flex-direction: column;
@@ -994,6 +1003,9 @@ div:has(> .output-toolbar) {
 .output-box-fill .output-target {
   flex: 1 1 auto;
   align-items: stretch;
+}
+.output-box-fill .output-target > .output-toolbar {
+  align-self: center;
 }
 @media (max-width: 700px) {
   .split-pane {

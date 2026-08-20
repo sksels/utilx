@@ -291,3 +291,33 @@ test('JSON Formatter -- output box bottom border aligns with the indent-size pan
       `.split-pane-right-fill, per STYLE_GUIDE.md's CR#8 #48/#53 section.`
   ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
 });
+
+// CR#8 backlog #48/#53, fourth re-fix: making .output-target stretch (align-items:stretch, so
+// the output textarea would grow to match the taller output box -- see the test above) had a
+// side effect that shipped unnoticed: align-items:stretch applies to *every* flex item in
+// .output-target, not just the textarea, so it stretched .output-toolbar's own box to the full
+// height too. .output-toolbar is itself a column flex container with no justify-content set, so
+// its buttons packed at flex-start (the top) of that taller box instead of staying centered --
+// exactly what read as "buttons pinned to the top line." align-self:center on the toolbar
+// overrides the inherited stretch for just itself, independent of the textarea's own stretch.
+test('JSON Formatter -- output toolbar stays vertically centered even though the output box now stretches taller', async ({ page }) => {
+  await page.goto('/tools/json-formatter.html');
+
+  const outputTarget = page.locator('.output-box-fill .output-target');
+  const toolbar = page.locator('.output-box-fill .output-toolbar');
+  const targetBox = await outputTarget.boundingBox();
+  const toolbarBox = await toolbar.boundingBox();
+  expect(targetBox, '.output-target has no bounding box').not.toBeNull();
+  expect(toolbarBox, 'output toolbar has no bounding box').not.toBeNull();
+
+  const targetCenterY = targetBox.y + targetBox.height / 2;
+  const toolbarCenterY = toolbarBox.y + toolbarBox.height / 2;
+
+  expect(
+    Math.abs(targetCenterY - toolbarCenterY),
+    `.output-target center y=${targetCenterY}, output toolbar center y=${toolbarCenterY} -- ` +
+      `these should match even though .output-target now stretches to a much taller height ` +
+      `than the toolbar's own ~98px. Check .output-box-fill .output-target > .output-toolbar ` +
+      `still has align-self:center, per STYLE_GUIDE.md's CR#8 #48/#53 section.`
+  ).toBeLessThanOrEqual(CENTER_TOLERANCE_PX);
+});
