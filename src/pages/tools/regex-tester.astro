@@ -41,6 +41,7 @@ const jsonLd = JSON.stringify({
 <script is:inline src="/output-toolbar.js"></script>
 <script is:inline src="/local-state.js"></script>
 <script is:inline src="/debounce.js"></script>
+<script is:inline src="/field-flash.js"></script>
 </Fragment>
 
 <main>
@@ -155,6 +156,12 @@ function explainPattern() {
   } catch (e) {
     out.textContent = 'Could not parse: ' + e.message;
     box.style.display = 'block';
+    // CR#7 (Live Interaction, backlog #40): border-flash only, no cursor jump. Unlike
+    // JSON.parse (json-formatter.astro), RegExp constructor error messages don't reliably
+    // expose a usable character position across engines -- there's no consistent "position N"
+    // or "line L column C" to extract, so this is scoped to "point at the field," not
+    // "point at the exact character" the way JSON Formatter does.
+    FieldFlashLib.flashError(document.getElementById('pattern'));
   }
 }
 
@@ -188,6 +195,7 @@ function applyRegexResult(data) {
     msg.innerHTML = '<div class="error-msg">Invalid pattern: ' + escapeHtml(data.message) + '</div>';
     highlighted.innerHTML = '';
     matchesBox.value = '';
+    FieldFlashLib.flashError(document.getElementById('pattern'));
     return;
   }
   highlighted.innerHTML = data.html || '<span style="color:var(--text-dim)">No matches</span>';
@@ -280,6 +288,7 @@ function runRegex() {
     msg.innerHTML = '<div class="error-msg">' + escapeHtml(flagsError) + '</div>';
     highlighted.innerHTML = '';
     matchesBox.value = '';
+    FieldFlashLib.flashError(document.getElementById('flags'));
     return;
   }
 

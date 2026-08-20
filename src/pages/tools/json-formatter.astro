@@ -40,6 +40,8 @@ const jsonLd = JSON.stringify({
 <script is:inline src="/output-toolbar.js"></script>
 <script is:inline src="/local-state.js"></script>
 <script is:inline src="/debounce.js"></script>
+<script is:inline src="/error-location.js"></script>
+<script is:inline src="/field-flash.js"></script>
 </Fragment>
 
 <main>
@@ -141,9 +143,30 @@ function getIndent() {
 // link. Always escape before inserting into innerHTML, never trust "just an error message."
 const escapeHtml = HtmlEscapeLib.escapeHtml;
 
+// CR#7 (Live Interaction, backlog #40): inline error-location mapping -- besides showing
+// JSON.parse's message text, points at exactly where the problem is: flashes the field's
+// border (public/error-location.js + style.css) and, when safe, moves the cursor/selection
+// there (public/field-flash.js). "When safe" matters: jumping the selection while the field
+// is the one currently focused would select one character right where the user's very next
+// keystroke lands, silently overwriting it mid-typing -- so the cursor jump only fires once
+// the field has lost focus (e.g. after a button click), never during live auto-format typing.
+// The border flash alone still fires either way, so there's always some signal.
+function jsonErrorText(e, fieldEl) {
+  let text = escapeHtml(e.message);
+  const loc = ErrorLocationLib.locateJsonError(e.message, fieldEl.value);
+  if (loc) {
+    text += ' (line ' + loc.line + ', column ' + loc.column + ')';
+    FieldFlashLib.flashError(fieldEl);
+    if (document.activeElement !== fieldEl) {
+      FieldFlashLib.jumpToPosition(fieldEl, loc.index);
+    }
+  }
+  return text;
+}
+
 function showError(e) {
   const msg = document.getElementById('msg');
-  msg.innerHTML = '<div class="error-msg">Invalid JSON: ' + escapeHtml(e.message) + '</div>';
+  msg.innerHTML = '<div class="error-msg">Invalid JSON: ' + jsonErrorText(e, document.getElementById('input')) + '</div>';
 }
 
 function showSuccess(text) {
@@ -277,14 +300,14 @@ function compareJson() {
   try {
     a = JSON.parse(document.getElementById('diffA').value);
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">JSON A is invalid: ' + escapeHtml(e.message) + '</div>';
+    msg.innerHTML = '<div class="error-msg">JSON A is invalid: ' + jsonErrorText(e, document.getElementById('diffA')) + '</div>';
     box.style.display = 'none';
     return;
   }
   try {
     b = JSON.parse(document.getElementById('diffB').value);
   } catch (e) {
-    msg.innerHTML = '<div class="error-msg">JSON B is invalid: ' + escapeHtml(e.message) + '</div>';
+    msg.innerHTML = '<div class="error-msg">JSON B is invalid: ' + jsonErrorText(e, document.getElementById('diffB')) + '</div>';
     box.style.display = 'none';
     return;
   }

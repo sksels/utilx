@@ -39,6 +39,7 @@ const jsonLd = JSON.stringify({
 <script is:inline src="/output-toolbar.js"></script>
 <script is:inline src="/local-state.js"></script>
 <script is:inline src="/debounce.js"></script>
+<script is:inline src="/field-flash.js"></script>
 </Fragment>
 
 <main>
@@ -158,6 +159,26 @@ function loadExample(expr) {
   document.getElementById('decodeInput').scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
+// CR#7 (Live Interaction, backlog #40): border-flash only (no character-position mapping --
+// these are discrete dropdown/text fields, not a multi-line document with a meaningful
+// "character offset"). CronLib.validateBuildFields returns plain-English messages, not
+// field identifiers, so this matches each message's known, fixed prefix back to the field
+// it's about rather than duplicating validateCronField's own range/abbreviation logic here.
+const BUILD_FIELD_ERROR_PREFIXES = [
+  ['Minute', 'minute'],
+  ['Hour', 'hour'],
+  ['Day of month', 'dom'],
+  ['Month', 'month'],
+  ['Day of week', 'dow'],
+];
+
+function flashInvalidBuildFields(errors) {
+  errors.forEach((msg) => {
+    const match = BUILD_FIELD_ERROR_PREFIXES.find(([prefix]) => msg.startsWith(prefix));
+    if (match) FieldFlashLib.flashError(document.getElementById(match[1]));
+  });
+}
+
 function buildCron() {
   const m = document.getElementById('minute').value.trim() || '*';
   const h = document.getElementById('hour').value.trim() || '*';
@@ -171,6 +192,7 @@ function buildCron() {
     buildMsg.innerHTML = '<div class="error-msg">' + errors.join('<br>') + '</div>';
     document.getElementById('built').value = '';
     document.getElementById('k8sYaml').value = '';
+    flashInvalidBuildFields(errors);
     return;
   }
 
@@ -219,12 +241,14 @@ function decodeCron() {
       : '';
     msg.innerHTML = '<div class="success-msg">Parsed as standard cron (Linux / Kubernetes CronJob syntax).</div>' + warning;
     out.value = CronLib.explainStandardCron(parts);
+    if (fieldErrors.length) FieldFlashLib.flashError(document.getElementById('decodeInput'));
   } else if (parts.length === 6 || parts.length === 7) {
     msg.innerHTML = '<div class="success-msg">Parsed as Quartz cron (' + parts.length + ' fields, Java/Spring syntax).</div>';
     out.value = CronLib.explainQuartzCron(parts);
   } else {
     msg.innerHTML = '<div class="error-msg">Expected 5 fields (standard cron / Kubernetes CronJob: minute hour day-of-month month day-of-week), or 6-7 fields (Quartz: seconds minute hour day-of-month month day-of-week [year]).</div>';
     out.value = '';
+    FieldFlashLib.flashError(document.getElementById('decodeInput'));
   }
 }
 

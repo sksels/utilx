@@ -613,6 +613,24 @@ div:has(> .output-toolbar) {
   margin-top: 8px;
   animation: fadeInUp .25s var(--ease);
 }
+
+/* CR#7 (Live Interaction, backlog #40): inline error-location mapping -- briefly flashes a
+   field's border when a live auto-process run finds a syntax error, so the eye is drawn to
+   *which* field has the problem (see public/field-flash.js for the JS side, which also
+   jumps the text cursor to the exact character offset via setSelectionRange). Reuses
+   --danger rather than introducing a separate "amber" token: the field's error text right
+   below it is already --danger-colored, and a red border + red text reads as one consistent
+   signal, where red-text-plus-amber-border would read as two different, competing signals
+   for the same single problem. --danger already clears WCAG 1.4.11's 3:1 non-text contrast
+   minimum in both themes (it was tuned to clear the stricter 4.5:1 *text* minimum for
+   .error-msg), so no separate contrast check was needed for this border-only use. */
+.field-error-flash {
+  animation: fieldErrorFlash 1s ease-out;
+}
+@keyframes fieldErrorFlash {
+  0% { border-color: var(--danger); }
+  100% { border-color: var(--border); }
+}
 .success-msg {
   color: var(--success);
   font-size: 0.85rem;
