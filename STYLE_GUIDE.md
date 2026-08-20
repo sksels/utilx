@@ -213,6 +213,32 @@ different feature, not what this backlog item was about.
 in) came down from 800 to 740 alongside this — see the comment there for why only a partial
 reduction, not the full amount saved on the two pages that actually shrank.
 
+## Searchable dropdowns: native `<input list>` + `<datalist>` (CR#8, backlog #54)
+
+Color Converter's Name field ("developers can play around by choosing rather than typing")
+needed a dropdown with type-to-filter search. Built with a plain `<input list="...">` paired
+with a `<datalist>`, not a custom combobox widget — every browser already gives free
+type-to-filter behavior for this pattern, with zero custom ARIA required. Reach for this first
+for any future "pick from a list, but let me search/type too" need (the CR#8 backlog #35
+command palette is a different, bigger case — a global Cmd/Ctrl+K launcher, not a per-field
+picker — so it doesn't reuse this directly, but the same "native first" instinct applies
+before reaching for a custom widget).
+
+`src/pages/tools/color-converter.astro` populates the `<datalist>` at runtime from
+`NamedColorsLib.allNames()` (`public/tools/lib/named-colors.js`) rather than hand-writing
+option tags in the template — 148 CSS/SVG extended color keywords don't belong hardcoded in
+markup. `NamedColorsLib.nameToHex`/`hexToName` plug into the page's existing `updateFrom(source)`
+dispatch the same way hex/rgb/hsl already do: typing a recognized name converts and syncs the
+other three fields; editing hex/rgb/hsl auto-fills the Name field when the result happens to be
+an exact named color, and clears it otherwise (not every color has a name). Same
+"don't overwrite the field currently being typed into" rule the other three fields already
+follow.
+
+New library files added to a tool page's `head-extra` must also be added to
+`public/service-worker.js`'s `PRECACHE_URLS` — missed once already in CR#7 (caught before
+shipping, not after), and it's an easy thing to forget since the page works fine locally
+either way; it only breaks offline/installed-PWA sessions.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).
