@@ -772,13 +772,20 @@ div:has(> .output-toolbar) {
 }
 /* This select only ever holds a couple of short options ("2 spaces", "Tab") -- the global
    select{width:100%} rule was stretching it across the entire panel width, several times
-   wider than its own text needs. 140px (CR#7) was a first pass at fixing that but was still
-   noticeably wider than the longest option ("4 spaces") needs -- CR#8 backlog #48 tightened
-   the shared field/toolbar min-height, and #49 tightens this select's own width the same way:
-   96px comfortably fits "4 spaces" plus the select's own padding and native dropdown arrow
-   (measured against the global textarea/input/select padding of 10px 12px) without the arrow
-   crowding the text the way an even tighter value would. */
+   wider than its own text needs. Both the CR#7 140px attempt and the CR#8 #49 96px attempt
+   below set width:auto + min-width, but neither one actually took effect: .input-box select
+   (above) sets display:block, and a *block-level* box with width:auto fills its containing
+   block's width -- that's what width:auto means for a block box, not "shrink to content".
+   min-width only clamps a computed width that would otherwise be smaller; here the computed
+   width was always "the full panel," so min-width never engaged and the select rendered at
+   full width both times, unnoticed until the site owner caught it visually post-deploy (no
+   automated test asserts select width). display:inline-block is what actually makes
+   width:auto shrink-to-fit based on content -- min-width:96px then genuinely acts as the
+   floor it was always meant to be, comfortably fitting "4 spaces" plus the select's own
+   padding and native dropdown arrow (measured against the global textarea/input/select
+   padding of 10px 12px) without the arrow crowding the text. */
 .input-box .input-secondary select {
+  display: inline-block;
   width: auto;
   min-width: 96px;
 }
@@ -828,28 +835,47 @@ div:has(> .output-toolbar) {
   align-items: stretch;
   gap: 0;
 }
+/* CR#8 backlog #53, re-fixed: the original version of this fix (kept here in spirit, not
+   literally -- see git history for the superseded attempt) tried to make both panes line up by
+   relying on margin *collapsing* between each pane and its first child. That reasoning turned
+   out to be wrong for JSON Formatter/Regex Tester specifically: their left pane's first child
+   is .field-header (a flex container, for the CR#6 "recent inputs" dropdown), and a flex
+   container does not let its own child's margin collapse through it the way a bare element
+   does -- so .field-header's *own* (unset, i.e. 0) margin-top was winning, not the <label>'s
+   14px inside it. Base64 Tool's left pane (bare <label>, no .field-header) rendered fine; JSON
+   Formatter and Regex Tester didn't -- confirmed live after the CR#8 facelift finally deployed
+   (a separate, earlier build-breaking bug had been silently blocking every deploy since #57 and
+   masking this until the real fix went out).
+   Rather than re-deriving which of the two DOM shapes (bare <label> vs .field-header wrapper)
+   collapses which way -- exactly the fragile reasoning that produced the wrong fix the first
+   time -- this uses padding instead of margin collapsing, which has no such ambiguity: padding
+   always creates real, uncollapsible space, full stop, regardless of what's inside it or
+   whether that content is a flex container. padding-top:14px on both panes is the single source
+   of the offset (matching the sitewide label { margin-top: 14px } value everything else already
+   uses); every possible first-child shape then has its OWN margin-top zeroed out so it can't
+   add anything on top of that padding. This covers all three shapes actually in use: a bare
+   <label> (Base64 Tool), a .field-header wrapper (JSON Formatter, Regex Tester), and
+   .output-box's own child <label> (which still collapses with .output-box in the normal way,
+   since .output-box itself isn't a flex container -- so it needs zeroing too, or it'd add its
+   14px on top of the pane's 14px padding). */
 .split-pane-left,
 .split-pane-right {
   min-width: 0;
+  padding-top: 14px;
 }
-/* CR#8 backlog #53: user feedback the output side "is not well spaced... vertically", tracked
-   down to the two panes starting at different offsets from the top of .split-pane. The left
-   pane's first element is always a <label> (bare, or inside .field-header) -- its own
-   margin-top:14px is what actually sets that visible offset, since a flex item establishes a
-   new block-formatting context for its own children (their margins don't collapse through the
-   flex item's box edge, but they also don't add on top of a zero-margin flex item itself). The
-   right pane's first element is .output-box, whose global 16px margin-top DOES collapse with
-   its own first child <label>'s 14px (no border/padding on .output-box to block that) --
-   giving max(16,14) = 16px, 2px more than the left pane's 14px. Overriding to 6px here still
-   collapses the same way, but to max(6,14) = 14px -- matching the left pane exactly, without
-   touching .output-box's own rule (which stays 16px for its normal standalone use elsewhere --
-   Password Generator, Cron Builder, etc.). Scoped to just the *first* .output-box in the pane
-   (:first-child, not a bare > .output-box) since Regex Tester's split-pane-right stacks three
-   separate .output-box sections (highlighted matches / match details / plain-English
-   breakdown) that still want their normal 16px separation from each other for visual grouping
-   -- only the first one's offset from the pane's own top needed to change. */
+.split-pane-left > *:first-child {
+  margin-top: 0;
+}
+/* Scoped to just the *first* .output-box in the pane (:first-child, not a bare > .output-box)
+   since Regex Tester's split-pane-right stacks three separate .output-box sections (highlighted
+   matches / match details / plain-English breakdown) that still want their normal 16px
+   separation from each other for visual grouping -- only the first one's offset from the pane's
+   own top (now owned by padding-top above) needed to change. */
 .split-pane-right > .output-box:first-child {
-  margin-top: 6px;
+  margin-top: 0;
+}
+.split-pane-right > .output-box:first-child > label:first-child {
+  margin-top: 0;
 }
 /* CR#8 backlog #53: "the vertical splitter needs to be thicker" -- visible bar 2px -> 4px.
    Widened the hit-target box to match (14px -> 16px) and its negative margin to match (-4px ->
