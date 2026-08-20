@@ -68,10 +68,10 @@ const jsonLd = JSON.stringify({
           <label for="testtext">Test string</label>
           <div class="input-target">
             <textarea id="testtext" rows="8" placeholder="Paste sample text here to test your pattern against it."></textarea>
+            <!-- CR#8 backlog #50: "Test Regex" removed -- pattern/flags/testtext already
+                 auto-test on every keystroke (see autoTest below) and Ctrl+Enter tests
+                 immediately, so the click added nothing either path didn't already do. -->
             <InputToolbar>
-              <button class="toolbar-btn" onclick="runRegex()" title="Test Regex">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
-              </button>
               <button class="toolbar-btn" onclick="explainPattern()" title="Explain pattern">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 17v-.5"/><path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 4"/></svg>
               </button>

@@ -74,10 +74,10 @@ const jsonLd = JSON.stringify({
       <label for="dow">Day of week (0-6, Sun=0, * for every)</label>
       <div class="input-target">
         <input type="text" id="dow" value="*">
+        <!-- CR#8 backlog #50: "Build Expression" removed -- the five build fields already
+             auto-build on every keystroke (see autoBuild below) and Ctrl+Enter builds
+             immediately, so the click added nothing either path didn't already do. -->
         <InputToolbar inline>
-          <button class="toolbar-btn" onclick="buildCron()" title="Build Expression">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
-          </button>
           <button class="toolbar-btn" onclick="clearBuild()" title="Clear">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
@@ -108,10 +108,10 @@ const jsonLd = JSON.stringify({
       </div>
       <div class="input-target">
         <input type="text" id="decodeInput" placeholder="0 9 * * 1-5">
+        <!-- CR#8 backlog #50: "Decode" removed -- #decodeInput already auto-decodes on every
+             keystroke (see autoDecode below) and Ctrl+Enter decodes immediately, so the click
+             added nothing either path didn't already do. -->
         <InputToolbar inline>
-          <button class="toolbar-btn" onclick="decodeCron()" title="Decode">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
-          </button>
           <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </button>
