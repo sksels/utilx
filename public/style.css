@@ -782,12 +782,20 @@ div:has(> .output-toolbar) {
    automated test asserts select width). display:inline-block is what actually makes
    width:auto shrink-to-fit based on content -- min-width:96px then genuinely acts as the
    floor it was always meant to be, comfortably fitting "4 spaces" plus the select's own
-   padding and native dropdown arrow (measured against the global textarea/input/select
-   padding of 10px 12px) without the arrow crowding the text. */
+   padding and native dropdown arrow.
+   Separately (confirmed via live DevTools inspection, not just reasoning this time -- the
+   width fix above genuinely was applying correctly): the select was still inheriting the
+   generic textarea/input/select rule's padding:10px 12px, sized for a full textarea or a
+   prominent text input. On a short one-line dropdown inside this already-compact secondary
+   panel, that reads as a visibly oversized box with too much empty space above and below
+   "2 spaces" -- both the label-to-select gap and the select-to-panel-border gap looked
+   bloated because the select's own box was taller than it needed to be. Tightened to match
+   .recent-select's already-compact padding (4px 8px) rather than inventing a third scale. */
 .input-box .input-secondary select {
   display: inline-block;
   width: auto;
   min-width: 96px;
+  padding: 4px 8px;
 }
 
 /* Persistent local state (CR#6): a compact "recent inputs" dropdown sitting inline with a
