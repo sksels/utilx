@@ -21,7 +21,7 @@ interface Props {
   /** Tool pages only -- e.g. 'json-formatter', 'color-converter'. Sets data-tool-id on <html>,
       which style.css's :root.popup-mode[data-tool-id="..."] rules use to border the popup
       window in that tool's own icon color (CR#8 backlog #57). Must exactly match the
-      corresponding chip-*/--tool-accent-* suffix in style.css. */
+      corresponding chip-* and --tool-accent-* suffix in style.css. */
   toolId?: string;
   /** Loads theme.js as the first head element. Default true; admin dashboard sets false. */
   includeThemeJs?: boolean;
