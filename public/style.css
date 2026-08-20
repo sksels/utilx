@@ -18,6 +18,15 @@
   --text-on-accent: #0a0c12;
   --success: #4ade80;
   --danger: #ff6b6b;
+  /* CR#8 backlog #51: toolbar-btn's own accent, kept separate from --accent so links/focus
+     rings/headings etc. stay blue (item #59 tackles the site's overall black-and-blue look
+     separately) -- this only recolors the action-button rail. Aliased to --success rather
+     than a new hex pair so it inherits that token's already WCAG-AA-checked light/dark
+     values automatically (see the light-theme block below for why those four tokens have
+     the values they do). --toolbar-accent-hover has no existing token to alias -- picked and
+     contrast-checked fresh, see the light-theme block. */
+  --toolbar-accent: var(--success);
+  --toolbar-accent-hover: #86efac;
   --radius: 10px;
   --radius-lg: 14px;
   --max-width: 960px;
@@ -45,6 +54,10 @@
   --accent-soft: rgba(47, 91, 196, 0.08);
   --success: #15803d;
   --danger: #b91c1c;
+  /* CR#8 backlog #51: hover tone for --toolbar-accent, mirroring how --accent-hover goes
+     *darker* than --accent in this theme (the reverse of dark theme's lighter hover) --
+     text=#ffffff (--text-on-accent below) against this is 9.11:1, well past WCAG AA's 4.5:1. */
+  --toolbar-accent-hover: #14532d;
   /* --text-on-accent is text painted directly on a solid --accent background (button text,
      toolbar-btn labels like the UUID generator's "10x"/"100x"). The dark theme's default
      (#0a0c12, near-black) works there because dark theme's --accent (#5b8cff) is light
@@ -539,8 +552,12 @@ div:has(> .output-toolbar) {
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  border: 1px solid var(--accent);
-  background: var(--accent);
+  /* CR#8 backlog #51: was var(--accent) (blue) -- the user flagged every screen reading as
+     "full black and blue". --toolbar-accent is green (aliased to --success, see :root above)
+     and scoped to just this action-button rail; links/focus rings/headings etc. keep --accent
+     unchanged, and item #59 addresses the overall black background separately. */
+  border: 1px solid var(--toolbar-accent);
+  background: var(--toolbar-accent);
   color: var(--text-on-accent);
   cursor: pointer;
   transition: background .15s ease, border-color .15s ease;
@@ -548,8 +565,8 @@ div:has(> .output-toolbar) {
 
 .output-toolbar .toolbar-btn:hover,
 .input-toolbar .toolbar-btn:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--toolbar-accent-hover);
+  border-color: var(--toolbar-accent-hover);
   box-shadow: none;
 }
 
@@ -559,10 +576,16 @@ div:has(> .output-toolbar) {
   height: 16px;
 }
 
+/* CR#8 backlog #51: .copied used to flash --success (green) as a moment of contrast against
+   the toolbar's resting blue -- now that the resting state IS green (--toolbar-accent, above),
+   flashing the same green would give zero visible feedback on a successful copy. Swapped to
+   --accent (the original resting blue) so the flash is still a clearly different color from
+   the button's normal state -- same contrast-checked pairing this toolbar already used for
+   years before #51, just with the two colors' roles reversed. */
 .output-toolbar .toolbar-btn.copied,
 .input-toolbar .toolbar-btn.copied {
-  background: var(--success);
-  border-color: var(--success);
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--text-on-accent);
 }
 

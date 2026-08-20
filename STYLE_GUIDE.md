@@ -13,13 +13,15 @@ All colors, spacing, and shadows are CSS custom properties defined once in `publ
 | `--border` | `#262b3a` | `#e1e4ec` | Default border color |
 | `--text` | `#e6e8ef` | `#1a1d29` | Primary text |
 | `--text-dim` | `#9aa1b4` | `#5b6072` | Secondary/muted text |
-| `--accent` | `#5b8cff` | `#3b6fe0` | Links, primary buttons, focus states |
-| `--accent-hover` | `#7ba0ff` | `#2f5bc4` | Hover state for accent elements |
-| `--accent-soft` | `rgba(91,140,255,.1)` | `rgba(59,111,224,.08)` | Subtle accent backgrounds (gradients, highlights) |
+| `--accent` | `#5b8cff` | `#2f5bc4` | Links, primary buttons, focus states, toolbar-btn's "copied" flash (CR#8 #51) |
+| `--accent-hover` | `#7ba0ff` | `#24479c` | Hover state for accent elements |
+| `--accent-soft` | `rgba(91,140,255,.1)` | `rgba(47,91,196,.08)` | Subtle accent backgrounds (gradients, highlights) |
+| `--toolbar-accent` | `var(--success)` | `var(--success)` | toolbar-btn's resting background/border (CR#8 backlog #51 -- green, kept separate from `--accent` so links/focus rings/headings stay blue) |
+| `--toolbar-accent-hover` | `#86efac` | `#14532d` | Hover state for toolbar-btn (CR#8 #51) |
 | `--code-bg` | `#0a0c12` | `#eef0f6` | Code/output block backgrounds |
-| `--text-on-accent` | `#0a0c12` (theme-invariant) | | Button/toolbar-btn text color on an accent-colored background |
-| `--success` | `#4ade80` (theme-invariant) | | Success messages, "copied" flash, click-flash border |
-| `--danger` | `#ff6b6b` (theme-invariant) | | Error messages |
+| `--text-on-accent` | `#0a0c12` | `#ffffff` | Button/toolbar-btn text color on an accent-colored background |
+| `--success` | `#4ade80` | `#15803d` | Success messages, click-flash border, `--toolbar-accent`'s value |
+| `--danger` | `#ff6b6b` | `#b91c1c` | Error messages |
 | `--radius` / `--radius-lg` | `10px` / `14px` | | Border radius (cards vs. larger tiles) |
 | `--shadow-sm` / `--shadow-md` / `--shadow-glow` | theme-varying | | Elevation |
 | `--ease` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | | Standard transition easing |
@@ -54,7 +56,8 @@ Every field that has action buttons (Generate, Format, Copy, Clear, etc.) follow
 
 - One accent color for every `.toolbar-btn`, always — no primary/secondary visual split. This was deliberate: once buttons stopped sharing a bordered box, mixed button styling read as arbitrary rather than meaningful. If a button needs emphasis, that's a UX/copy problem, not a color problem.
 - `.toolbar-btn` is 30×30px, icon-only, `border-radius: 6px`.
-- `.toolbar-btn.copied` (post-copy flash) swaps to `--success` briefly via `output-toolbar.js`, then reverts.
+- `.toolbar-btn`'s resting color is `--toolbar-accent` (green, CR#8 backlog #51) — not `--accent` (blue). `--accent` is still used for links, focus states, and primary `<button>`s; this split keeps those blue while toolbar action buttons read as a distinct, green-accented rail. Don't reintroduce `var(--accent)` on `.toolbar-btn` without also reconsidering `.toolbar-btn.copied` below, since the two rely on being different colors from each other.
+- `.toolbar-btn.copied` (post-copy flash) swaps to `--accent` briefly via `output-toolbar.js`, then reverts — deliberately the *other* color from `.toolbar-btn`'s resting `--toolbar-accent`, so the flash is visibly a state change rather than blending into the button's normal look.
 
 ## Field/output structure
 
