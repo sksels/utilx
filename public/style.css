@@ -607,6 +607,71 @@ div:has(> .output-toolbar) {
   .two-col { grid-template-columns: 1fr; }
 }
 
+/* CR#7 (Live Interaction, backlog #36): resizable side-by-side input/output split panes.
+   Desktop-only (see the 700px fallback below, matching .two-col's existing breakpoint --
+   this site has exactly one narrow-viewport cutoff, reused here rather than inventing a
+   second one). flex-basis on the two panes is set inline by public/split-pane.js (the
+   user's chosen/restored split ratio); this stylesheet only owns the divider's look and the
+   narrow-viewport fallback back to stacked. */
+.split-pane {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+}
+.split-pane-left,
+.split-pane-right {
+  min-width: 0;
+}
+/* A generous 14px hit target for a precise 2px visible line -- narrower would make the
+   divider hard to grab, especially on touch, without needing to look wide itself. */
+.split-divider {
+  flex: 0 0 auto;
+  width: 14px;
+  margin: 0 -4px;
+  position: relative;
+  cursor: col-resize;
+  background: transparent;
+  border: none;
+  z-index: 1;
+}
+.split-divider::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  border-radius: 1px;
+  background: var(--border);
+  transition: background .15s ease;
+}
+.split-divider:hover::after,
+.split-divider:focus-visible::after,
+.split-divider.dragging::after {
+  background: var(--accent);
+}
+.split-divider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+@media (max-width: 700px) {
+  .split-pane {
+    display: block;
+  }
+  /* The ratio is still saved for next time on a wide viewport, but a phone-width screen
+     shouldn't render two independently-narrow, barely-usable columns -- override the
+     JS-set inline flex-basis back to a normal stacked block layout. */
+  .split-pane-left,
+  .split-pane-right {
+    flex-basis: auto !important;
+  }
+  .split-divider {
+    display: none;
+  }
+}
+
 .error-msg {
   color: var(--danger);
   font-size: 0.85rem;

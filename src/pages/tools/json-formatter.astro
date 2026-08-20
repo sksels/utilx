@@ -42,6 +42,7 @@ const jsonLd = JSON.stringify({
 <script is:inline src="/debounce.js"></script>
 <script is:inline src="/error-location.js"></script>
 <script is:inline src="/field-flash.js"></script>
+<script is:inline src="/split-pane.js"></script>
 </Fragment>
 
 <main>
@@ -52,51 +53,57 @@ const jsonLd = JSON.stringify({
     <div><LocalBadge /></div>
 
     <div class="card">
-      <div class="field-header">
-        <label for="input">Input JSON</label>
-        <select id="inputRecent" class="recent-select" title="Load a recent input" disabled></select>
-      </div>
-      <div class="input-box-row">
-        <div class="input-box">
-          <div class="input-target">
-            <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
+      <div class="split-pane" id="mainSplitPane">
+        <div class="split-pane-left">
+          <div class="field-header">
+            <label for="input">Input JSON</label>
+            <select id="inputRecent" class="recent-select" title="Load a recent input" disabled></select>
           </div>
+          <div class="input-box-row">
+            <div class="input-box">
+              <div class="input-target">
+                <textarea id="input" rows="10" placeholder='{"name":"Ada","active":true,"tags":["math","cs"]}'></textarea>
+              </div>
 
-          <div class="input-secondary">
-            <label for="indent">Indent size</label>
-            <select id="indent">
-              <option value="2">2 spaces</option>
-              <option value="4">4 spaces</option>
-              <option value="tab">Tab</option>
-            </select>
+              <div class="input-secondary">
+                <label for="indent">Indent size</label>
+                <select id="indent">
+                  <option value="2">2 spaces</option>
+                  <option value="4">4 spaces</option>
+                  <option value="tab">Tab</option>
+                </select>
+              </div>
+            </div>
+            <InputToolbar>
+              <button class="toolbar-btn" onclick="formatJson()" title="Format / Beautify">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="minifyJson()" title="Minify">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+              </button>
+              <button class="toolbar-btn" onclick="clearAll()" title="Clear">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </InputToolbar>
+          </div>
+          <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
+        </div>
+        <div class="split-divider" id="mainSplitDivider" role="separator" aria-orientation="vertical" aria-label="Resize input and output panes" tabindex="0"></div>
+        <div class="split-pane-right">
+          <div class="output-box">
+            <label for="output">Output</label>
+            <div class="output-target">
+              <textarea id="output" rows="12" readonly></textarea>
+              <OutputToolbar targetId="output" download={true} downloadFilename="formatted.json" />
+            </div>
           </div>
         </div>
-        <InputToolbar>
-          <button class="toolbar-btn" onclick="formatJson()" title="Format / Beautify">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="minifyJson()" title="Minify">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-          </button>
-          <button class="toolbar-btn" onclick="clearAll()" title="Clear">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
-          </button>
-        </InputToolbar>
       </div>
-      <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Formats automatically as you type. Tip: press Ctrl+Enter (Cmd+Enter on Mac) to format immediately.</p>
 
       <div id="msg"></div>
-
-      <div class="output-box">
-        <label for="output">Output</label>
-        <div class="output-target">
-          <textarea id="output" rows="12" readonly></textarea>
-          <OutputToolbar targetId="output" download={true} downloadFilename="formatted.json" />
-        </div>
-      </div>
     </div>
 
     <div class="card">
@@ -239,6 +246,16 @@ document.addEventListener('keydown', (e) => {
 });
 
 OutputToolbarLib.init();
+
+// CR#7 (Live Interaction, backlog #36): resizable input/output split panes (desktop only --
+// see style.css's 700px fallback). Ratio persists across visits under its own local-state key.
+SplitPaneLib.init(
+  document.getElementById('mainSplitPane'),
+  document.querySelector('#mainSplitPane .split-pane-left'),
+  document.querySelector('#mainSplitPane .split-pane-right'),
+  document.getElementById('mainSplitDivider'),
+  'utilx-json-formatter-split-ratio'
+);
 
 // CR#7 (Live Interaction, backlog #31): no-click auto-processing -- format as the user
 // types instead of requiring an explicit click/shortcut. Debounced (see public/debounce.js)

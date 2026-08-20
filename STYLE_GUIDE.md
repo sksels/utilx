@@ -96,6 +96,31 @@ this test, not by default:
 - Debounce every `input`-event auto-run (typing is a burst of events); never debounce a
   `change`-event auto-run (already one discrete event per user action).
 
+## Resizable input/output split panes (CR#7, backlog #36)
+
+Tools whose primary interaction is one large input textarea paired with one large output
+area (JSON Formatter, Regex Tester, Base64 Tool) lay them out side-by-side on desktop widths
+via a shared `.split-pane` / `.split-pane-left` / `.split-divider` / `.split-pane-right`
+structure, with a draggable divider between them (`public/split-pane.js`, wired with
+`SplitPaneLib.init(container, leftEl, rightEl, dividerEl, storageKey)`). Falls back to the
+normal stacked layout at the same 700px breakpoint `.two-col` already uses (see style.css) --
+two independently-narrow columns aren't useful on a phone screen. The chosen split ratio
+persists per-tool via `public/local-state.js`.
+
+Not every tool gets this treatment -- only apply it where there's a genuine one-big-input,
+one-big-output pairing to resize:
+- Cron Builder's Build/Decode sections use short single-line fields, not a large-textarea
+  input/output pair -- no natural split to make.
+- Password/UUID Generator has no "input" in this sense (it only ever generates).
+- Color Converter's fields are all short too.
+- JSON Formatter's Compare (diffA/diffB) section already lays its two inputs side-by-side via
+  the existing `.two-col` grid -- that's a distinct, already-solved "side-by-side" case
+  (two inputs, not resizable), left as-is rather than folded into `.split-pane`.
+
+When a tool does qualify, `msg`/status divs move to sit *below* the whole `.split-pane` (full
+width) rather than between the input and output, since with the two panes side-by-side there
+is no longer a single "between input and output" position for them.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).
