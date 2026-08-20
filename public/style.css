@@ -27,6 +27,22 @@
      contrast-checked fresh, see the light-theme block. */
   --toolbar-accent: var(--success);
   --toolbar-accent-hover: #86efac;
+  /* CR#8 backlog #57/#58: one representative solid color per tool, theme-invariant like the
+     .chip-* gradients themselves (see the "Visual anchor tabs" comment further down --
+     colors are fixed per tool, not per theme, so they stay a stable visual anchor). Each
+     value is the darker/more saturated stop already used in that tool's .chip-* gradient
+     (picked for color-converter's 3-stop gradient: the first stop, pink, since its other two
+     stops collide with regex's purple and the site's own --accent blue). Reused in two
+     places instead of two independent hardcoded hex pairs: the .chip-* gradient's end stop
+     (unchanged visually -- same value as before, now named) and the popup-window border
+     (backlog #57, "the popup border color should be the same as the icon color" -- see the
+     :root.popup-mode[data-tool-id] rules near the bottom of this file). */
+  --tool-accent-json: #f59e0b;
+  --tool-accent-regex: #a855f7;
+  --tool-accent-cron: #06b6d4;
+  --tool-accent-password: #ef4444;
+  --tool-accent-base64: #10b981;
+  --tool-accent-color: #f472b6;
   --radius: 10px;
   --radius-lg: 14px;
   --max-width: 960px;
@@ -84,6 +100,26 @@
 :root[data-theme="light"].popup-mode {
   --bg: #e9edfa;
 }
+
+/* CR#8 backlog #57: "when each tile is clicked, the popup border color should be the same as
+   the icon color." data-tool-id is set on <html> by BaseLayout (from each tool page's toolId
+   prop) regardless of popup-mode -- these rules only take effect combined with .popup-mode, so
+   the border exists only in the popped-out window, not the normal in-page view. Applied to
+   body (not html/:root directly -- styling the root element's own border is unreliable across
+   browsers once scrollbars are involved) with min-height:100vh so the frame always wraps the
+   full window regardless of how much content the page actually has. Colors are the same
+   --tool-accent-* tokens the homepage tile's own icon chip gradient uses (see :root above) --
+   literally the same value, not just a visually-similar one. */
+:root.popup-mode body {
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+:root.popup-mode[data-tool-id="json-formatter"] body { border: 3px solid var(--tool-accent-json); }
+:root.popup-mode[data-tool-id="regex-tester"] body { border: 3px solid var(--tool-accent-regex); }
+:root.popup-mode[data-tool-id="cron-builder"] body { border: 3px solid var(--tool-accent-cron); }
+:root.popup-mode[data-tool-id="password-generator"] body { border: 3px solid var(--tool-accent-password); }
+:root.popup-mode[data-tool-id="base64-tool"] body { border: 3px solid var(--tool-accent-base64); }
+:root.popup-mode[data-tool-id="color-converter"] body { border: 3px solid var(--tool-accent-color); }
 
 * { box-sizing: border-box; }
 
@@ -316,12 +352,12 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
 .tool-card:hover .tool-icon-chip { transform: scale(1.08) rotate(-2deg); }
 .tool-card:hover .tool-icon-chip .tool-icon { transform: none; }
 
-.chip-json { background: linear-gradient(135deg, #f5a623, #f59e0b); }
-.chip-regex { background: linear-gradient(135deg, #c084fc, #a855f7); }
-.chip-cron { background: linear-gradient(135deg, #22d3ee, #06b6d4); }
-.chip-password { background: linear-gradient(135deg, #f87171, #ef4444); }
-.chip-base64 { background: linear-gradient(135deg, #34d399, #10b981); }
-.chip-color { background: linear-gradient(135deg, #f472b6, #a855f7, #3b82f6); }
+.chip-json { background: linear-gradient(135deg, #f5a623, var(--tool-accent-json)); }
+.chip-regex { background: linear-gradient(135deg, #c084fc, var(--tool-accent-regex)); }
+.chip-cron { background: linear-gradient(135deg, #22d3ee, var(--tool-accent-cron)); }
+.chip-password { background: linear-gradient(135deg, #f87171, var(--tool-accent-password)); }
+.chip-base64 { background: linear-gradient(135deg, #34d399, var(--tool-accent-base64)); }
+.chip-color { background: linear-gradient(135deg, var(--tool-accent-color), #a855f7, #3b82f6); }
 
 /* CR#8 backlog #55: icon and title used to stack (icon above, h3 below) -- user feedback:
    "the icon and the title should be adjacent to each other and not one below the other".

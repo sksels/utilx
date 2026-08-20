@@ -22,6 +22,12 @@ All colors, spacing, and shadows are CSS custom properties defined once in `publ
 | `--text-on-accent` | `#0a0c12` | `#ffffff` | Button/toolbar-btn text color on an accent-colored background |
 | `--success` | `#4ade80` | `#15803d` | Success messages, click-flash border, `--toolbar-accent`'s value |
 | `--danger` | `#ff6b6b` | `#b91c1c` | Error messages |
+| `--tool-accent-json` | `#f59e0b` | (theme-invariant) | JSON Formatter's icon-chip gradient stop + popup border (CR#8 #57) |
+| `--tool-accent-regex` | `#a855f7` | (theme-invariant) | Regex Tester's icon-chip gradient stop + popup border (CR#8 #57) |
+| `--tool-accent-cron` | `#06b6d4` | (theme-invariant) | Cron Builder's icon-chip gradient stop + popup border (CR#8 #57) |
+| `--tool-accent-password` | `#ef4444` | (theme-invariant) | Password/UUID Generator's icon-chip gradient stop + popup border (CR#8 #57) |
+| `--tool-accent-base64` | `#10b981` | (theme-invariant) | Base64/JWT Tool's icon-chip gradient stop + popup border (CR#8 #57) |
+| `--tool-accent-color` | `#f472b6` | (theme-invariant) | Color Converter's icon-chip gradient stop + popup border (CR#8 #57) |
 | `--radius` / `--radius-lg` | `10px` / `14px` | | Border radius (cards vs. larger tiles) |
 | `--shadow-sm` / `--shadow-md` / `--shadow-glow` | theme-varying | | Elevation |
 | `--ease` | `cubic-bezier(0.2, 0.8, 0.2, 1)` | | Standard transition easing |
@@ -255,6 +261,29 @@ added with genuinely no natural related-tool link, give it a `.tool-card-guide` 
 pointing back to the homepage's guides listing, or omitted entirely with the understanding
 that its tile's line will then sit higher than the rest of that row) rather than silently
 breaking the "same line, same level" consistency this fix established.
+
+## Popup border color matches tile icon color (CR#8, backlog #57)
+
+Each tool's icon-chip gradient already carries a distinct brand color per tool (`.chip-json`,
+`.chip-regex`, etc.). When a tool is opened via the homepage's "open in popup window" feature
+(`popup-nav.js`), the popup window now borders itself in that same color, so the popup reads as
+unmistakably *that* tool's window rather than a generic second copy of the site. Each `.chip-*`
+gradient rule was refactored to pull one of its stops from a new `--tool-accent-*` token (see
+design tokens table above) instead of a locally-hardcoded hex, so the icon-chip and the popup
+border are guaranteed to stay in sync — one token, two consumers.
+
+Wiring: `BaseLayout.astro` takes a `toolId` prop (tool pages only, e.g. `toolId="json-formatter"`)
+and renders it as `<html data-tool-id={toolId}>` — Astro omits the attribute entirely when
+`toolId` is undefined (same pattern as the existing `noindex` meta tag), so non-tool pages are
+unaffected. `style.css` pairs that with the existing `.popup-mode` class (set client-side via
+`window.opener` detection) in `:root.popup-mode[data-tool-id="json-formatter"] body { border: 3px
+solid var(--tool-accent-json); }` — one rule per tool, six total. `toolId` must exactly match the
+`.chip-*`/`--tool-accent-*` suffix already used for that tool everywhere else in the codebase.
+
+When adding a 7th tool: give it a `--tool-accent-*` token, use it in that tool's `.chip-*`
+gradient, add one more `:root.popup-mode[data-tool-id="..."] body` rule, and pass `toolId="..."`
+on its `<BaseLayout>` — skipping any one of these four leaves the popup unbordered for that tool
+rather than erroring, so it's easy to silently miss; check all four together.
 
 ## Adding a new tool page
 
