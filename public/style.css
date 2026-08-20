@@ -123,10 +123,29 @@
 
 * { box-sizing: border-box; }
 
+/* CR#8 backlog #59: every page (and every tool popup) used to sit on the flat, textureless
+   --bg color -- site owner feedback was explicitly "not flat black", and explicitly site-wide,
+   not just the homepage. Two soft radial glows in --accent-soft (already theme-aware, already
+   used elsewhere for subtle accent backgrounds) sit over the flat --bg base color rather than
+   introducing a new token pair -- reusing --accent-soft keeps this in sync with the rest of the
+   accent system instead of drifting into its own one-off color. Pure CSS gradients, no image
+   request, so this has zero Lighthouse performance cost. Contrast is unaffected in practice:
+   --accent-soft is 8-10% alpha, so text everywhere (--text/--text-dim on --bg, or on solid
+   --bg-card cards which sit above this and are unaffected) keeps effectively the same contrast
+   ratio already verified for --bg alone (CR#8 #51). `background-attachment: fixed` keeps the
+   glows anchored to the viewport corners as a stable "wallpaper" rather than scrolling with page
+   content, which read as distracting on tall tool pages during testing. This single rule covers
+   every page AND every popup automatically -- --bg (and therefore this gradient's base layer)
+   is already overridden per-theme and per-popup-mode above, so no separate popup-specific
+   background rule is needed. */
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse 1200px 800px at 12% -10%, var(--accent-soft), transparent 60%),
+    radial-gradient(ellipse 1000px 700px at 100% 110%, var(--accent-soft), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.6;

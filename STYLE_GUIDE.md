@@ -310,6 +310,36 @@ This is unrelated to the homepage's `.tool-card-header` (item #55) beyond sharin
 `.tool-icon-chip`/`.chip-*` building blocks — one lives in a homepage tile, one in a tool page's
 own header, and each has its own margin rules scoped to its own class so they don't interfere.
 
+## Site-wide background treatment (CR#8, backlog #59)
+
+Every page and every tool popup used to sit on the flat, textureless `--bg` color — site owner
+feedback was explicitly "not flat black," and explicitly site-wide (corrected mid-conversation
+from an initial homepage-only framing). `html, body`'s `background` is now two soft radial
+glows in `--accent-soft` layered over the flat `--bg` base color:
+
+```css
+background:
+  radial-gradient(ellipse 1200px 800px at 12% -10%, var(--accent-soft), transparent 60%),
+  radial-gradient(ellipse 1000px 700px at 100% 110%, var(--accent-soft), transparent 55%),
+  var(--bg);
+background-attachment: fixed;
+```
+
+Deliberately reuses `--accent-soft` (already theme-aware, already used elsewhere for subtle
+accent backgrounds) rather than introducing a new token pair — one gradient rule automatically
+covers light mode, dark mode, and popup mode, since `--bg`/`--accent-soft` are already overridden
+per-theme and per-`.popup-mode` elsewhere in this file; no separate popup-specific background
+rule was needed. `background-attachment: fixed` anchors the glows to the viewport corners as a
+stable backdrop rather than scrolling with page content (tried scrolling first — read as
+distracting on tall tool pages). Pure CSS, no image request, so this has no Lighthouse
+performance cost, and at 8-10% alpha it doesn't meaningfully shift the contrast ratios already
+verified for `--bg` alone (CR#8 #51) — text sitting directly on `--bg` (not a `--bg-card` panel)
+keeps effectively the same contrast.
+
+Related but explicitly out of scope here: the octopus mascot/logo work (backlog row 22) is a
+separate, still-open thread toward the same "give UtilX a visual identity" goal — this item is
+just the background treatment, not a logo.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).
