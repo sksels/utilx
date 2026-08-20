@@ -56,9 +56,11 @@
     URL.revokeObjectURL(url);
   }
 
-  // Impure: briefly flags a toolbar button as "copied" (green outline + tooltip swap) so
-  // the user gets confirmation the click actually did something -- copy actions have no
-  // other visible feedback otherwise.
+  // Impure: briefly flags a toolbar button as "copied" (color swap + tooltip swap) so the
+  // user gets confirmation the click actually did something -- copy actions have no other
+  // visible feedback otherwise. The actual color (--accent, a deliberate contrast against
+  // .toolbar-btn's resting --toolbar-accent) lives in style.css, not here -- see
+  // .toolbar-btn.copied and CR#8 backlog #51 in STYLE_GUIDE.md.
   function flashCopied(button) {
     if (!button) return;
     button.classList.add('copied');

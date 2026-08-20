@@ -29,6 +29,7 @@ const jsonLd = JSON.stringify({
   title="Cron Expression Builder — Standard, Quartz & Kubernetes | UtilX"
   description="Build and decode cron expressions with dropdowns. Auto-detects standard cron (Linux/Kubernetes CronJob), Quartz syntax (Java/Spring, with seconds and named days/months), and exports a ready-to-use Kubernetes CronJob YAML manifest."
   canonicalPath="/tools/cron-builder.html"
+  toolId="cron-builder"
   pwa={true}
   jsonLd={jsonLd}
 >
@@ -45,7 +46,12 @@ const jsonLd = JSON.stringify({
 <main>
   <div class="wrap">
     <div class="breadcrumb"><a href="/index.html">Tools</a> / Cron Builder</div>
-    <h1>Cron Expression Builder &amp; Decoder</h1>
+    <div class="tool-page-header">
+      <div class="tool-icon-chip chip-cron">
+        <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>
+      </div>
+      <h1>Cron Expression Builder &amp; Decoder</h1>
+    </div>
     <p class="lede">Build a 5-field cron expression with dropdowns, or paste one in — the decoder auto-detects standard cron (Linux/Kubernetes CronJob), or Quartz syntax (6-7 fields with seconds, used by Java/Spring schedulers).</p>
     <div><LocalBadge /></div>
 
@@ -74,10 +80,10 @@ const jsonLd = JSON.stringify({
       <label for="dow">Day of week (0-6, Sun=0, * for every)</label>
       <div class="input-target">
         <input type="text" id="dow" value="*">
+        <!-- CR#8 backlog #50: "Build Expression" removed -- the five build fields already
+             auto-build on every keystroke (see autoBuild below) and Ctrl+Enter builds
+             immediately, so the click added nothing either path didn't already do. -->
         <InputToolbar inline>
-          <button class="toolbar-btn" onclick="buildCron()" title="Build Expression">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
-          </button>
           <button class="toolbar-btn" onclick="clearBuild()" title="Clear">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
@@ -108,10 +114,10 @@ const jsonLd = JSON.stringify({
       </div>
       <div class="input-target">
         <input type="text" id="decodeInput" placeholder="0 9 * * 1-5">
+        <!-- CR#8 backlog #50: "Decode" removed -- #decodeInput already auto-decodes on every
+             keystroke (see autoDecode below) and Ctrl+Enter decodes immediately, so the click
+             added nothing either path didn't already do. -->
         <InputToolbar inline>
-          <button class="toolbar-btn" onclick="decodeCron()" title="Decode">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v16l13-8Z"/></svg>
-          </button>
           <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
           </button>

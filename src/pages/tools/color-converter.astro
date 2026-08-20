@@ -28,11 +28,13 @@ const jsonLd = JSON.stringify({
   title="Color Converter + Image Picker & Contrast Checker | UtilX"
   description="Convert HEX, RGB, and HSL instantly, sample any color directly from an uploaded image, and check WCAG contrast ratios for accessibility — all free and browser-based."
   canonicalPath="/tools/color-converter.html"
+  toolId="color-converter"
   pwa={true}
   jsonLd={jsonLd}
 >
 <Fragment slot="head-extra">
 <script is:inline src="lib/color.js"></script>
+<script is:inline src="lib/named-colors.js"></script>
 <script is:inline src="lib/url-state.js"></script>
 <script is:inline src="/local-state.js"></script>
 </Fragment>
@@ -40,7 +42,12 @@ const jsonLd = JSON.stringify({
 <main>
   <div class="wrap">
     <div class="breadcrumb"><a href="/index.html">Tools</a> / Color Converter</div>
-    <h1>Color Converter</h1>
+    <div class="tool-page-header">
+      <div class="tool-icon-chip chip-color">
+        <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.5 1.5-1.3 0-.4-.15-.7-.4-1-.25-.3-.4-.6-.4-1 0-.8.7-1.4 1.5-1.4H16a4 4 0 0 0 4-4c0-5-3.6-9-8-9Z"/><circle cx="7.5" cy="10.5" r="1"/><circle cx="9.5" cy="7" r="1"/><circle cx="14" cy="7" r="1"/><circle cx="16" cy="10.5" r="1"/></svg>
+      </div>
+      <h1>Color Converter</h1>
+    </div>
     <p class="lede">Enter a color in any format below — the others update automatically.</p>
     <div><LocalBadge text="Processed 100% locally — uploaded images never leave this tab" /></div>
 
@@ -57,8 +64,20 @@ const jsonLd = JSON.stringify({
       <input type="text" id="rgb" value="rgb(91, 140, 255)">
 
       <label for="hsl">HSL</label>
+      <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
+
+      <!-- CR#8 backlog #54: searchable named-color dropdown -- input+datalist rather than a
+           custom combobox widget. Native <datalist> already gives type-to-filter behavior in
+           every browser with zero custom ARIA, so it's the lowest-risk way to satisfy "drop
+           down options with search function" (this project got burned once already on a
+           custom widget's ARIA -- see split-pane's aria-valuenow fix in CR#7). Populated at
+           runtime from NamedColorsLib.allNames() (see script below), not hand-written here --
+           148 <option> tags don't belong in the template. Filled in automatically when hex/
+           rgb/hsl lands on an exact named match (see updateFrom's hexToName call), and clears
+           when it doesn't -- not every color has a name. -->
+      <label for="colorName">Name</label>
       <div class="input-target">
-        <input type="text" id="hsl" value="hsl(222, 100%, 68%)">
+        <input type="text" id="colorName" list="namedColorsList" placeholder="e.g. cornflowerblue" autocomplete="off">
         <InputToolbar inline>
           <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
@@ -68,6 +87,7 @@ const jsonLd = JSON.stringify({
           </button>
         </InputToolbar>
       </div>
+      <datalist id="namedColorsList"></datalist>
 
       <div id="msg"></div>
     </div>
@@ -106,6 +126,7 @@ const jsonLd = JSON.stringify({
 const hexEl = document.getElementById('hex');
 const rgbEl = document.getElementById('rgb');
 const hslEl = document.getElementById('hsl');
+const colorNameEl = document.getElementById('colorName');
 const swatch = document.getElementById('swatch');
 const msg = document.getElementById('msg');
 
@@ -120,6 +141,19 @@ const RECENT_KEY = 'utilx-color-converter-recent-hex';
 function refreshRecentSelect() {
   LocalStateLib.populateRecentSelect(document.getElementById('hexRecent'), RECENT_KEY, 'Recent colors...');
 }
+
+// CR#8 backlog #54: populate the <datalist> once from NamedColorsLib.allNames() rather than
+// hand-writing 148 <option> tags in the template -- the data table lives in one place
+// (named-colors.js), not duplicated here.
+(function populateNamedColorsDatalist() {
+  const datalist = document.getElementById('namedColorsList');
+  const names = NamedColorsLib.allNames();
+  for (const name of names) {
+    const option = document.createElement('option');
+    option.value = name;
+    datalist.appendChild(option);
+  }
+})();
 
 function updateFrom(source) {
   let rgb;
@@ -148,6 +182,13 @@ function updateFrom(source) {
       }
       rgb = hslToRgb(parsed.h, parsed.s, parsed.l);
       alpha = parsed.a;
+    } else if (source === 'name') {
+      const hex = NamedColorsLib.nameToHex(colorNameEl.value);
+      if (!hex) {
+        errorMsg = 'Not a recognized CSS color name -- start typing to search (e.g. "cornflower" finds cornflowerblue), or use the HEX/RGB/HSL fields above for an exact custom value.';
+        throw new Error('bad name');
+      }
+      rgb = hexToRgb(hex);
     }
   } catch (e) {
     msg.innerHTML = '<div class="error-msg">' + errorMsg + '</div>';
@@ -169,6 +210,14 @@ function updateFrom(source) {
       ? 'hsl(' + hsl.h + ', ' + hsl.s + '%, ' + hsl.l + '%)'
       : 'hsla(' + hsl.h + ', ' + hsl.s + '%, ' + hsl.l + '%, ' + alpha + ')';
   }
+  // CR#8 backlog #54: same "don't stomp on what the user is actively typing" rule the other
+  // three fields already follow above -- only sync the Name field from the *other* fields,
+  // never overwrite it while it's the one being typed into. Clears to '' (not left stale)
+  // when the resulting color has no exact named match -- not every color has a name, and a
+  // leftover name from a previous value would be actively misleading.
+  if (source !== 'name') {
+    colorNameEl.value = NamedColorsLib.hexToName(hex) || '';
+  }
   swatch.style.background = alpha === undefined
     ? 'rgb(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ')'
     : 'rgba(' + rgb.r + ', ' + rgb.g + ', ' + rgb.b + ', ' + alpha + ')';
@@ -180,6 +229,7 @@ function updateFrom(source) {
 hexEl.addEventListener('input', () => updateFrom('hex'));
 rgbEl.addEventListener('input', () => updateFrom('rgb'));
 hslEl.addEventListener('input', () => updateFrom('hsl'));
+colorNameEl.addEventListener('input', () => updateFrom('name'));
 
 // --- Image color sampling ---
 const imageInput = document.getElementById('imageInput');
@@ -275,6 +325,7 @@ function clearAll() {
   hexEl.value = '';
   rgbEl.value = '';
   hslEl.value = '';
+  colorNameEl.value = '';
   swatch.style.background = 'transparent';
   msg.innerHTML = '';
 }

@@ -18,6 +18,31 @@
   --text-on-accent: #0a0c12;
   --success: #4ade80;
   --danger: #ff6b6b;
+  /* CR#8 backlog #51: toolbar-btn's own accent, kept separate from --accent so links/focus
+     rings/headings etc. stay blue (item #59 tackles the site's overall black-and-blue look
+     separately) -- this only recolors the action-button rail. Aliased to --success rather
+     than a new hex pair so it inherits that token's already WCAG-AA-checked light/dark
+     values automatically (see the light-theme block below for why those four tokens have
+     the values they do). --toolbar-accent-hover has no existing token to alias -- picked and
+     contrast-checked fresh, see the light-theme block. */
+  --toolbar-accent: var(--success);
+  --toolbar-accent-hover: #86efac;
+  /* CR#8 backlog #57/#58: one representative solid color per tool, theme-invariant like the
+     .chip-* gradients themselves (see the "Visual anchor tabs" comment further down --
+     colors are fixed per tool, not per theme, so they stay a stable visual anchor). Each
+     value is the darker/more saturated stop already used in that tool's .chip-* gradient
+     (picked for color-converter's 3-stop gradient: the first stop, pink, since its other two
+     stops collide with regex's purple and the site's own --accent blue). Reused in two
+     places instead of two independent hardcoded hex pairs: the .chip-* gradient's end stop
+     (unchanged visually -- same value as before, now named) and the popup-window border
+     (backlog #57, "the popup border color should be the same as the icon color" -- see the
+     :root.popup-mode[data-tool-id] rules near the bottom of this file). */
+  --tool-accent-json: #f59e0b;
+  --tool-accent-regex: #a855f7;
+  --tool-accent-cron: #06b6d4;
+  --tool-accent-password: #ef4444;
+  --tool-accent-base64: #10b981;
+  --tool-accent-color: #f472b6;
   --radius: 10px;
   --radius-lg: 14px;
   --max-width: 960px;
@@ -45,6 +70,10 @@
   --accent-soft: rgba(47, 91, 196, 0.08);
   --success: #15803d;
   --danger: #b91c1c;
+  /* CR#8 backlog #51: hover tone for --toolbar-accent, mirroring how --accent-hover goes
+     *darker* than --accent in this theme (the reverse of dark theme's lighter hover) --
+     text=#ffffff (--text-on-accent below) against this is 9.11:1, well past WCAG AA's 4.5:1. */
+  --toolbar-accent-hover: #14532d;
   /* --text-on-accent is text painted directly on a solid --accent background (button text,
      toolbar-btn labels like the UUID generator's "10x"/"100x"). The dark theme's default
      (#0a0c12, near-black) works there because dark theme's --accent (#5b8cff) is light
@@ -72,12 +101,51 @@
   --bg: #e9edfa;
 }
 
+/* CR#8 backlog #57: "when each tile is clicked, the popup border color should be the same as
+   the icon color." data-tool-id is set on <html> by BaseLayout (from each tool page's toolId
+   prop) regardless of popup-mode -- these rules only take effect combined with .popup-mode, so
+   the border exists only in the popped-out window, not the normal in-page view. Applied to
+   body (not html/:root directly -- styling the root element's own border is unreliable across
+   browsers once scrollbars are involved) with min-height:100vh so the frame always wraps the
+   full window regardless of how much content the page actually has. Colors are the same
+   --tool-accent-* tokens the homepage tile's own icon chip gradient uses (see :root above) --
+   literally the same value, not just a visually-similar one. */
+:root.popup-mode body {
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+:root.popup-mode[data-tool-id="json-formatter"] body { border: 3px solid var(--tool-accent-json); }
+:root.popup-mode[data-tool-id="regex-tester"] body { border: 3px solid var(--tool-accent-regex); }
+:root.popup-mode[data-tool-id="cron-builder"] body { border: 3px solid var(--tool-accent-cron); }
+:root.popup-mode[data-tool-id="password-generator"] body { border: 3px solid var(--tool-accent-password); }
+:root.popup-mode[data-tool-id="base64-tool"] body { border: 3px solid var(--tool-accent-base64); }
+:root.popup-mode[data-tool-id="color-converter"] body { border: 3px solid var(--tool-accent-color); }
+
 * { box-sizing: border-box; }
 
+/* CR#8 backlog #59: every page (and every tool popup) used to sit on the flat, textureless
+   --bg color -- site owner feedback was explicitly "not flat black", and explicitly site-wide,
+   not just the homepage. Two soft radial glows in --accent-soft (already theme-aware, already
+   used elsewhere for subtle accent backgrounds) sit over the flat --bg base color rather than
+   introducing a new token pair -- reusing --accent-soft keeps this in sync with the rest of the
+   accent system instead of drifting into its own one-off color. Pure CSS gradients, no image
+   request, so this has zero Lighthouse performance cost. Contrast is unaffected in practice:
+   --accent-soft is 8-10% alpha, so text everywhere (--text/--text-dim on --bg, or on solid
+   --bg-card cards which sit above this and are unaffected) keeps effectively the same contrast
+   ratio already verified for --bg alone (CR#8 #51). `background-attachment: fixed` keeps the
+   glows anchored to the viewport corners as a stable "wallpaper" rather than scrolling with page
+   content, which read as distracting on tall tool pages during testing. This single rule covers
+   every page AND every popup automatically -- --bg (and therefore this gradient's base layer)
+   is already overridden per-theme and per-popup-mode above, so no separate popup-specific
+   background rule is needed. */
 html, body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(ellipse 1200px 800px at 12% -10%, var(--accent-soft), transparent 60%),
+    radial-gradient(ellipse 1000px 700px at 100% 110%, var(--accent-soft), transparent 55%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--text);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   line-height: 1.6;
@@ -165,6 +233,31 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
 }
 .local-badge svg { width: 13px; height: 13px; color: var(--success); flex-shrink: 0; }
 
+/* CR#8 backlog #52: InfoLink.astro's compact "How this works" affordance -- one line instead
+   of the <h2>+prose block it replaced. Rendered as either <a> (has a /guides/ page) or
+   <button> (doesn't) depending on whether InfoLink got an href, so this styles both by class
+   rather than tag, and resets the <button> case's inherited button chrome (background/padding/
+   margin-top -- see the base `button` rule) back to look identical to the <a> case. */
+.info-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--accent);
+  text-decoration: none;
+  cursor: pointer;
+}
+.info-link:hover,
+.info-link:focus-visible {
+  text-decoration: underline;
+}
+.info-link svg { width: 14px; height: 14px; flex-shrink: 0; }
+
 .theme-toggle {
   background: transparent;
   border: 1px solid var(--border);
@@ -220,7 +313,11 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
      catching a subtly raised card. */
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.12);
   transition: border-color .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
-  display: block;
+  /* CR#8 backlog #56: flex column so .tool-card-guide's margin-top:auto (below) can pin the
+     separator line + guide link to the bottom of the card, instead of it sitting wherever the
+     description text happens to end -- see that rule's comment for the full reasoning. */
+  display: flex;
+  flex-direction: column;
 }
 .tool-card:hover {
   border-color: var(--accent);
@@ -274,14 +371,50 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
 .tool-card:hover .tool-icon-chip { transform: scale(1.08) rotate(-2deg); }
 .tool-card:hover .tool-icon-chip .tool-icon { transform: none; }
 
-.chip-json { background: linear-gradient(135deg, #f5a623, #f59e0b); }
-.chip-regex { background: linear-gradient(135deg, #c084fc, #a855f7); }
-.chip-cron { background: linear-gradient(135deg, #22d3ee, #06b6d4); }
-.chip-password { background: linear-gradient(135deg, #f87171, #ef4444); }
-.chip-base64 { background: linear-gradient(135deg, #34d399, #10b981); }
-.chip-color { background: linear-gradient(135deg, #f472b6, #a855f7, #3b82f6); }
-.tool-card h3 { margin: 0 0 6px; color: var(--text); font-size: 1.05rem; font-weight: 650; }
+.chip-json { background: linear-gradient(135deg, #f5a623, var(--tool-accent-json)); }
+.chip-regex { background: linear-gradient(135deg, #c084fc, var(--tool-accent-regex)); }
+.chip-cron { background: linear-gradient(135deg, #22d3ee, var(--tool-accent-cron)); }
+.chip-password { background: linear-gradient(135deg, #f87171, var(--tool-accent-password)); }
+.chip-base64 { background: linear-gradient(135deg, #34d399, var(--tool-accent-base64)); }
+.chip-color { background: linear-gradient(135deg, var(--tool-accent-color), #a855f7, #3b82f6); }
+
+/* CR#8 backlog #55: icon and title used to stack (icon above, h3 below) -- user feedback:
+   "the icon and the title should be adjacent to each other and not one below the other".
+   .tool-card-header wraps just those two elements in a row; the description <p> stays below
+   the row, unaffected. h3's old margin:0 0 6px and .tool-icon-chip's margin-bottom:14px both
+   existed specifically to create vertical spacing in the old *stacked* layout -- inside this
+   row they'd only misalign align-items:center, so h3's margin is reset to 0 in its own rule
+   below and .tool-icon-chip's is reset here (scoped to `.tool-card-header .tool-icon-chip`,
+   not the base .tool-icon-chip rule, so any future standalone use elsewhere -- e.g. backlog
+   #58's planned icon-chip-inside-the-tool-popup -- keeps its normal 14px). The row itself owns
+   the spacing before the paragraph instead, via its own margin-bottom. */
+.tool-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+.tool-card-header .tool-icon-chip {
+  margin-bottom: 0;
+  flex-shrink: 0;
+}
+.tool-card h3 { margin: 0; color: var(--text); font-size: 1.05rem; font-weight: 650; }
 .tool-card p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
+
+/* CR#8 backlog #58: every tool page's <h1> used to be plain text -- the colored icon chip only
+   existed on the homepage tile, so it never appeared once a tool was actually opened (in a
+   normal tab or, especially, the backlog #57 popup that now borders itself in that same color).
+   Reuses the exact same .tool-icon-chip/.chip-* markup already used on the homepage tile (see
+   index.astro) rather than inventing a second icon system. h1's own margin-bottom moves onto
+   the row so the row+h1 pair takes up the same vertical space h1 alone used to. */
+.tool-page-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+.tool-page-header h1 { margin: 0; }
+.tool-page-header .tool-icon-chip { flex-shrink: 0; margin-bottom: 0; }
 
 /* Restructured tool cards (JSON Formatter, Regex Tester, Cron Builder, Base64) that fold
    a "related guide" link into the tile: the outer .tool-card is now a plain container
@@ -289,9 +422,23 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
    .tool-card-link covers the icon/title/description as the main click target, and
    .tool-card-guide is a smaller secondary link below it. */
 .tool-card-link { display: block; color: inherit; text-decoration: none; }
+/* CR#8 backlog #56: user feedback the separator line above this link didn't "match and
+   reside at the same level across tiles" -- it didn't, on two counts. First, margin-top:12px
+   put it directly after the description text, so its height depended on how many lines that
+   text happened to wrap to (varies per tile). Second, Password Generator and Color Converter
+   had no .tool-card-guide at all (no /guides/ page exists for either), so those two tiles had
+   no line whatsoever -- every tile in a grid row visually needs the same footer position to
+   read as a consistent set. margin-top:auto (with .tool-card now a flex column, above) pins
+   this to the bottom of the card instead of wherever the content above happens to end -- grid
+   items stretch to their row's tallest tile by default (.tool-grid never overrides
+   align-items), so cards in the same row are already equal height, and this rides that to sit
+   at the same Y position across all of them. The two previously-missing tiles now reuse the
+   same "Related tool" cross-link their own tool page already shows in its own "Related tool"
+   paragraph (both point to Base64 Encoder / Decoder), rather than inventing new guide pages or
+   leaving a tile with no footer to pin. */
 .tool-card-guide {
   display: block;
-  margin-top: 12px;
+  margin-top: auto;
   padding-top: 10px;
   border-top: 1px solid var(--border);
   font-size: 0.82rem;
@@ -432,6 +579,54 @@ div:has(> .output-toolbar) {
   min-width: 0;
   width: auto;
 }
+
+/* CR#8 (backlog #48): a *column* toolbar (the default, un-.inline layout -- see
+   .input-toolbar.inline below) is only ever as tall as its own buttons: N * 30px of button
+   plus (N-1) * 4px of gap. Since the field next to it is centered, not stretched
+   (align-items:center on the row above, not stretch), a field whose own natural height falls
+   short of that -- e.g. the Base64 tool's 8-row input textarea next to its 5-button toolbar,
+   150px + 16px gap = 166px of buttons against a ~158px textarea -- gets vertically centered
+   inside a row taller than itself, so the top and bottom buttons hang a few px past the
+   field's own border instead of reading as contained within it. Rather than hand-tune a
+   min-height per field (fragile -- breaks again the next time a button's added or removed),
+   :has()+:nth-child count the toolbar's actual button children at render time and floor the
+   field to match. Ordered smallest N first so same-specificity cascade lets a larger count
+   override a smaller one for toolbars that clear multiple thresholds at once. Only .input-box
+   (composite panels, e.g. Password Generator's slider+checkboxes) intentionally has no floor
+   here -- those are already far taller than any 2-5 button toolbar could be undersized against,
+   so a min-height would never engage there anyway. */
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > input,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > select,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > input,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(2)) > pre {
+  min-height: 64px;
+}
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > input,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > select,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > input,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(3)) > pre {
+  min-height: 98px;
+}
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > input,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > select,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > input,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(4)) > pre {
+  min-height: 132px;
+}
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > input,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > select,
+.input-target:has(> .input-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > input,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > textarea,
+.output-target:has(> .output-toolbar:not(.inline) > .toolbar-btn:nth-child(5)) > pre {
+  min-height: 166px;
+}
 /* Multi-line fields are tall enough that a column of buttons reads naturally down their
    side (like an editor's icon rail) -- that's the default. Single-line fields (.inline) are
    too short for a column to make sense, so those lay the buttons out in a row instead. */
@@ -491,8 +686,12 @@ div:has(> .output-toolbar) {
   align-items: center;
   justify-content: center;
   border-radius: 6px;
-  border: 1px solid var(--accent);
-  background: var(--accent);
+  /* CR#8 backlog #51: was var(--accent) (blue) -- the user flagged every screen reading as
+     "full black and blue". --toolbar-accent is green (aliased to --success, see :root above)
+     and scoped to just this action-button rail; links/focus rings/headings etc. keep --accent
+     unchanged, and item #59 addresses the overall black background separately. */
+  border: 1px solid var(--toolbar-accent);
+  background: var(--toolbar-accent);
   color: var(--text-on-accent);
   cursor: pointer;
   transition: background .15s ease, border-color .15s ease;
@@ -500,8 +699,8 @@ div:has(> .output-toolbar) {
 
 .output-toolbar .toolbar-btn:hover,
 .input-toolbar .toolbar-btn:hover {
-  background: var(--accent-hover);
-  border-color: var(--accent-hover);
+  background: var(--toolbar-accent-hover);
+  border-color: var(--toolbar-accent-hover);
   box-shadow: none;
 }
 
@@ -511,10 +710,16 @@ div:has(> .output-toolbar) {
   height: 16px;
 }
 
+/* CR#8 backlog #51: .copied used to flash --success (green) as a moment of contrast against
+   the toolbar's resting blue -- now that the resting state IS green (--toolbar-accent, above),
+   flashing the same green would give zero visible feedback on a successful copy. Swapped to
+   --accent (the original resting blue) so the flash is still a clearly different color from
+   the button's normal state -- same contrast-checked pairing this toolbar already used for
+   years before #51, just with the two colors' roles reversed. */
 .output-toolbar .toolbar-btn.copied,
 .input-toolbar .toolbar-btn.copied {
-  background: var(--success);
-  border-color: var(--success);
+  background: var(--accent);
+  border-color: var(--accent);
   color: var(--text-on-accent);
 }
 
@@ -558,19 +763,60 @@ div:has(> .output-toolbar) {
 .input-box select:focus {
   box-shadow: none;
 }
-.input-box .input-secondary {
-  padding: 10px 12px;
-  border-top: 1px solid var(--border);
+/* CR#8 #48/#53 follow-up: .input-secondary (JSON Formatter's indent-size picker) used to live
+   *inside* .input-box, alongside the textarea, sharing one bordered panel. That made
+   .input-box-row's toolbar -- a flex sibling of .input-box, vertically centered via
+   align-items:center (see div:has(> .input-toolbar) above) -- center against the *combined*
+   textarea+indent-picker height instead of the textarea alone, visibly pulling the 3-button
+   toolbar below the textarea's own center (confirmed against the live page, not just reasoned
+   about -- see STYLE_GUIDE.md). .input-secondary is now a sibling of .input-box-row instead
+   (see json-formatter.astro), so .input-box wraps only the textarea and the toolbar centers
+   against exactly that. These two rules re-join the now-separate boxes so they still read as
+   one continuous panel: .input-box's bottom corners flatten and lose their bottom border where
+   an .input-secondary follows, and .input-secondary below picks up its own full border
+   (1px negative margin-top so the shared edge doesn't double up to 2px) and rounds the bottom
+   corners it now owns alone. */
+.input-box-row:has(+ .input-secondary) .input-box {
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
 }
-.input-box .input-secondary label {
+.input-box-row + .input-secondary {
+  margin-top: -1px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 0 0 var(--radius) var(--radius);
+  background: var(--code-bg);
+}
+.input-secondary label {
   margin-top: 0;
 }
 /* This select only ever holds a couple of short options ("2 spaces", "Tab") -- the global
    select{width:100%} rule was stretching it across the entire panel width, several times
-   wider than its own text needs. */
-.input-box .input-secondary select {
+   wider than its own text needs. Both the CR#7 140px attempt and the CR#8 #49 96px attempt
+   below set width:auto + min-width, but neither one actually took effect: .input-box select
+   (above) sets display:block, and a *block-level* box with width:auto fills its containing
+   block's width -- that's what width:auto means for a block box, not "shrink to content".
+   min-width only clamps a computed width that would otherwise be smaller; here the computed
+   width was always "the full panel," so min-width never engaged and the select rendered at
+   full width both times, unnoticed until the site owner caught it visually post-deploy (no
+   automated test asserts select width). display:inline-block is what actually makes
+   width:auto shrink-to-fit based on content -- min-width:96px then genuinely acts as the
+   floor it was always meant to be, comfortably fitting "4 spaces" plus the select's own
+   padding and native dropdown arrow.
+   Separately (confirmed via live DevTools inspection, not just reasoning this time -- the
+   width fix above genuinely was applying correctly): the select was still inheriting the
+   generic textarea/input/select rule's padding:10px 12px, sized for a full textarea or a
+   prominent text input. On a short one-line dropdown inside this already-compact secondary
+   panel, that reads as a visibly oversized box with too much empty space above and below
+   "2 spaces" -- both the label-to-select gap and the select-to-panel-border gap looked
+   bloated because the select's own box was taller than it needed to be. Tightened to match
+   .recent-select's already-compact padding (4px 8px) rather than inventing a third scale. */
+.input-secondary select {
+  display: inline-block;
   width: auto;
-  min-width: 140px;
+  min-width: 96px;
+  padding: 4px 8px;
 }
 
 /* Persistent local state (CR#6): a compact "recent inputs" dropdown sitting inline with a
@@ -582,6 +828,23 @@ div:has(> .output-toolbar) {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+/* CR#8 #48/#53 follow-up: every other first-in-pane label on this page got its 14px
+   margin-top explicitly zeroed by the #53 fix (.split-pane-right's output label, .split-pane-
+   left's own first-child) -- this one didn't, because it's not the direct first-child itself,
+   it's nested one level inside .field-header. As a flex item, the label's own uncorrected 14px
+   margin-top doesn't get absorbed into .field-header's outer box (margins don't collapse
+   through a flex container -- the exact mechanism the #53 fix above is built around), so it
+   was inflating .field-header's own rendered height by 14px versus the equivalent spacing on
+   the output side. Confirmed against the live page: the .input-box below .field-header started
+   about 14px lower than .output-target's textarea, even though .field-header's own top edge
+   (what the Playwright split-pane-alignment test measures) matched .output-box's exactly --
+   the drift was inside .field-header's height, not its position. Scoped to .split-pane-left
+   specifically (not every .field-header site-wide, e.g. Cron Builder's/Color Converter's,
+   which aren't a split-pane's first child and haven't been flagged) so this fix touches only
+   the pages/spots it's actually verified against. */
+.split-pane-left .field-header label {
+  margin-top: 0;
 }
 
 .recent-select {
@@ -618,16 +881,69 @@ div:has(> .output-toolbar) {
   align-items: stretch;
   gap: 0;
 }
+/* CR#8 backlog #53, re-fixed: the original version of this fix (kept here in spirit, not
+   literally -- see git history for the superseded attempt) tried to make both panes line up by
+   relying on margin *collapsing* between each pane and its first child. That reasoning turned
+   out to be wrong for JSON Formatter/Regex Tester specifically: their left pane's first child
+   is .field-header (a flex container, for the CR#6 "recent inputs" dropdown), and a flex
+   container does not let its own child's margin collapse through it the way a bare element
+   does -- so .field-header's *own* (unset, i.e. 0) margin-top was winning, not the <label>'s
+   14px inside it. Base64 Tool's left pane (bare <label>, no .field-header) rendered fine; JSON
+   Formatter and Regex Tester didn't -- confirmed live after the CR#8 facelift finally deployed
+   (a separate, earlier build-breaking bug had been silently blocking every deploy since #57 and
+   masking this until the real fix went out).
+   Rather than re-deriving which of the two DOM shapes (bare <label> vs .field-header wrapper)
+   collapses which way -- exactly the fragile reasoning that produced the wrong fix the first
+   time -- this uses padding instead of margin collapsing, which has no such ambiguity: padding
+   always creates real, uncollapsible space, full stop, regardless of what's inside it or
+   whether that content is a flex container. padding-top:14px on both panes is the single source
+   of the offset (matching the sitewide label { margin-top: 14px } value everything else already
+   uses); every possible first-child shape then has its OWN margin-top zeroed out so it can't
+   add anything on top of that padding. This covers all three shapes actually in use: a bare
+   <label> (Base64 Tool), a .field-header wrapper (JSON Formatter, Regex Tester), and
+   .output-box's own child <label> (which still collapses with .output-box in the normal way,
+   since .output-box itself isn't a flex container -- so it needs zeroing too, or it'd add its
+   14px on top of the pane's 14px padding). */
+/* CR#8 #48/#53 follow-up: neither pane had any horizontal padding at all before the divider --
+   content on both sides (the input toolbar on the left, the output box on the right) sat flush
+   against the pane's own edge, which is already pulled 5px closer to center by .split-divider's
+   own negative margin (below). The two effects combined made both sides read as "stuck" to the
+   bar instead of separated by it. 12px on each inner edge restores real, deliberate breathing
+   room independent of the divider's own width/margin tuning. */
 .split-pane-left,
 .split-pane-right {
   min-width: 0;
+  padding-top: 14px;
 }
-/* A generous 14px hit target for a precise 2px visible line -- narrower would make the
-   divider hard to grab, especially on touch, without needing to look wide itself. */
+.split-pane-left {
+  padding-right: 12px;
+}
+.split-pane-right {
+  padding-left: 12px;
+}
+.split-pane-left > *:first-child {
+  margin-top: 0;
+}
+/* Scoped to just the *first* .output-box in the pane (:first-child, not a bare > .output-box)
+   since Regex Tester's split-pane-right stacks three separate .output-box sections (highlighted
+   matches / match details / plain-English breakdown) that still want their normal 16px
+   separation from each other for visual grouping -- only the first one's offset from the pane's
+   own top (now owned by padding-top above) needed to change. */
+.split-pane-right > .output-box:first-child {
+  margin-top: 0;
+}
+.split-pane-right > .output-box:first-child > label:first-child {
+  margin-top: 0;
+}
+/* CR#8 backlog #53: "the vertical splitter needs to be thicker" -- visible bar 2px -> 4px.
+   Widened the hit-target box to match (14px -> 16px) and its negative margin to match (-4px ->
+   -5px) so the *added* visible gap between panes stays the same proportion as before (roughly
+   6px of breathing room on each side of the bar) rather than the panes suddenly sitting
+   further apart just because the bar itself got thicker. */
 .split-divider {
   flex: 0 0 auto;
-  width: 14px;
-  margin: 0 -4px;
+  width: 16px;
+  margin: 0 -5px;
   position: relative;
   cursor: col-resize;
   background: transparent;
@@ -640,9 +956,9 @@ div:has(> .output-toolbar) {
   top: 8px;
   bottom: 8px;
   left: 50%;
-  width: 2px;
+  width: 4px;
   transform: translateX(-50%);
-  border-radius: 1px;
+  border-radius: 2px;
   background: var(--border);
   transition: background .15s ease;
 }
@@ -655,6 +971,41 @@ div:has(> .output-toolbar) {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 2px;
+}
+/* CR#8 #48/#53 follow-up: opt-in classes (not bare .split-pane-right/.output-box rules) so
+   only JSON Formatter's single output box grows to fill its pane -- Regex Tester's
+   .split-pane-right stacks three separate .output-box sections, and stretching the *first* of
+   those to fill the whole pane would badly break that layout. .split-pane-right-fill switches
+   the pane from block to a column flex container so .output-box-fill (flex:1 1 auto) can claim
+   all the vertical space .split-pane's own align-items:stretch already gives the pane -- that
+   stretch was already sizing the pane correctly, .output-box just wasn't growing to fill it.
+   align-items:stretch on .output-target overrides the sitewide align-items:center (see
+   div:has(> .input-toolbar) above) so the textarea itself -- the actual visible bottom border
+   -- stretches with it, not just its row wrapper.
+   That stretch has a second effect that wasn't caught before shipping: align-items:stretch
+   applies to *every* flex item in .output-target, not just the textarea -- it stretches
+   .output-toolbar's own box to the full (now much taller) height too. .output-toolbar is
+   itself display:flex;flex-direction:column with no justify-content set, so its buttons pack
+   at flex-start (the top) of that taller box by default, which is exactly what read as
+   "buttons pinned to the top line instead of centered." align-self:center below overrides the
+   inherited stretch for just the toolbar, putting it back to the same centered-within-its-row
+   behavior every other toolbar on the site has, while the textarea (no override, still
+   inherits stretch) keeps filling the full height. */
+.split-pane-right-fill {
+  display: flex;
+  flex-direction: column;
+}
+.output-box-fill {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+}
+.output-box-fill .output-target {
+  flex: 1 1 auto;
+  align-items: stretch;
+}
+.output-box-fill .output-target > .output-toolbar {
+  align-self: center;
 }
 @media (max-width: 700px) {
   .split-pane {

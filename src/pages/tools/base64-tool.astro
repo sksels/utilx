@@ -29,6 +29,7 @@ const jsonLd = JSON.stringify({
   title="Base64 Encoder & Decoder + JWT Decoder | UtilX"
   description="Encode text to Base64, decode Base64 to text or a downloadable file, or decode a JWT to inspect its header and payload — entirely in your browser. Supports UTF-8 correctly, unlike plain btoa/atob."
   canonicalPath="/tools/base64-tool.html"
+  toolId="base64-tool"
   pwa={true}
   jsonLd={jsonLd}
 >
@@ -46,7 +47,12 @@ const jsonLd = JSON.stringify({
 <main>
   <div class="wrap">
     <div class="breadcrumb"><a href="/index.html">Tools</a> / Base64 Encoder / Decoder</div>
-    <h1>Base64 Encoder / Decoder</h1>
+    <div class="tool-page-header">
+      <div class="tool-icon-chip chip-base64">
+        <svg class="tool-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l-3-3M4 7l3 3"/><path d="M20 17H9l3 3M20 17l-3-3"/></svg>
+      </div>
+      <h1>Base64 Encoder / Decoder</h1>
+    </div>
     <p class="lede">Encode or decode text using Base64, with correct UTF-8 handling (emoji and accented characters included).</p>
     <div><LocalBadge text="Processed 100% locally — JWTs and secrets never leave this tab" /></div>
 
@@ -97,10 +103,10 @@ const jsonLd = JSON.stringify({
       <label for="jwtInput">JWT</label>
       <div class="input-target">
         <textarea id="jwtInput" rows="4" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
+        <!-- CR#8 backlog #50: "Decode JWT" removed -- #jwtInput already auto-decodes on every
+             keystroke (see autoDecodeJwt below) and Ctrl+Enter decodes immediately, so the
+             click added nothing either path didn't already do. -->
         <InputToolbar>
-          <button class="toolbar-btn" onclick="decodeJwt()" title="Decode JWT">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
-          </button>
           <button class="toolbar-btn" onclick="clearJwt()" title="Clear">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
