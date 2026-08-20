@@ -394,6 +394,48 @@ both showing at once (a returning visitor with an installable PWA *and* granted 
 permission) can never visually stack or overlap, without needing any z-index/offset-stacking
 logic for a combination this uncommon.
 
+## Tools/guides registry via Astro Content Collections (CR#8, backlog #69)
+
+The homepage tile grid (`src/pages/index.astro`) reads from `getCollection('tools')` instead
+of hardcoded per-tile HTML. `src/content.config.ts` defines the `tools` and `guides`
+collections (`file()` loader + Zod schema) backed by `src/data/tools.json` / `guides.json`.
+Built ahead of the command palette (CR#8 #35) on purpose, at the site owner's request, so the
+palette's search index reads from the same collection instead of a second hand-typed list —
+exactly the class of drift bug this project has been bitten by before (see the toolbar-centering
+CSS rule's own comment on a duplicate that fell out of sync).
+
+**Why a schema, not a plain JS array.** `defineCollection`'s Zod schema fails the build loudly
+if a new tool entry is missing a required field (e.g. `chipClass`) — verified locally by
+deleting a field and confirming `astro build` errors with the exact entry and field name,
+rather than silently rendering an unstyled tile. That validation is the actual reason this is
+worth the extra file over `src/data/tools.js`.
+
+**`order` field is required, not inferred from JSON array position.** Verified locally that
+Astro's `file()` loader does not preserve the source JSON array's order — `getCollection()`
+returned the 6 tools sorted alphabetically by `id` instead of the curated homepage order. Each
+entry has an explicit `order: number`; `index.astro` sorts by it
+(`.sort((a, b) => a.data.order - b.data.order)`) before rendering. Don't rely on JSON array
+order for anything display-related with this loader.
+
+**`iconSvg` holds inner markup only.** Every tile icon shares one outer `<svg viewBox="0 0 24
+24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+stroke-linejoin="round">` wrapper, hardcoded once in `index.astro`; only the per-tool
+path/circle/line markup lives in `tools.json`, injected via `set:html`. Rendered output is
+functionally identical to the old hand-written markup (verified via a diff of the built
+`index.html`) but not byte-identical: `set:html` passes the raw JSON string through verbatim
+(self-closing `<path/>` tags, literal `→` character), where Astro's JSX-like compiler used to
+normalize hand-written SVG into explicit `<path></path>` closing tags and kept `&rarr;` as an
+HTML entity. Both render identically in every browser; no test depends on the exact byte form
+either way.
+
+**`aliases` field exists but is unused today.** Populated per tool now (extra search terms a
+fuzzy match against `label` wouldn't catch — see backlog #68) so #35/#68 don't need a second
+data-entry pass later. Not read by any code yet.
+
+**Adding a 7th tool in the future:** add one entry to `src/data/tools.json` (with a unique
+`order`) — no `index.astro` changes needed, and once #35 ships reading from this same
+collection, no palette changes either.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).
