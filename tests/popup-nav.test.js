@@ -21,6 +21,11 @@ test('buildFeaturesString: includes resizable and the given dimensions', () => {
   assert.match(features, /resizable=yes/);
 });
 
+test('buildFeaturesString: includes popup=1 (regression -- required for Chromium to render a true chrome-less popup; without it, toolbar=no/location=no are silently ignored and it opens as a regular tab/window instead)', () => {
+  const features = PopupNavLib.buildFeaturesString(1040, 800, 440, 140);
+  assert.match(features, /(^|,)popup=1(,|$)/);
+});
+
 test('shouldIntercept: true for a plain left-click with no modifiers', () => {
   assert.equal(PopupNavLib.shouldIntercept({ button: 0 }), true);
   assert.equal(PopupNavLib.shouldIntercept({}), true);

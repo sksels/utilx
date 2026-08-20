@@ -47,3 +47,25 @@
     Referrer-Policy = "strict-origin-when-cross-origin"
     Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
     Strict-Transport-Security = "max-age=31536000; includeSubDomains"
+
+# Real incident: after shipping a CSS fix, a branch-alias URL (development--<site>.netlify.app)
+# kept serving an old style.css for multiple deploys in a row -- confirmed via direct fetch
+# that the exact same deploy's own permalink (<deploy-id>--<site>.netlify.app) served the
+# correct, current file. So the build was never the problem: Netlify's edge/CDN had cached a
+# stale response against the branch-alias hostname specifically, and even a "clear cache and
+# deploy" (fresh build, no build-cache reuse) didn't dislodge it, because that clears Netlify's
+# *build* cache, not a *served-response* cache already sitting at the edge for that path.
+# no-cache (not no-store) forces the browser/CDN to revalidate with the origin on every
+# request instead of trusting a cached copy for any length of time -- the origin can still
+# answer with a cheap 304 if the file genuinely hasn't changed, so this isn't "never cache",
+# just "never trust a cached copy without asking first". Scoped to CSS/JS only (matches
+# service-worker.js's PRECACHE_URLS static-asset list) so images/fonts keep normal caching.
+[[headers]]
+  for = "/*.css"
+  [headers.values]
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/*.js"
+  [headers.values]
+    Cache-Control = "no-cache"

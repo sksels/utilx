@@ -1,0 +1,17 @@
+{
+  "plugins": ["stylelint-declaration-strict-value"],
+  "rules": {
+    "no-duplicate-selectors": true,
+    "declaration-block-no-duplicate-properties": true,
+    "block-no-empty": true,
+    "no-empty-source": true,
+    "no-invalid-double-slash-comments": true,
+    "scale-unlimited/declaration-strict-value": [
+      ["color", "background-color", "border-color"],
+      {
+        "ignoreValues": ["currentColor", "transparent", "inherit", "unset", "none"],
+        "message": "Use a design token (var(--...)) instead of a raw color value -- see STYLE_GUIDE.md. If this is genuinely a one-off (e.g. a dynamic user-supplied color preview), wrap it in a stylelint-disable comment explaining why."
+      }
+    ]
+  }
+}

@@ -34,13 +34,6 @@
     return precacheUrls.indexOf(pathname) !== -1;
   }
 
-  // The "update available" toast should only appear when there's a worker genuinely
-  // waiting to take over AND this is an update to an already-running app (a controller
-  // already exists) -- not the very first install, which has no old version to update from.
-  function shouldShowUpdateToast(hasWaitingWorker, hasController) {
-    return !!(hasWaitingWorker && hasController);
-  }
-
   // The custom "Add to Home Screen" prompt should only appear when the browser actually
   // fired beforeinstallprompt (so it's genuinely installable), the app isn't already
   // running in standalone/installed mode, and the user hasn't already dismissed it before.
@@ -53,7 +46,6 @@
     isStaleShellCache,
     shouldHandleFetch,
     isPrecachedAsset,
-    shouldShowUpdateToast,
     shouldShowInstallPrompt
   };
 });

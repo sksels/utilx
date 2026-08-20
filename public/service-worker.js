@@ -1,16 +1,35 @@
-// UtilX service worker -- precaches the installable app shell (the 6 tools + launcher)
-// and applies two caching strategies depending on request type:
+// UtilX service worker -- precaches the installable app shell (the 6 tools + launcher).
+// Both request types below now use the same network-first strategy; the cached shell is
+// only a fallback for when the network request genuinely fails (offline).
 //   - HTML documents (navigations): network-first, cache as fallback only. This is
 //     deliberate -- every real visit should still hit the network so the AdSense script
-//     and the analytics beacon fire exactly as they would in a normal browser tab. The
-//     cached shell only serves when the network request genuinely fails.
-//   - Static assets (CSS/JS/icons): stale-while-revalidate. Serve the cached copy
-//     instantly for speed, and refresh the cache in the background regardless.
+//     and the analytics beacon fire exactly as they would in a normal browser tab.
+//   - Static assets (CSS/JS/icons): also network-first as of this fix (previously
+//     stale-while-revalidate -- serve cache instantly, refresh in the background). That
+//     saved a network round-trip on repeat visits, but it meant a real visitor (not just
+//     an already-open tab) could sit on a stale style.css/JS bundle for an entire extra
+//     visit after a new deploy, with no way to force it short of unregistering the service
+//     worker by hand -- confirmed live: a hard refresh (Ctrl+Shift+R) bypasses the browser's
+//     own HTTP cache but does NOT bypass a service worker's fetch handler, so it did nothing
+//     here. Network-first costs one extra round-trip per asset on a warm cache, but every
+//     visit now gets what's actually deployed, same guarantee HTML navigations already had.
 //
-// Update strategy: new installs sit in the "waiting" state and do NOT auto-activate.
-// The page shows an "update available" toast (see sw-register.js) and only calls
-// skipWaiting() once the user clicks Refresh -- never a silent forced reload, since
-// these tools all involve live user input that a surprise reload could throw away.
+// Update strategy (revised -- see CR#7 note below): new installs call skipWaiting()
+// immediately and take over via clients.claim() on activate, entirely in the background.
+// This does NOT reload or otherwise disturb any currently-open tab/window -- an open tab
+// keeps running the JS it already loaded into memory for the rest of that session (no
+// forced reload is ever triggered, so live user input like a pasted JSON blob or a regex
+// under test is never at risk). The new version simply takes effect the next time the app
+// is genuinely reloaded or reopened (e.g. relaunched from an installed PWA's taskbar/home-
+// screen icon), with no prompt, toast, or confirmation of any kind.
+//
+// CR#7 note: this replaces the original "ask before refresh" toast design. That design
+// assumed a browser-tab context; once the site became installable (CR#4) and users started
+// launching it from a taskbar/home-screen icon like a native app, an interactive "a new
+// version is available, click Refresh" toast doesn't fit that mental model at all -- an
+// installed app's icon is expected to just open the current version, silently, the way any
+// other desktop/mobile app updates. See tests/pwa-lib.test.js and sw-register.js for the
+// registration side of this.
 //
 // The pure decision logic (which caches are stale, which requests to intercept, etc.)
 // lives in pwa-lib.js so it's unit-testable with plain node:test -- see tests/pwa-lib.test.js.
@@ -31,6 +50,9 @@ var PRECACHE_URLS = [
   '/output-toolbar.js',
   '/local-state.js',
   '/manifest.json',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/icon-512-maskable.png',
   '/tools/json-formatter.html',
   '/tools/regex-tester.html',
   '/tools/cron-builder.html',
@@ -54,9 +76,10 @@ self.addEventListener('install', function (event) {
   event.waitUntil(
     caches.open(SHELL_CACHE).then(function (cache) {
       return cache.addAll(PRECACHE_URLS);
+    }).then(function () {
+      return self.skipWaiting();
     })
   );
-  // No self.skipWaiting() here on purpose -- see update-strategy note above.
 });
 
 self.addEventListener('activate', function (event) {
@@ -73,13 +96,6 @@ self.addEventListener('activate', function (event) {
         return self.clients.claim();
       })
   );
-});
-
-// The page's toast sends this once the user clicks "Refresh".
-self.addEventListener('message', function (event) {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
 });
 
 self.addEventListener('fetch', function (event) {
@@ -112,16 +128,15 @@ self.addEventListener('fetch', function (event) {
 
   if (self.PwaLib.isPrecachedAsset(url.pathname, PRECACHE_URLS)) {
     event.respondWith(
-      caches.match(request).then(function (cached) {
-        var network = fetch(request)
-          .then(function (response) {
-            var copy = response.clone();
-            caches.open(SHELL_CACHE).then(function (cache) { cache.put(request, copy); });
-            return response;
-          })
-          .catch(function () { return cached; });
-        return cached || network;
-      })
+      fetch(request)
+        .then(function (response) {
+          var copy = response.clone();
+          caches.open(SHELL_CACHE).then(function (cache) { cache.put(request, copy); });
+          return response;
+        })
+        .catch(function () {
+          return caches.match(request);
+        })
     );
   }
 });

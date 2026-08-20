@@ -54,7 +54,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
     </table>
 
     <h2>Example: matching an email-like string</h2>
-    <pre><code>{String.raw`\b[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}\b`}</code></pre>
+    <pre><code>{String.raw`\b[\w.+-]+@[\w-]+(?:\.[\w-]+)+\b`}</code></pre>
     <p>This is fine for quick filtering, but note that a fully RFC-compliant email regex is notoriously complex — for real validation, send a confirmation email instead of relying purely on regex.</p>
 
     <h2>Try it yourself</h2>

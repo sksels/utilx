@@ -1,0 +1,22 @@
+---
+// Shared wrapper for the action-button rail beside an input field (Format, Encode, Generate,
+// Clear, etc.). Unlike OutputToolbar.astro, these buttons call different page-specific JS
+// functions per tool (encode()/decode()/generatePassword()/formatJson()/...), so this
+// component does NOT render the buttons itself -- it just guarantees every tool page uses
+// the exact same wrapper markup (div.input-toolbar[.inline]) instead of hand-copying it six
+// times, which is how the wrapper class/structure drifted between pages in the past. Callers
+// pass their own <button class="toolbar-btn" ...> elements as children.
+//
+// Layout (flex row/column, alignment, gap) comes entirely from style.css's
+// div:has(> .input-toolbar) rule -- this component only owns the class name, not the layout.
+interface Props {
+  /** true for a toolbar beside a single-line field (row layout) instead of a multi-line
+      textarea/grouped panel (column layout, the default). */
+  inline?: boolean;
+}
+
+const { inline = false } = Astro.props;
+---
+<div class:list={["input-toolbar", { inline }]}>
+  <slot />
+</div>

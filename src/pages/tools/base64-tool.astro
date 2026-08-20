@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
+import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
 
 const jsonLd = JSON.stringify({
@@ -48,14 +49,25 @@ const jsonLd = JSON.stringify({
 
     <div class="card">
       <label for="input">Input</label>
-      <textarea id="input" rows="8" placeholder="Type or paste text here..."></textarea>
-
-      <div>
-        <button onclick="encode()">Encode →</button>
-        <button onclick="decode()">← Decode</button>
-        <button class="secondary" onclick="swap()">Swap</button>
-        <button class="secondary" onclick="copyShareLink()">Copy shareable link</button>
-        <button class="secondary" onclick="clearAll()">Clear</button>
+      <div class="input-target">
+        <textarea id="input" rows="8" placeholder="Type or paste text here..."></textarea>
+        <InputToolbar>
+          <button class="toolbar-btn" onclick="encode()" title="Encode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="decode()" title="Decode">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="swap()" title="Swap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3l4 4-4 4"/><path d="M3 7h18"/><path d="M7 21l-4-4 4-4"/><path d="M21 17H3"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="copyShareLink()" title="Copy shareable link">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="clearAll()" title="Clear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </InputToolbar>
       </div>
       <p style="color:var(--text-dim); font-size:0.8rem; margin:6px 0 0;">Tip: press Ctrl+Enter (Cmd+Enter on Mac) to encode. In the JWT box below, it decodes instead.</p>
 
@@ -63,8 +75,10 @@ const jsonLd = JSON.stringify({
 
       <div class="output-box">
         <label for="output">Output</label>
-        <textarea id="output" rows="8"></textarea>
-        <OutputToolbar targetId="output" download={true} downloadFilename="output.txt" />
+        <div class="output-target">
+          <textarea id="output" rows="8"></textarea>
+          <OutputToolbar targetId="output" download={true} downloadFilename="output.txt" />
+        </div>
       </div>
     </div>
 
@@ -72,25 +86,38 @@ const jsonLd = JSON.stringify({
       <h2 style="margin-top:0;">JWT Decoder</h2>
       <p style="color:var(--text-dim); margin-top:-8px;">JWTs are just Base64url-encoded JSON under the hood — paste one below to see the header and payload decoded. This does not verify the signature (that requires the secret key), it just decodes the readable parts.</p>
       <label for="jwtInput">JWT</label>
-      <textarea id="jwtInput" rows="4" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
-      <div>
-        <button onclick="decodeJwt()">Decode JWT</button>
+      <div class="input-target">
+        <textarea id="jwtInput" rows="4" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"></textarea>
+        <InputToolbar>
+          <button class="toolbar-btn" onclick="decodeJwt()" title="Decode JWT">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M11 6l-6 6 6 6"/></svg>
+          </button>
+          <button class="toolbar-btn" onclick="clearJwt()" title="Clear">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </InputToolbar>
       </div>
       <div id="jwtMsg"></div>
       <div class="output-box">
-        <label>Header</label>
-        <textarea id="jwtHeader" rows="4" readonly></textarea>
-        <OutputToolbar targetId="jwtHeader" />
+        <label for="jwtHeader">Header</label>
+        <div class="output-target">
+          <textarea id="jwtHeader" rows="4" readonly></textarea>
+          <OutputToolbar targetId="jwtHeader" />
+        </div>
       </div>
       <div class="output-box">
-        <label>Payload</label>
-        <textarea id="jwtPayload" rows="6" readonly></textarea>
-        <OutputToolbar targetId="jwtPayload" />
+        <label for="jwtPayload">Payload</label>
+        <div class="output-target">
+          <textarea id="jwtPayload" rows="6" readonly></textarea>
+          <OutputToolbar targetId="jwtPayload" />
+        </div>
       </div>
       <div class="output-box">
-        <label>Signature (raw, unverified)</label>
-        <input type="text" id="jwtSignature" readonly>
-        <OutputToolbar targetId="jwtSignature" />
+        <label for="jwtSignature">Signature (raw, unverified)</label>
+        <div class="output-target">
+          <input type="text" id="jwtSignature" readonly>
+          <OutputToolbar targetId="jwtSignature" inline={true} />
+        </div>
       </div>
     </div>
 
@@ -163,6 +190,14 @@ function clearAll() {
   document.getElementById('input').value = '';
   document.getElementById('output').value = '';
   document.getElementById('msg').innerHTML = '';
+}
+
+function clearJwt() {
+  document.getElementById('jwtInput').value = '';
+  document.getElementById('jwtHeader').value = '';
+  document.getElementById('jwtPayload').value = '';
+  document.getElementById('jwtSignature').value = '';
+  document.getElementById('jwtMsg').innerHTML = '';
 }
 
 function copyShareLink() {
