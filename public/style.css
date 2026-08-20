@@ -258,7 +258,11 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
      catching a subtly raised card. */
   box-shadow: var(--shadow-sm), inset 0 1px 0 rgba(255, 255, 255, 0.04), inset 0 -1px 0 rgba(0, 0, 0, 0.12);
   transition: border-color .2s var(--ease), transform .2s var(--ease), box-shadow .2s var(--ease);
-  display: block;
+  /* CR#8 backlog #56: flex column so .tool-card-guide's margin-top:auto (below) can pin the
+     separator line + guide link to the bottom of the card, instead of it sitting wherever the
+     description text happens to end -- see that rule's comment for the full reasoning. */
+  display: flex;
+  flex-direction: column;
 }
 .tool-card:hover {
   border-color: var(--accent);
@@ -348,9 +352,23 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
    .tool-card-link covers the icon/title/description as the main click target, and
    .tool-card-guide is a smaller secondary link below it. */
 .tool-card-link { display: block; color: inherit; text-decoration: none; }
+/* CR#8 backlog #56: user feedback the separator line above this link didn't "match and
+   reside at the same level across tiles" -- it didn't, on two counts. First, margin-top:12px
+   put it directly after the description text, so its height depended on how many lines that
+   text happened to wrap to (varies per tile). Second, Password Generator and Color Converter
+   had no .tool-card-guide at all (no /guides/ page exists for either), so those two tiles had
+   no line whatsoever -- every tile in a grid row visually needs the same footer position to
+   read as a consistent set. margin-top:auto (with .tool-card now a flex column, above) pins
+   this to the bottom of the card instead of wherever the content above happens to end -- grid
+   items stretch to their row's tallest tile by default (.tool-grid never overrides
+   align-items), so cards in the same row are already equal height, and this rides that to sit
+   at the same Y position across all of them. The two previously-missing tiles now reuse the
+   same "Related tool" cross-link their own tool page already shows in its own "Related tool"
+   paragraph (both point to Base64 Encoder / Decoder), rather than inventing new guide pages or
+   leaving a tile with no footer to pin. */
 .tool-card-guide {
   display: block;
-  margin-top: 12px;
+  margin-top: auto;
   padding-top: 10px;
   border-top: 1px solid var(--border);
   font-size: 0.82rem;

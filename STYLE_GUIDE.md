@@ -239,6 +239,23 @@ New library files added to a tool page's `head-extra` must also be added to
 shipping, not after), and it's an easy thing to forget since the page works fine locally
 either way; it only breaks offline/installed-PWA sessions.
 
+## Homepage tile footer alignment (CR#8, backlog #56)
+
+`.tool-card` is a flex column (not `display: block`) specifically so `.tool-card-guide`'s
+`margin-top: auto` can pin the separator line + link to the bottom of the card. Don't revert
+`.tool-card` to `display: block` without re-solving this: without the flex column, the line
+goes back to sitting wherever the description text happens to end, which varies per tile (and
+was the exact complaint that prompted this).
+
+Every tile has a `.tool-card-guide` footer now, even the two tools with no dedicated
+`/guides/` page (Password Generator, Color Converter) — those two reuse the same "Related
+tool" cross-link their own tool page already shows (both point to Base64 Encoder / Decoder),
+rather than a tile with no footer to pin, or an invented guide page. If a 7th tool is ever
+added with genuinely no natural related-tool link, give it a `.tool-card-guide` anyway (even
+pointing back to the homepage's guides listing, or omitted entirely with the understanding
+that its tile's line will then sit higher than the rest of that row) rather than silently
+breaking the "same line, same level" consistency this fix established.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).
