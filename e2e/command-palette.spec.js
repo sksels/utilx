@@ -125,8 +125,15 @@ test.describe('command palette', () => {
   });
 
   test('dragged position resets on re-open, not persisted', async ({ page }) => {
+    // .utilx-palette has a 0.2s fadeInUp animation (translateY 6px -> 0) on open -- without
+    // waiting it out, boundingBox() can be measured mid-animation, and the two measurements
+    // below (initial open vs re-open) land at different random points in that 0.2s window,
+    // producing a few px of pure animation-timing noise that has nothing to do with whether
+    // the drag position actually reset. Real bug found by CI's first-ever run of this file
+    // (Aug 21 2026) -- looked like a positioning bug, was actually a test race.
     await page.goto('/');
     await page.getByRole('button', { name: 'Open command palette' }).click();
+    await page.waitForTimeout(250);
 
     const dialog = page.locator('#utilx-palette');
     const original = await dialog.boundingBox();
@@ -139,6 +146,7 @@ test.describe('command palette', () => {
 
     await page.keyboard.press('Escape');
     await page.getByRole('button', { name: 'Open command palette' }).click();
+    await page.waitForTimeout(250);
     const reopened = await dialog.boundingBox();
 
     expect(reopened.x).toBeCloseTo(original.x, 0);

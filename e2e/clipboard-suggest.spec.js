@@ -4,6 +4,16 @@
 const { test, expect } = require('@playwright/test');
 
 test.describe('clipboard suggestion toast', () => {
+  // Serialized, not parallel (playwright.config.js sets fullyParallel: true site-wide): every
+  // test here writes to navigator.clipboard, and on Linux CI runners the clipboard can behave
+  // like a single shared OS resource across concurrent browser contexts rather than being
+  // isolated per test. Real flake caught by CI's first-ever run of this file on `development`
+  // (Aug 21 2026) -- "does not show a toast for clipboard content that matches no tool" failed
+  // once (almost certainly reading another test's in-flight clipboard write) then passed on
+  // retry (ran alone that time). Serializing removes the race instead of masking it with a
+  // longer wait, which wouldn't fix concurrent writes landing in either order.
+  test.describe.configure({ mode: 'serial' });
+
   test('shows the toast and navigates to the matching tool when clipboard-read is already granted', async ({ page, context, baseURL }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write'], { origin: baseURL });
     await page.goto('/');

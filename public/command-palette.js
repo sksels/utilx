@@ -25,6 +25,14 @@ let initialized = false;
 let dragging = false;
 let dragOffsetX = 0;
 let dragOffsetY = 0;
+// Real bug, caught by CI's first-ever run of this file (Aug 21 2026): ArrowDown/ArrowUp
+// pressed before palette-data.json/Fuse.js have finished loading were silently dropped
+// (visibleResults is still [] at that point, so onKeydown's nav branch no-ops), and then
+// render()'s initial call unconditionally reset selectedIndex to 0 once data DID arrive --
+// erasing the keypress entirely. Only reachable on the first open of a session (later opens
+// reuse the cached entriesPromise and resolve near-instantly), but a real race a fast
+// keyboard user or a slow connection could hit. Recorded here and replayed once data loads.
+let pendingInitialNavDelta = 0;
 
 function els() {
   if (!backdropEl) {
@@ -184,6 +192,8 @@ function onKeydown(e) {
     if (visibleResults.length) {
       selectedIndex = (selectedIndex + 1) % visibleResults.length;
       updateSelectionVisual();
+    } else {
+      pendingInitialNavDelta += 1;
     }
     return;
   }
@@ -192,6 +202,8 @@ function onKeydown(e) {
     if (visibleResults.length) {
       selectedIndex = (selectedIndex - 1 + visibleResults.length) % visibleResults.length;
       updateSelectionVisual();
+    } else {
+      pendingInitialNavDelta -= 1;
     }
     return;
   }
@@ -284,9 +296,16 @@ export function openPalette() {
   resetDragPosition();
   lastFocused = document.activeElement;
   backdropEl.hidden = false;
+  pendingInitialNavDelta = 0;
   document.addEventListener('keydown', onKeydown);
   loadData().then(() => {
     render(allEntries);
+    if (pendingInitialNavDelta !== 0 && visibleResults.length) {
+      const len = visibleResults.length;
+      selectedIndex = ((selectedIndex + pendingInitialNavDelta) % len + len) % len;
+      updateSelectionVisual();
+    }
+    pendingInitialNavDelta = 0;
     inputEl.value = '';
     inputEl.focus();
   });
