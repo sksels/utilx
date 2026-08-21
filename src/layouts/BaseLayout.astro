@@ -111,7 +111,12 @@ if (window.opener) document.documentElement.classList.add('popup-mode');
   </>
 )}
 {includeAdsAndAnalytics && <script is:inline defer src="/analytics.js"></script>}
-{includePopupNav && <script is:inline src="/popup-nav.js"></script>}
+{/* CR#8 #35: selecting a palette result now opens the tool in the same popup window the
+    homepage tiles use (window.openToolPopup, defined here) -- so this needs to load on every
+    page the palette is on, not just the homepage. One shared condition (instead of a second
+    near-identical script tag) avoids loading popup-nav.js twice on index.astro, which sets
+    both includePopupNav and includeCommandPalette. */}
+{(includePopupNav || includeCommandPalette) && <script is:inline src="/popup-nav.js"></script>}
 <link rel="stylesheet" href="/style.css">
 {pwa && (
   <>

@@ -17,19 +17,24 @@ let entriesPromise = null;
 let fuseInstance = null;
 let allEntries = [];
 
-let backdropEl, inputEl, resultsEl;
+let backdropEl, inputEl, resultsEl, paletteEl, dragHandleEl;
 let selectedIndex = -1;
 let visibleResults = [];
 let lastFocused = null;
 let initialized = false;
+let dragging = false;
+let dragOffsetX = 0;
+let dragOffsetY = 0;
 
 function els() {
   if (!backdropEl) {
     backdropEl = document.getElementById('utilx-palette-backdrop');
     inputEl = document.getElementById('utilx-palette-input');
     resultsEl = document.getElementById('utilx-palette-results');
+    paletteEl = document.getElementById('utilx-palette');
+    dragHandleEl = document.getElementById('utilx-palette-drag-handle');
   }
-  return { backdropEl, inputEl, resultsEl };
+  return { backdropEl, inputEl, resultsEl, paletteEl, dragHandleEl };
 }
 
 // Pure, unit-testable: shapes the raw palette-data.json payload into one flat, render-ready
@@ -114,7 +119,7 @@ function render(results) {
 function attachRowHandlers() {
   const { resultsEl } = els();
   resultsEl.querySelectorAll('.utilx-palette-row').forEach((row) => {
-    row.addEventListener('click', () => navigateTo(row.dataset.url));
+    row.addEventListener('click', () => activateEntry(visibleResults[Number(row.dataset.index)]));
     row.addEventListener('mouseenter', () => {
       selectedIndex = Number(row.dataset.index);
       updateSelectionVisual();
@@ -131,9 +136,26 @@ function updateSelectionVisual() {
   });
 }
 
-function navigateTo(url) {
-  if (!url) return;
-  window.location.href = url;
+// Site owner call (Aug 20 2026): selecting a result opens the tool the same way clicking a
+// homepage tile does -- window.openToolPopup (public/popup-nav.js), not a plain navigation of
+// the current page. Only 'tool' entries get the popup treatment, matching the homepage (only
+// tool tiles are popup-triggering there; the "Guide: X ->" links on each tile are plain
+// navigation, and guides aren't in the tile grid at all). openToolPopup expects a MouseEvent
+// to read modifier keys off of (middle-click/ctrl/cmd/shift/alt all mean "let this navigate
+// normally instead") -- passing {} here means none of those are set, so it always attempts
+// the popup, which is what a keyboard/click selection from the palette should do. It returns
+// false when it successfully opened the popup (handled), or true when it did not intercept
+// (blocked by a popup blocker, here, since {} can never trigger the modifier-key path) -- in
+// that true case we fall back to a plain navigation so the click still does something.
+function activateEntry(entry) {
+  if (!entry || !entry.url) return;
+  if (entry.kind === 'tool' && typeof window.openToolPopup === 'function') {
+    const notIntercepted = window.openToolPopup({}, entry.url);
+    if (notIntercepted) window.location.href = entry.url;
+  } else {
+    window.location.href = entry.url;
+  }
+  closePalette();
 }
 
 function search(query) {
@@ -170,7 +192,7 @@ function onKeydown(e) {
   if (e.key === 'Enter') {
     e.preventDefault();
     const entry = visibleResults[selectedIndex];
-    if (entry) navigateTo(entry.url);
+    if (entry) activateEntry(entry);
     return;
   }
   if (e.key === 'Tab') {
@@ -190,12 +212,62 @@ function onBackdropClick(e) {
   if (e.target && e.target.id === 'utilx-palette-backdrop') closePalette();
 }
 
+// Site owner call (Aug 20 2026): draggable, not fixed. The dialog starts centered/top-anchored
+// via the backdrop's own flexbox layout (see style.css) -- position:fixed only gets applied
+// here, at drag-start, once the user actually grabs the handle, so a visitor who never drags
+// it sees no behavior change at all. Position resets to the CSS default on every re-open
+// (see openPalette() below) rather than persisting across opens -- simplest v1 behavior;
+// persisting the last dragged position (e.g. via sessionStorage) is a reasonable future
+// enhancement, not assumed here.
+function onDragStart(e) {
+  const { paletteEl } = els();
+  if (!paletteEl) return;
+  e.preventDefault();
+  const rect = paletteEl.getBoundingClientRect();
+  dragOffsetX = e.clientX - rect.left;
+  dragOffsetY = e.clientY - rect.top;
+  paletteEl.style.position = 'fixed';
+  paletteEl.style.margin = '0';
+  paletteEl.style.left = rect.left + 'px';
+  paletteEl.style.top = rect.top + 'px';
+  dragging = true;
+  document.addEventListener('mousemove', onDragMove);
+  document.addEventListener('mouseup', onDragEnd);
+}
+
+function onDragMove(e) {
+  if (!dragging) return;
+  const { paletteEl } = els();
+  const maxLeft = window.innerWidth - paletteEl.offsetWidth;
+  const maxTop = window.innerHeight - paletteEl.offsetHeight;
+  const newLeft = Math.max(0, Math.min(e.clientX - dragOffsetX, maxLeft));
+  const newTop = Math.max(0, Math.min(e.clientY - dragOffsetY, maxTop));
+  paletteEl.style.left = newLeft + 'px';
+  paletteEl.style.top = newTop + 'px';
+}
+
+function onDragEnd() {
+  dragging = false;
+  document.removeEventListener('mousemove', onDragMove);
+  document.removeEventListener('mouseup', onDragEnd);
+}
+
+function resetDragPosition() {
+  const { paletteEl } = els();
+  if (!paletteEl) return;
+  paletteEl.style.position = '';
+  paletteEl.style.left = '';
+  paletteEl.style.top = '';
+  paletteEl.style.margin = '';
+}
+
 function ensureInit() {
   if (initialized) return;
-  const { backdropEl, inputEl } = els();
+  const { backdropEl, inputEl, dragHandleEl } = els();
   if (!backdropEl) return;
   inputEl.addEventListener('input', onInput);
   backdropEl.addEventListener('click', onBackdropClick);
+  if (dragHandleEl) dragHandleEl.addEventListener('mousedown', onDragStart);
   initialized = true;
 }
 
@@ -203,6 +275,7 @@ export function openPalette() {
   ensureInit();
   const { backdropEl, inputEl } = els();
   if (!backdropEl) return;
+  resetDragPosition();
   lastFocused = document.activeElement;
   backdropEl.hidden = false;
   document.addEventListener('keydown', onKeydown);
@@ -218,6 +291,10 @@ export function closePalette() {
   if (!backdropEl || backdropEl.hidden) return;
   backdropEl.hidden = true;
   document.removeEventListener('keydown', onKeydown);
+  // Defensive: if Escape/backdrop-click/activateEntry fires mid-drag (e.g. dragged onto a
+  // palette row, then Enter), make sure the drag's own document-level listeners don't outlive
+  // the dialog closing.
+  onDragEnd();
   if (lastFocused && typeof lastFocused.focus === 'function') lastFocused.focus();
 }
 
