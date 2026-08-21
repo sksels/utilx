@@ -454,6 +454,31 @@ collection, no palette changes either.
 
 **Scope note.** This first pass is search + keyboard nav + navigate only. Recently-used-first ordering, "Paste & go" clipboard tie-in, output-side quick actions, a theme-toggle command, and alias-boosted ranking are logged as CR#8 backlog sub-items (#64-#68), deliberately deferred for gradual follow-up. Tool-page quick actions (mirroring each tool's own input-toolbar buttons) are also out of this pass -- every tool wires a different, bespoke set of global functions (`encode()`/`formatJson()`/`generatePassword()`/...), and wiring six tool-specific integrations deserves its own pass and tests.
 
+## Testing policy: Definition of Done and the CI pipeline
+
+Established Aug 21 2026 after CR#8 #35 (command palette) shipped with real, user-visible bugs despite "tests exist" being true at every point along the way. The lesson: a test file existing is not the same as a test having ever run. The palette's Playwright spec (`e2e/command-palette.spec.js`) was written in the same commit as the feature itself, but sat unexecuted for a full day of work -- it couldn't run in the sandbox this project is built in (Chromium download blocked by that sandbox's network allowlist), and `ci.yml` didn't trigger on `development` pushes at all at the time. It hid a real fuzzy-search bug (Fuse.js's threshold was loose enough to match "cron" against Color Converter and Password & UUID Generator) for that entire day, plus the test's own assertion was wrong. Nothing is "Done" until it has actually run and passed, not merely been written.
+
+**Definition of Done -- four gates, only claim what was actually checked:**
+
+1. **Written** -- code exists, matches this style guide, `node --check`-clean.
+2. **Unit-verified** -- `node --test` suite passes, zero regressions.
+3. **Build-verified** -- fresh clone, `npm ci && npm run build` succeeds, schema/lint checks pass.
+4. **Live-verified** -- actually opened in a real browser (via the connected Chrome browser tools, or CI's Playwright run) and walked through an acceptance checklist agreed *before* building, not assumed after.
+
+State explicitly which gates were run for a given change. "Done" without saying which gates passed is not an acceptable status update.
+
+**CI pipeline (`.github/workflows/ci.yml`) -- one job per branch, each push-triggered, each scoped to what that stage is actually for:**
+
+| Branch | Job | Runs | Why |
+|---|---|---|---|
+| `development` | `development-tests` | syntax check, `lint:css`, `astro build`, `node --test`, Playwright (no Lighthouse) | Full functional pack, fires immediately on every push -- this is where new-feature bugs get caught, right after the push that introduced them, and where iteration happens. |
+| `staging` | `performance` | `astro build`, Lighthouse | Functional correctness was already proven on `development` against this exact code; re-running the full pack would be re-testing an unchanged input. Performance budgets are the one thing the dev pack doesn't cover. |
+| `main` | `sanity` | `astro build`, `node --test` | Can't block anything after the fact (see below), but gives an immediate automated signal if something is visibly broken on the branch that drives the production deploy. |
+
+**Deliberately no `pull_request` trigger and no branch-protection required-status-check** (backlog #117 -- closed as not-applicable to this design, not done). There's no PR-attached check for branch protection to gate on, so promotion safety is procedural: confirm the previous stage's push was green before promoting, not a technical block on the merge button. That's the right tradeoff for a single-maintainer pipeline with no parallel or forked development. If this project ever grows multiple contributors or forks, revisit this -- add `pull_request` triggers back and turn on branch protection, since "trust the last push was checked" stops holding once more than one person can push.
+
+**Playwright/Lighthouse cannot run in this project's Claude sandbox** -- both need to download a browser, and that sandbox's network allowlist blocks it. `node --test` and everything else here (lint, build) has no such dependency and always runs locally before a commit. This is why gate 4 (Live-verified) for anything with DOM/browser behavior means either the connected Chrome browser tools against a deployed URL, or waiting for the relevant CI stage to actually run -- not a local Playwright run, which structurally cannot happen here.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).
