@@ -22,13 +22,17 @@ test.describe('command palette', () => {
   });
 
   test('typing filters results down to matching tools/guides', async ({ page }) => {
+    // "cron" legitimately matches two entries -- the tool and its guide -- and nothing else.
+    // Regression coverage for a real bug (Aug 21 2026): the Fuse.js threshold was too loose
+    // (0.35) and this same query also matched Color Converter and Password & UUID Generator,
+    // neither of which mentions cron anywhere. Tightened to 0.2 in public/command-palette.js.
     await page.goto('/');
     await page.getByRole('button', { name: 'Open command palette' }).click();
     await page.locator('#utilx-palette-input').fill('cron');
 
     const rows = page.locator('.utilx-palette-row');
-    await expect(rows).toHaveCount(1);
-    await expect(rows.first()).toContainText('Cron Expression Builder');
+    await expect(rows).toHaveCount(2);
+    await expect(rows).toContainText(['Cron Expression Builder', 'Cron Syntax Guide']);
   });
 
   test('a query matching nothing shows the empty state, not a stale result list', async ({ page }) => {

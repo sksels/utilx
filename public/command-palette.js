@@ -80,7 +80,13 @@ async function loadData() {
           { name: 'label', weight: 0.7 },
           { name: 'description', weight: 0.3 },
         ],
-        threshold: 0.35,
+        // 0.35 (Fuse's own suggested "fairly permissive" default) was too loose in practice --
+        // live-verification (Aug 21 2026) found "cron" matching Color Converter and Password &
+        // UUID Generator, neither of which has anything to do with cron. Tuned empirically
+        // against every tool/guide label+description in src/data/*.json: 0.2 is the tightest
+        // value that still keeps every intended match (including single-word ones like "uuid")
+        // while dropping the false positives. See e2e/command-palette.spec.js's filtering test.
+        threshold: 0.2,
       });
       return allEntries;
     });
