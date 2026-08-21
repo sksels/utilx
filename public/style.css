@@ -1129,9 +1129,19 @@ div:has(> .output-toolbar) {
   display: flex;
   flex-direction: column;
 }
+/* Real bug, caught by CI's first-ever run on development (Aug 21 2026): .input-box-row (JSON
+   Formatter's/Password Generator's left pane) has a deliberate margin-top:6px giving breathing
+   room below .field-header's recent-inputs row -- but .output-target here had no equivalent, so
+   the input box sat 6px lower than the output textarea despite both panes sharing the same
+   padding-top:14px base offset. Site owner call: give the output side matching spacing rather
+   than removing the input side's. Scoped to .output-box-fill (JSON Formatter's grown output box
+   only, per the comment above) so Regex Tester's stacked .output-box sections and every other
+   tool's plain .output-box are untouched -- confirmed live (diff went from 6px to 0px) before
+   committing. */
 .output-box-fill .output-target {
   flex: 1 1 auto;
   align-items: stretch;
+  margin-top: 6px;
 }
 .output-box-fill .output-target > .output-toolbar {
   align-self: center;
