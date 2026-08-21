@@ -324,6 +324,17 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
      this value means (a fixed dimming overlay, not a themed surface). */
   background: rgba(10, 12, 18, 0.55);
 }
+/* Real bug, caught live: the [hidden] attribute's default `display: none` (a UA-stylesheet
+   rule) is overridden by ANY author-stylesheet `display` declaration on the same element,
+   `hidden` attribute or not -- a well-known CSS gotcha (see MDN's own note on the `hidden`
+   attribute). Without this, .utilx-palette-backdrop's `display: flex` above wins regardless
+   of `hidden`, so the backdrop rendered as permanently visible from page load, before
+   openPalette() ever ran -- which also meant the Escape listener (wired inside openPalette())
+   was never attached, and search stayed dead since loadData() was never triggered either.
+   [hidden] alone has equal specificity to the bare class selector above, so this needs the
+   compound `.utilx-palette-backdrop[hidden]` selector (higher specificity) to reliably win
+   regardless of source order, not just append a later same-specificity rule. */
+.utilx-palette-backdrop[hidden] { display: none; }
 .utilx-palette {
   width: 100%;
   max-width: 560px;
