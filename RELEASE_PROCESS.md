@@ -35,14 +35,11 @@ No command for this step — it's manual review.
 
 ## 4. Promote development -> staging
 
-On GitHub (github.com/sksels/utilx):
+Merge `development` into `staging` directly (locally with `git merge`, or on GitHub) and push.
+No PR is required — see the note below.
 
-- Switch branch dropdown to `development`.
-- Either merge directly into `staging`, or open a PR: base `staging`, compare `development` ->
-  "Create pull request" -> "Merge pull request".
-
-This push triggers the CI workflow automatically. Check the **Actions** tab for a green run
-(syntax check + `node --test` regression suite).
+This push triggers the `performance` job in CI (Lighthouse budgets against the built site).
+Check the **Actions** tab for a green run before moving on to step 5.
 
 ## 5. QA on staging
 
@@ -51,14 +48,22 @@ needed.
 
 ## 6. Promote staging -> main
 
-On GitHub:
+Merge `staging` into `main` directly (locally with `git merge`, or on GitHub) and push. No PR is
+required here either.
 
-- Go to `github.com/sksels/utilx/compare/main...staging` (base: `main`, compare: `staging`).
-- Click **Create pull request**, confirm the CI check passes on the PR, then **Merge pull
-  request**.
+This push triggers the `sanity` job in CI (build + unit tests). Check the **Actions** tab for a
+green run.
 
-Always use a PR here, not a direct merge — the PR is what triggers the CI check as a gate
-before production.
+**Note on CI and PRs (updated Aug 21 2026):** `ci.yml` is pure push-triggered — there's no
+`pull_request` trigger and no branch-protection required-status-check on this repo, by design
+(see `ARCHITECTURE.md` §7 and `STYLE_GUIDE.md`'s Definition of Done section). CI never
+technically blocks a merge; it's a fast automated signal, not a gate. Promotion safety is
+procedural: confirm the previous stage's CI run was green *before* promoting, the same way you'd
+confirm it via a PR check, just without GitHub enforcing it for you. This is the right tradeoff
+for a single-maintainer project with no forks or parallel contributors — revisit (add
+`pull_request` triggers and real branch protection back) if that ever changes. Using a PR instead
+of a direct merge is still fine if you prefer the review-diff UI; it just isn't required to
+trigger CI the way it used to be.
 
 ## 7. Production deploy
 

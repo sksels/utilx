@@ -51,7 +51,9 @@ const URL_STATE_PAGES = [
 test('every keyboard-shortcut tool page loads lib/shortcuts.js and wires a keydown listener', () => {
   for (const page of SHORTCUT_PAGES) {
     const html = readPage(page);
-    assert.match(html, /<script src="lib\/shortcuts\.js">/, `${page} should load lib/shortcuts.js`);
+    // (?: defer)? -- base64-tool.html defers this (and its other tool libs) as of the Aug 24
+    // 2026 Lighthouse LCP fix; every other page still loads it as a plain blocking script.
+    assert.match(html, /<script(?: defer)? src="lib\/shortcuts\.js">/, `${page} should load lib/shortcuts.js`);
     assert.match(html, /ShortcutsLib\.isRunShortcut/, `${page} should call ShortcutsLib.isRunShortcut`);
   }
 });
@@ -59,7 +61,7 @@ test('every keyboard-shortcut tool page loads lib/shortcuts.js and wires a keydo
 test('every shareable-URL tool page loads lib/url-state.js and wires a share-link + restore flow', () => {
   for (const page of URL_STATE_PAGES) {
     const html = readPage(page);
-    assert.match(html, /<script src="lib\/url-state\.js">/, `${page} should load lib/url-state.js`);
+    assert.match(html, /<script(?: defer)? src="lib\/url-state\.js">/, `${page} should load lib/url-state.js`);
     assert.match(html, /UrlStateLib\.buildShareUrl/, `${page} should build a shareable link`);
     assert.match(html, /UrlStateLib\.decodeState/, `${page} should restore state from the URL on load`);
   }

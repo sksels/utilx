@@ -9,6 +9,8 @@
 // header used only on the token-gated admin dashboard (which also skips theme.js, AdSense,
 // analytics, and the footer entirely in the original markup). The `header`/`includeThemeJs`/
 // `showFooter` props reproduce that split faithfully rather than forcing one shape everywhere.
+import CommandPalette from '../components/CommandPalette.astro';
+
 interface Props {
   title: string;
   description?: string;
@@ -31,6 +33,13 @@ interface Props {
   includePopupNav?: boolean;
   /** Homepage only. */
   includeTileOrder?: boolean;
+  /** Homepage only. CR#8 backlog #32: clipboard-based tool suggestion toast. */
+  includeClipboardSuggest?: boolean;
+  /** CR#8 #35: native command palette (Cmd/Ctrl+K). Defaults to true whenever the full header
+      is shown -- it's meant to be global nav, available from every page -- and false for the
+      admin dashboard (header: 'minimal'), matching how that page already opts out of
+      theme.js/ads/analytics/footer. Pass explicitly only to override that default. */
+  includeCommandPalette?: boolean;
   /** 'full' = brand + trust badge + nav + theme toggle. 'minimal' = brand link only (admin). */
   header?: 'full' | 'minimal';
   showFooter?: boolean;
@@ -49,10 +58,12 @@ const {
   includeAdsAndAnalytics = true,
   includePopupNav = false,
   includeTileOrder = false,
+  includeClipboardSuggest = false,
   header = 'full',
   showFooter = true,
   noindex = false,
 } = Astro.props;
+const includeCommandPalette = Astro.props.includeCommandPalette ?? (header === 'full');
 
 const siteUrl = 'https://utilx.tools';
 const canonicalUrl = canonicalPath ? siteUrl + canonicalPath : null;
@@ -75,8 +86,28 @@ const isHome = canonicalPath === '/';
 if (window.opener) document.documentElement.classList.add('popup-mode');
 </script>
 {includeAdsAndAnalytics && (
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745"
-     crossorigin="anonymous"></script>
+  <script is:inline>
+  // Real regression found via Lighthouse CI (Aug 24 2026): this ~260KB Google AdSense loader
+  // (Auto Ads script + its sodar/config calls) was previously loaded eagerly via a plain
+  // <script async> tag -- `async` only means "don't block HTML parsing," not "don't compete for
+  // bandwidth/CPU right now." Under Lighthouse's Slow-4G + CPU-throttled emulation this was 77%
+  // of base64-tool.html's total network weight and starved that page's own paint of bandwidth
+  // and main-thread time, even though the tag is byte-for-byte identical on every page (that
+  // page's LCP candidate is simply the one with the least margin to absorb the contention).
+  // No <ins class="adsbygoogle"> ad units exist yet -- see README's "before applying for
+  // AdSense" checklist -- so nothing currently depends on this having loaded by any particular
+  // moment. Deferring to page idle (same pattern as the command palette's Fuse.js load, see
+  // CommandPalette.astro) costs nothing once Auto Ads is actually live, while taking a third of
+  // a megabyte of third-party JS fully out of the critical rendering path for every visitor.
+  var idleLoadAds = window.requestIdleCallback || function (fn) { setTimeout(fn, 1500); };
+  idleLoadAds(function () {
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745';
+    s.crossOrigin = 'anonymous';
+    document.head.appendChild(s);
+  });
+  </script>
 )}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -100,7 +131,12 @@ if (window.opener) document.documentElement.classList.add('popup-mode');
   </>
 )}
 {includeAdsAndAnalytics && <script is:inline defer src="/analytics.js"></script>}
-{includePopupNav && <script is:inline src="/popup-nav.js"></script>}
+{/* CR#8 #35: selecting a palette result now opens the tool in the same popup window the
+    homepage tiles use (window.openToolPopup, defined here) -- so this needs to load on every
+    page the palette is on, not just the homepage. One shared condition (instead of a second
+    near-identical script tag) avoids loading popup-nav.js twice on index.astro, which sets
+    both includePopupNav and includeCommandPalette. */}
+{(includePopupNav || includeCommandPalette) && <script is:inline src="/popup-nav.js"></script>}
 <link rel="stylesheet" href="/style.css">
 {pwa && (
   <>
@@ -116,6 +152,15 @@ if (window.opener) document.documentElement.classList.add('popup-mode');
   </>
 )}
 {includeTileOrder && <script is:inline src="/tile-order.js"></script>}
+{includeClipboardSuggest && (
+  <>
+    <script is:inline src="/tools/lib/cron.js"></script>
+    <script is:inline src="/tools/lib/color.js"></script>
+    <script is:inline src="/tools/lib/base64.js"></script>
+    <script is:inline src="/tools/lib/clipboard-detect.js"></script>
+    <script is:inline defer src="/clipboard-suggest.js"></script>
+  </>
+)}
 <slot name="head-extra" />
 {jsonLd && <script type="application/ld+json" set:html={jsonLd} />}
 </head>
@@ -133,6 +178,12 @@ if (window.opener) document.documentElement.classList.add('popup-mode');
         <a href="/guides/what-is-json.html">Guides</a>
         <a href="/about.html">About</a>
         <a href="/contact.html">Contact</a>
+        {includeCommandPalette && (
+          <button type="button" id="utilx-palette-trigger" class="palette-trigger" aria-label="Open command palette" title="Search tools and guides (Cmd/Ctrl+K)">
+            <svg class="icon-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="6"/><line x1="20" y1="20" x2="14.5" y2="14.5"/></svg>
+            <kbd class="palette-trigger-kbd">Ctrl/&#8984;K</kbd>
+          </button>
+        )}
         <button type="button" class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle light or dark theme" title="Your light/dark choice is saved only in this browser (localStorage) — never sent to us or anyone else">
           <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
           <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5Z"/></svg>
@@ -147,6 +198,8 @@ if (window.opener) document.documentElement.classList.add('popup-mode');
     </div>
   </header>
 )}
+
+{includeCommandPalette && <CommandPalette />}
 
 <slot />
 
