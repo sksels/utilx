@@ -24,7 +24,7 @@
     "description": "Test patterns with live match highlighting and a plain-English explainer.",
     "url": "/tools/regex-tester.html",
     "chipClass": "chip-regex",
-    "iconSvg": "<circle cx=\"10\" cy=\"11.5\" r=\"6\"/><line x1=\"20\" y1=\"21.5\" x2=\"14.5\" y2=\"16\"/><path d=\"M8 11.5h1M11 11.5h1M14 11.5h.5\" stroke-width=\"1.4\"/>",
+    "iconSvg": "<circle cx=\"10\" cy=\"10\" r=\"6\"/><line x1=\"20\" y1=\"20\" x2=\"14.5\" y2=\"14.5\"/><path d=\"M8 10h1M11 10h1M14 10h.5\" stroke-width=\"1.4\"/>",
     "relatedLabel": "Guide: Regex Cheat Sheet \u2192",
     "relatedUrl": "/guides/regex-cheatsheet.html",
     "aliases": [
