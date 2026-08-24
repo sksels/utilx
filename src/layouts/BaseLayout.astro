@@ -86,8 +86,28 @@ const isHome = canonicalPath === '/';
 if (window.opener) document.documentElement.classList.add('popup-mode');
 </script>
 {includeAdsAndAnalytics && (
-  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745"
-     crossorigin="anonymous"></script>
+  <script is:inline>
+  // Real regression found via Lighthouse CI (Aug 24 2026): this ~260KB Google AdSense loader
+  // (Auto Ads script + its sodar/config calls) was previously loaded eagerly via a plain
+  // <script async> tag -- `async` only means "don't block HTML parsing," not "don't compete for
+  // bandwidth/CPU right now." Under Lighthouse's Slow-4G + CPU-throttled emulation this was 77%
+  // of base64-tool.html's total network weight and starved that page's own paint of bandwidth
+  // and main-thread time, even though the tag is byte-for-byte identical on every page (that
+  // page's LCP candidate is simply the one with the least margin to absorb the contention).
+  // No <ins class="adsbygoogle"> ad units exist yet -- see README's "before applying for
+  // AdSense" checklist -- so nothing currently depends on this having loaded by any particular
+  // moment. Deferring to page idle (same pattern as the command palette's Fuse.js load, see
+  // CommandPalette.astro) costs nothing once Auto Ads is actually live, while taking a third of
+  // a megabyte of third-party JS fully out of the critical rendering path for every visitor.
+  var idleLoadAds = window.requestIdleCallback || function (fn) { setTimeout(fn, 1500); };
+  idleLoadAds(function () {
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2667223941564745';
+    s.crossOrigin = 'anonymous';
+    document.head.appendChild(s);
+  });
+  </script>
 )}
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
