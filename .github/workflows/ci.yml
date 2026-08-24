@@ -4,32 +4,46 @@ name: CI
 # a generic duplicate of the workflow name -- pulls the CR#/commit message that's already
 # in every release.ps1 commit, plus which branch triggered it.
 run-name: >-
-  CI: ${{ github.event.pull_request.title || github.event.head_commit.message }} (${{ github.ref_name }})
+  CI: ${{ github.event.head_commit.message }} (${{ github.ref_name }})
 
+# Design (Aug 21 2026): pure push-triggered, no pull_request checks, no merge-blocking gate.
+# Three stages, one job each, each scoped to what that branch is actually for:
+#
+# - development-tests: full functional pack (lint, build, unit tests, Playwright), minus
+#   Lighthouse. Fires immediately on every push to development -- this is where new-feature
+#   bugs get caught, right after the push that introduced them, and where iteration happens.
+# - performance: build + Lighthouse only. Fires on push to staging. Functional correctness
+#   was already proven by development-tests against this same code; re-running the full pack
+#   here would be re-testing an unchanged input. Performance budgets are the one thing that
+#   pack doesn't cover.
+# - sanity: build + unit tests only (fast, no Playwright/Lighthouse). Fires on push to main.
+#   Can't block anything after the fact, but gives an immediate automated signal if something
+#   is visibly broken on the branch that drives the production deploy.
+#
+# Deliberately no pull_request trigger and no branch-protection required-status-check (backlog
+# #117, closed as "not applicable to this design" rather than done) -- there's no PR-attached
+# check for protection to gate on, so promotion safety is procedural: check the previous
+# stage's run was green before promoting, not a technical block on the merge button. That's
+# the right tradeoff for a single-maintainer pipeline with no parallel/forked development.
+# Revisit this (add pull_request triggers + branch protection back) if the project ever grows
+# multiple forks or parallel contributors, where "trust the last push was checked" no longer
+# holds.
 on:
   push:
-    branches: [staging]
-  pull_request:
-    # main: the hard gate before production -- this check is required via branch
-    # protection on main, so a failing run blocks the merge/push button outright.
-    # staging: gives the same pre-merge visibility + blockability for
-    # development->staging PRs (paired with a required-status-check rule on staging),
-    # rather than only finding out after the merge already landed.
-    branches: [main, staging]
+    branches: [development, staging, main]
 
 # Security release: explicit least-privilege token scope. Without this, the default
 # GITHUB_TOKEN for this workflow gets broad read/write permissions to the repo (contents,
-# issues, PRs, etc.) even though this job only ever checks out code and runs tests -- it
-# never needs to write anything. Pinning to read-only limits the blast radius if the
+# issues, PRs, etc.) even though these jobs only ever check out code and run tests -- they
+# never need to write anything. Pinning to read-only limits the blast radius if the
 # workflow or an action it depends on is ever compromised.
 permissions:
   contents: read
 
 jobs:
-  test:
-    # Shows as "CI / Regression test pack" in the PR checks widget and branch protection's
-    # required-status-check picker, instead of the generic "CI / test".
-    name: Regression test pack
+  development-tests:
+    name: Development test pack
+    if: github.ref_name == 'development'
     runs-on: ubuntu-latest
     steps:
       - name: Check out code
@@ -61,7 +75,7 @@ jobs:
       - name: Astro build (validates the site actually builds)
         run: npm run build
 
-      - name: Run regression test suite
+      - name: Run unit test suite
         run: node --test
 
       - name: Install Playwright's Chromium
@@ -75,12 +89,53 @@ jobs:
       - name: Layout-assertion + accessibility tests (Playwright)
         run: npm run test:e2e
 
+  performance:
+    name: Performance gate
+    if: github.ref_name == 'staging'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Astro build (Lighthouse audits the static output directly)
+        run: npm run build
+
       - name: Performance budgets (Lighthouse CI)
-        # First real run of this gate -- the error thresholds below (LCP, CLS, overall
-        # performance score) are standard "good" Core Web Vitals targets, not numbers
-        # calibrated against this site's actual measured performance (Lighthouse can't run
-        # in this project's Claude sandbox either -- same network-allowlist constraint as
-        # Chromium/Playwright above). If this fails on its first run, that's real signal to
-        # act on, not a false alarm to loosen blindly: check the uploaded report link in the
-        # job output before changing any threshold in .lighthouserc.json.
+        # The error thresholds below (LCP, CLS, overall performance score) are standard
+        # "good" Core Web Vitals targets, not numbers calibrated against this site's actual
+        # measured performance (Lighthouse can't run in this project's Claude sandbox --
+        # blocked by that sandbox's network allowlist -- so this has only ever run in CI).
+        # If this fails, that's real signal to act on, not a false alarm to loosen blindly:
+        # check the uploaded report link in the job output before changing any threshold in
+        # .lighthouserc.json.
         run: npm run test:perf
+
+  sanity:
+    name: Production sanity check
+    if: github.ref_name == 'main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Astro build (validates the site actually builds)
+        run: npm run build
+
+      - name: Run unit test suite
+        run: node --test

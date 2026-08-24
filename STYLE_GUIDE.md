@@ -340,6 +340,145 @@ Related but explicitly out of scope here: the octopus mascot/logo work (backlog 
 separate, still-open thread toward the same "give UtilX a visual identity" goal — this item is
 just the background treatment, not a logo.
 
+## Smart clipboard injection (CR#8, backlog #32)
+
+Homepage-only: on load and whenever the tab becomes visible again, checks whether the
+clipboard already contains something that looks like a tool's input (JSON, a cron expression,
+a hex color, a JWT, or a generic Base64 token) and — if so — shows a small dismissible toast
+("Your clipboard looks like JSON — open it in JSON Formatter?"). Confirmed choice, asked
+directly: shows a suggestion, never auto-navigates. Split across three files, same separation
+this project already uses for every tool's own logic:
+
+- `public/tools/lib/clipboard-detect.js` — pure pattern matching (`detectToolForText(text)` →
+  `{ toolId, url, label } | null`), no DOM/clipboard access, tested head-on in
+  `tests/clipboard-detect.test.js`. Reuses existing lib functions rather than reimplementing
+  validation (`CronLib.validateBuildFields`, `ColorLib.hexToRgb`, `Base64Lib.decodeJwt` /
+  `decodeBase64ToUtf8`) — the matchers are thin wrappers around logic that was already correct
+  and already tested elsewhere.
+- `public/clipboard-suggest.js` — the actual `navigator.clipboard.readText()` call, permission
+  handling, de-duplication (won't re-show the same dismissed clipboard content again this tab
+  session — `sessionStorage`), and the toast DOM, reusing the shared `.utilx-toast` CSS class
+  (see below).
+- `src/layouts/BaseLayout.astro` — new `includeClipboardSuggest` prop (homepage-only, like
+  `includeTileOrder`/`includePopupNav`), loads the four scripts above in dependency order.
+
+**Deliberately precision-over-recall matching.** Every pattern in `clipboard-detect.js` is
+chosen to have a low false-positive rate even at the cost of missing some real matches — a
+wrong suggestion is worse than a missed one, since it's shown unprompted before the user has
+indicated they want anything from the site at all. Concretely: hex-color detection requires a
+leading `#` (a bare 6-hex-digit string is exactly as likely to be a truncated git SHA as a
+color); Base64 detection requires no internal whitespace and a real minimum length; a shared
+`MIN_LENGTH`/`MAX_LENGTH` gate rejects short-coincidence and huge-paste cases before running
+any matcher. The one exception is hex color, checked *ahead of* that length gate — `#fff` is a
+fully legitimate 4-character color that `MIN_LENGTH` would otherwise wrongly reject, and
+`ColorLib.hexToRgb()` already fully constrains valid hex lengths on its own.
+
+**Never requests clipboard permission itself.** `navigator.clipboard.readText()` is gated
+behind the `'clipboard-read'` permission in every browser implementing the Async Clipboard
+API; calling it without that permission already granted triggers the browser's own native
+"Allow this site to see your clipboard?" prompt. Popping that dialog unprompted, the instant
+someone lands on the homepage, is exactly the kind of intrusive behavior this feature exists
+to avoid (the same reasoning behind the suggestion-toast-not-auto-navigate choice above). So
+`clipboard-suggest.js` only calls `readText()` when `navigator.permissions.query({name:
+'clipboard-read'})` reports the permission state is already `'granted'` — never requesting it.
+In practice this means the feature is a silent no-op on a freshly-visited browser, and on any
+browser (Firefox, notably) that doesn't support querying this permission at all. That's the
+intended trade-off, not a gap to "fix" by requesting permission anyway.
+
+**Shared toast CSS.** `.utilx-toast` (position/box/border/shadow) was factored out of what used
+to be `#utilx-install-prompt`-only CSS, since this is the second near-identical toast on the
+site (the PWA install prompt, `public/sw-register.js`, was the first). Position is set
+per-toast, not on the shared class: `#utilx-install-prompt` anchors `bottom: 20px`,
+`#utilx-clipboard-toast` anchors `top: 20px` — opposite viewport edges, so the rare case of
+both showing at once (a returning visitor with an installable PWA *and* granted clipboard
+permission) can never visually stack or overlap, without needing any z-index/offset-stacking
+logic for a combination this uncommon.
+
+## Tools/guides registry via Astro Content Collections (CR#8, backlog #69)
+
+The homepage tile grid (`src/pages/index.astro`) reads from `getCollection('tools')` instead
+of hardcoded per-tile HTML. `src/content.config.ts` defines the `tools` and `guides`
+collections (`file()` loader + Zod schema) backed by `src/data/tools.json` / `guides.json`.
+Built ahead of the command palette (CR#8 #35) on purpose, at the site owner's request, so the
+palette's search index reads from the same collection instead of a second hand-typed list —
+exactly the class of drift bug this project has been bitten by before (see the toolbar-centering
+CSS rule's own comment on a duplicate that fell out of sync).
+
+**Why a schema, not a plain JS array.** `defineCollection`'s Zod schema fails the build loudly
+if a new tool entry is missing a required field (e.g. `chipClass`) — verified locally by
+deleting a field and confirming `astro build` errors with the exact entry and field name,
+rather than silently rendering an unstyled tile. That validation is the actual reason this is
+worth the extra file over `src/data/tools.js`.
+
+**`order` field is required, not inferred from JSON array position.** Verified locally that
+Astro's `file()` loader does not preserve the source JSON array's order — `getCollection()`
+returned the 6 tools sorted alphabetically by `id` instead of the curated homepage order. Each
+entry has an explicit `order: number`; `index.astro` sorts by it
+(`.sort((a, b) => a.data.order - b.data.order)`) before rendering. Don't rely on JSON array
+order for anything display-related with this loader.
+
+**`iconSvg` holds inner markup only.** Every tile icon shares one outer `<svg viewBox="0 0 24
+24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"
+stroke-linejoin="round">` wrapper, hardcoded once in `index.astro`; only the per-tool
+path/circle/line markup lives in `tools.json`, injected via `set:html`. Rendered output is
+functionally identical to the old hand-written markup (verified via a diff of the built
+`index.html`) but not byte-identical: `set:html` passes the raw JSON string through verbatim
+(self-closing `<path/>` tags, literal `→` character), where Astro's JSX-like compiler used to
+normalize hand-written SVG into explicit `<path></path>` closing tags and kept `&rarr;` as an
+HTML entity. Both render identically in every browser; no test depends on the exact byte form
+either way.
+
+**`aliases` field exists but is unused today.** Populated per tool now (extra search terms a
+fuzzy match against `label` wouldn't catch — see backlog #68) so #35/#68 don't need a second
+data-entry pass later. Not read by any code yet.
+
+**Adding a 7th tool in the future:** add one entry to `src/data/tools.json` (with a unique
+`order`) — no `index.astro` changes needed, and once #35 ships reading from this same
+collection, no palette changes either.
+
+## Command palette (CR#8, backlog #35/#236)
+
+`Cmd/Ctrl+K` or the header's search button opens a global palette (`src/components/CommandPalette.astro`, `public/command-palette.js`) listing all tools/guides from the Content Collections built for this (backlog #69) -- fuzzy search via a vendored Fuse.js (`public/tools/lib/fuse.min.js`, Apache 2.0), arrow-key navigation, Enter/click to select, Escape/backdrop-click to close.
+
+**Draggable, not fixed (site owner decision).** The dialog has a drag handle (`#utilx-palette-drag-handle`, reuses the homepage tile's `&#10022;&#10022;` glyph convention) -- mousedown-drag repositions it via `position: fixed` + inline `left`/`top`, clamped to the viewport. The dragged position resets on every re-open rather than persisting across opens; that's a deliberate v1 simplification (`resetDragPosition()`, called from `openPalette()`), not an oversight -- persisting across opens/sessions is reasonable future work, not assumed here.
+
+**Selecting a tool result opens a popup, not a same-page navigation (site owner decision).** `activateEntry()` in `command-palette.js` routes tool entries through `window.openToolPopup()` (the same `public/popup-nav.js` function the homepage tiles use), so picking a tool from the palette behaves exactly like clicking its tile -- a separate popup window, main page/tab untouched. Falls back to a normal navigation if the popup was blocked (`openToolPopup`'s return value signals this). Guide entries still navigate the current page via `window.location.href` -- guides were never part of the popup convention anywhere else on the site, so the palette doesn't invent one for them. Because of this, `BaseLayout.astro` now loads `popup-nav.js` whenever `includePopupNav || includeCommandPalette` is true, not just on the homepage -- `window.openToolPopup` has to exist on every page the palette can trigger a popup from.
+
+**Lazy-loaded, not eager (backlog #70).** The only thing that runs on every page load is a tiny inline script in `CommandPalette.astro` registering the keydown listener and the trigger button's click handler. `public/command-palette.js`, Fuse.js, and `/palette-data.json` are only fetched the first time a visitor actually opens the palette (`import('/command-palette.js')` inside the trigger handler), with a `requestIdleCallback` prefetch (Safari fallback: `setTimeout`) to warm the module in the background once the page has settled -- so the first real keypress feels instant without costing every visitor bytes for a feature most won't use that session.
+
+**`/palette-data.json` is a build-time-generated static file** (`src/pages/palette-data.json.ts`, an Astro endpoint), not inlined into every page's HTML -- fetched lazily alongside Fuse.js for the same reason. `netlify.toml` gives it and `fuse.min.js` their own `Cache-Control` (a real `max-age`), scoped separately from the sitewide `/*.js` no-cache rule (which exists for *application* JS that changes every deploy -- these two files don't).
+
+**Global by default.** `BaseLayout.astro`'s `includeCommandPalette` prop defaults to `header === 'full'`, so every normal page gets it without per-page wiring; the admin dashboard (`header: 'minimal'`) opts out the same way it already skips theme.js/ads/analytics/footer.
+
+**Both `tools` and `guides` collections need an explicit `order` field** -- same Astro `file()`-loader gotcha as #69 (alphabetical-by-id, not source array order). Caught once already for tools; guides needed the same fix during this build.
+
+**Scope note.** This first pass is search + keyboard nav + navigate only. Recently-used-first ordering, "Paste & go" clipboard tie-in, output-side quick actions, a theme-toggle command, and alias-boosted ranking are logged as CR#8 backlog sub-items (#64-#68), deliberately deferred for gradual follow-up. Tool-page quick actions (mirroring each tool's own input-toolbar buttons) are also out of this pass -- every tool wires a different, bespoke set of global functions (`encode()`/`formatJson()`/`generatePassword()`/...), and wiring six tool-specific integrations deserves its own pass and tests.
+
+## Testing policy: Definition of Done and the CI pipeline
+
+Established Aug 21 2026 after CR#8 #35 (command palette) shipped with real, user-visible bugs despite "tests exist" being true at every point along the way. The lesson: a test file existing is not the same as a test having ever run. The palette's Playwright spec (`e2e/command-palette.spec.js`) was written in the same commit as the feature itself, but sat unexecuted for a full day of work -- it couldn't run in the sandbox this project is built in (Chromium download blocked by that sandbox's network allowlist), and `ci.yml` didn't trigger on `development` pushes at all at the time. It hid a real fuzzy-search bug (Fuse.js's threshold was loose enough to match "cron" against Color Converter and Password & UUID Generator) for that entire day, plus the test's own assertion was wrong. Nothing is "Done" until it has actually run and passed, not merely been written.
+
+**Definition of Done -- four gates, only claim what was actually checked:**
+
+1. **Written** -- code exists, matches this style guide, `node --check`-clean.
+2. **Unit-verified** -- `node --test` suite passes, zero regressions.
+3. **Build-verified** -- fresh clone, `npm ci && npm run build` succeeds, schema/lint checks pass.
+4. **Live-verified** -- actually opened in a real browser (via the connected Chrome browser tools, or CI's Playwright run) and walked through an acceptance checklist agreed *before* building, not assumed after.
+
+State explicitly which gates were run for a given change. "Done" without saying which gates passed is not an acceptable status update.
+
+**CI pipeline (`.github/workflows/ci.yml`) -- one job per branch, each push-triggered, each scoped to what that stage is actually for:**
+
+| Branch | Job | Runs | Why |
+|---|---|---|---|
+| `development` | `development-tests` | syntax check, `lint:css`, `astro build`, `node --test`, Playwright (no Lighthouse) | Full functional pack, fires immediately on every push -- this is where new-feature bugs get caught, right after the push that introduced them, and where iteration happens. |
+| `staging` | `performance` | `astro build`, Lighthouse | Functional correctness was already proven on `development` against this exact code; re-running the full pack would be re-testing an unchanged input. Performance budgets are the one thing the dev pack doesn't cover. |
+| `main` | `sanity` | `astro build`, `node --test` | Can't block anything after the fact (see below), but gives an immediate automated signal if something is visibly broken on the branch that drives the production deploy. |
+
+**Deliberately no `pull_request` trigger and no branch-protection required-status-check** (backlog #117 -- closed as not-applicable to this design, not done). There's no PR-attached check for branch protection to gate on, so promotion safety is procedural: confirm the previous stage's push was green before promoting, not a technical block on the merge button. That's the right tradeoff for a single-maintainer pipeline with no parallel or forked development. If this project ever grows multiple contributors or forks, revisit this -- add `pull_request` triggers back and turn on branch protection, since "trust the last push was checked" stops holding once more than one person can push.
+
+**Playwright/Lighthouse cannot run in this project's Claude sandbox** -- both need to download a browser, and that sandbox's network allowlist blocks it. `node --test` and everything else here (lint, build) has no such dependency and always runs locally before a commit. This is why gate 4 (Live-verified) for anything with DOM/browser behavior means either the connected Chrome browser tools against a deployed URL, or waiting for the relevant CI stage to actually run -- not a local Playwright run, which structurally cannot happen here.
+
 ## Adding a new tool page
 
 1. Copy the structure of an existing tool page closest to what you're building (Base64 Tool for a simple encode/decode pair, JSON Formatter for a grouped-panel input).

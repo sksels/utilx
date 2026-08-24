@@ -280,6 +280,135 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
 :root[data-theme="light"] .theme-toggle .icon-sun { display: none; }
 :root[data-theme="light"] .theme-toggle .icon-moon { display: inline-flex; }
 
+/* CR#8 #35: command palette. Header trigger button is always in the static HTML (cheap;
+   see BaseLayout.astro) -- the overlay/results markup below only becomes visually
+   meaningful once public/command-palette.js is lazily loaded on first Cmd/Ctrl+K or click
+   (backlog #70), but its CSS ships normally since it's zero-cost until `hidden` is removed. */
+.palette-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  border-radius: 8px;
+  height: 34px;
+  padding: 0 10px;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, color .15s ease;
+}
+.palette-trigger:hover { background: var(--bg-card); border-color: var(--accent); color: var(--text); box-shadow: none; }
+.palette-trigger .icon-search { width: 16px; height: 16px; flex-shrink: 0; }
+.palette-trigger-kbd {
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  line-height: 1.4;
+}
+
+.utilx-palette-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 16px;
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- a translucent
+     black scrim over the whole page needs to work identically in both themes; it isn't one of
+     the theme's own surface colors and reusing --text or --bg here would misrepresent what
+     this value means (a fixed dimming overlay, not a themed surface). */
+  background: rgba(10, 12, 18, 0.55);
+}
+/* Real bug, caught live: the [hidden] attribute's default `display: none` (a UA-stylesheet
+   rule) is overridden by ANY author-stylesheet `display` declaration on the same element,
+   `hidden` attribute or not -- a well-known CSS gotcha (see MDN's own note on the `hidden`
+   attribute). Without this, .utilx-palette-backdrop's `display: flex` above wins regardless
+   of `hidden`, so the backdrop rendered as permanently visible from page load, before
+   openPalette() ever ran -- which also meant the Escape listener (wired inside openPalette())
+   was never attached, and search stayed dead since loadData() was never triggered either.
+   [hidden] alone has equal specificity to the bare class selector above, so this needs the
+   compound `.utilx-palette-backdrop[hidden]` selector (higher specificity) to reliably win
+   regardless of source order, not just append a later same-specificity rule. */
+.utilx-palette-backdrop[hidden] { display: none; }
+.utilx-palette {
+  width: 100%;
+  max-width: 560px;
+  max-height: min(60vh, 480px);
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  animation: fadeInUp .2s var(--ease);
+}
+.utilx-palette-input-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.utilx-palette-search-icon { width: 18px; height: 18px; color: var(--text-dim); flex-shrink: 0; }
+.utilx-palette-input-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-size: 0.98rem;
+}
+.utilx-palette-input-row input:focus { outline: none; box-shadow: none; }
+.utilx-palette-esc {
+  font: inherit;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 1px 5px;
+  flex-shrink: 0;
+}
+/* Site owner call: draggable, not fixed -- reuses the exact same visual language as the
+   homepage tile drag handle (.tile-drag-handle) rather than inventing a new icon, so
+   "these two diamonds mean draggable" stays one convention across the site. */
+.utilx-palette-drag-handle {
+  color: var(--text-dim);
+  letter-spacing: -2px;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+  cursor: grab;
+  user-select: none;
+  padding-left: 2px;
+}
+.utilx-palette-drag-handle:active { cursor: grabbing; }
+.utilx-palette-results { overflow-y: auto; padding: 6px; }
+.utilx-palette-empty { color: var(--text-dim); font-size: 0.9rem; text-align: center; padding: 24px 12px; margin: 0; }
+.utilx-palette-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.utilx-palette-row[aria-selected="true"] { background: var(--accent-soft); }
+.utilx-palette-row .tool-icon-chip { width: 28px; height: 28px; border-radius: 8px; margin-bottom: 0; flex-shrink: 0; box-shadow: none; }
+.utilx-palette-row .tool-icon-chip .tool-icon { width: 15px; height: 15px; }
+.utilx-palette-guide-chip { background: var(--accent); }
+.utilx-palette-row-text { flex: 1 1 auto; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.utilx-palette-row-label { font-weight: 600; font-size: 0.92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.utilx-palette-row-desc { font-size: 0.8rem; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.utilx-palette-row-kind { font-size: 0.72rem; color: var(--text-dim); flex-shrink: 0; }
+
 main { padding: 20px 0 60px; }
 
 h1 { font-size: 2.05rem; font-weight: 750; margin: 0 0 10px; letter-spacing: -0.03em; line-height: 1.2; }
@@ -1000,9 +1129,19 @@ div:has(> .output-toolbar) {
   display: flex;
   flex-direction: column;
 }
+/* Real bug, caught by CI's first-ever run on development (Aug 21 2026): .input-box-row (JSON
+   Formatter's/Password Generator's left pane) has a deliberate margin-top:6px giving breathing
+   room below .field-header's recent-inputs row -- but .output-target here had no equivalent, so
+   the input box sat 6px lower than the output textarea despite both panes sharing the same
+   padding-top:14px base offset. Site owner call: give the output side matching spacing rather
+   than removing the input side's. Scoped to .output-box-fill (JSON Formatter's grown output box
+   only, per the comment above) so Regex Tester's stacked .output-box sections and every other
+   tool's plain .output-box are untouched -- confirmed live (diff went from 6px to 0px) before
+   committing. */
 .output-box-fill .output-target {
   flex: 1 1 auto;
   align-items: stretch;
+  margin-top: 6px;
 }
 .output-box-fill .output-target > .output-toolbar {
   align-self: center;
@@ -1164,13 +1303,14 @@ footer.site a:hover { color: var(--text); }
 .breadcrumb { font-size: 0.85rem; color: var(--text-dim); margin-bottom: 14px; }
 .breadcrumb a { color: var(--text-dim); }
 
-/* PWA install prompt -- shown by sw-register.js. (Its sibling, the "update available" toast,
-   was removed in CR#7: updates now apply silently in the background -- see
-   service-worker.js -- so there's nothing left to prompt the user about.) */
-#utilx-install-prompt {
+/* Shared toast box (position/box/border/shadow) -- originally written just for the PWA
+   install prompt below, now also reused by the clipboard-suggestion toast (CR#8 backlog #32,
+   public/clipboard-suggest.js) so a second near-identical block of CSS never had to be
+   copy-pasted for it. Position (top vs bottom) is set per-toast below, not here -- see the
+   #utilx-clipboard-toast comment for why. */
+.utilx-toast {
   position: fixed;
   left: 50%;
-  bottom: 20px;
   transform: translateX(-50%);
   z-index: 999;
   display: flex;
@@ -1186,13 +1326,27 @@ footer.site a:hover { color: var(--text); }
   font-size: 0.88rem;
   color: var(--text);
 }
+/* PWA install prompt -- shown by sw-register.js. (Its sibling, the "update available" toast,
+   was removed in CR#7: updates now apply silently in the background -- see
+   service-worker.js -- so there's nothing left to prompt the user about.) */
+#utilx-install-prompt {
+  bottom: 20px;
+}
+/* CR#8 backlog #32: anchored to the TOP of the viewport, not bottom like the install prompt
+   above -- so the two toasts can never visually stack/overlap on the rare occasion both are
+   showing at once (a first-time visitor whose browser has already granted clipboard-read
+   permission AND has an installable PWA prompt pending). Simpler than adding
+   z-index/offset-stacking logic for a combination this rare. */
+#utilx-clipboard-toast {
+  top: 20px;
+}
 .utilx-toast-label { line-height: 1; }
 /* Buttons don't inherit font-family/line-height from the page by default, and native button
    chrome (-webkit-appearance) can add invisible vertical padding that CSS padding doesn't
    fully override -- both caused the label and button text to look vertically misaligned in
    the same flex row (regression: still visibly off after the first line-height-only fix, so
    this round also matches font-size exactly and strips native appearance). See review comments. */
-#utilx-install-prompt button {
+.utilx-toast button {
   -webkit-appearance: none;
   appearance: none;
   display: inline-flex;
@@ -1206,14 +1360,14 @@ footer.site a:hover { color: var(--text); }
   line-height: 1;
   cursor: pointer;
   background: var(--accent);
-  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- the PWA install
-     banner is a separate, rarely-seen surface (not the main toolbar-btn/button convention);
+  /* stylelint-disable-next-line scale-unlimited/declaration-strict-value -- the toast buttons
+     are a separate, rarely-seen surface (not the main toolbar-btn/button convention);
      pre-existing white-on-accent choice here, left as-is rather than silently reconciling it
      with --text-on-accent's near-black, which would be an unreviewed visual change. */
   color: #fff;
   white-space: nowrap;
 }
-#utilx-install-prompt button:hover { background: var(--accent-hover); }
+.utilx-toast button:hover { background: var(--accent-hover); }
 .utilx-toast-dismiss {
   background: transparent !important;
   color: var(--text-dim);
