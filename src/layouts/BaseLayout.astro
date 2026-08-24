@@ -87,6 +87,47 @@ if (window.opener) document.documentElement.classList.add('popup-mode');
 </script>
 {header === 'full' && (
 <script is:inline>
+// Popup compaction system (backlog #61, #77, CR#10) -- part 2 of 2, see style.css's
+// "POPUP COMPACTION SYSTEM" comment block for the full picture. A table.ref-table can be
+// static markup (regex-tester's flag reference, cron-builder's schedule examples) or built
+// at runtime by a tool's own script (color-converter's contrast-ratio result, appended to
+// #contrastResult on input) -- either way, once it exists in the DOM it gets wrapped here in
+// a .ref-table-scroll container, which style.css caps to a fixed max-height with its own
+// internal scrollbar. That keeps a long reference/example table from ever forcing the whole
+// popup page to scroll, without deleting a single row of it, and without needing any
+// per-tool code: this runs for every tool page equally, keyed only on the table.ref-table
+// class every such table already uses. Wrapping (not `display:block` on the table itself)
+// is deliberate -- collapsing a table to a block box breaks its column-width layout once
+// rows are no longer laid out together, visibly misaligning columns row to row.
+// DOMContentLoaded (not `load`) so this has already run by the time the resize/center script
+// below measures scrollHeight on `load`.
+if (window.opener) {
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('table.ref-table').forEach(function (table) {
+      if (table.closest('.ref-table-scroll')) return;
+      var wrapper = document.createElement('div');
+      wrapper.className = 'ref-table-scroll';
+      table.parentNode.insertBefore(wrapper, table);
+      wrapper.appendChild(table);
+    });
+    // Any <details open class="popup-collapsible"> is a section a tool page has marked as
+    // genuinely secondary (JWT Decoder inside Base64 Tool, "sample from an image" inside
+    // Color Converter, the v4/v7/v1 explainer inside Password Generator, and whatever the
+    // next tool needs this for) -- expanded by default on the full page (the `open` attribute
+    // in markup), collapsed by default only inside a popup, where it's the difference between
+    // fitting on one screen and needing a scrollbar. Still fully present and functional either
+    // way, one click away. This is the one part of the compaction system that is a per-tool
+    // judgment call rather than a blanket selector rule -- see style.css's "POPUP COMPACTION
+    // SYSTEM" comment for when to reach for it.
+    document.querySelectorAll('details.popup-collapsible').forEach(function (d) {
+      d.open = false;
+    });
+  });
+}
+</script>
+)}
+{header === 'full' && (
+<script is:inline>
 // Backlog #61 ("compact popup windows -- eliminate excess whitespace, center on screen, show
 // all content without scrolling"), raised more than once and never actually landed. Earlier
 // attempts (#52, and popup-nav.js's own DEFAULT_WIDTH/HEIGHT constants) all guessed at one

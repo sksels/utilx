@@ -57,26 +57,34 @@ const jsonLd = JSON.stringify({
 
     <div class="card">
       <h2 style="margin-top:0;">Build</h2>
-      <div class="two-col">
-        <div>
+      <!-- backlog #77/CR#10: .cron-build-grid + .cron-build-fields + .field-cell exist only so
+           style.css's popup-mode rules can unwrap these two .two-col rows (display:contents)
+           and flow all 5 fields into one 5-column grid row inside a popup, where 3 stacked
+           rows was the single biggest reducible chunk on this page. Full-page layout (no
+           popup-mode class) is completely unchanged -- still two normal 2-col rows plus the
+           day-of-week row, exactly as before. -->
+      <div class="cron-build-grid">
+      <div class="two-col cron-build-fields">
+        <div class="field-cell">
           <label for="minute">Minute (0-59, * for every)</label>
           <input type="text" id="minute" value="0">
         </div>
-        <div>
+        <div class="field-cell">
           <label for="hour">Hour (0-23, * for every)</label>
           <input type="text" id="hour" value="*">
         </div>
       </div>
-      <div class="two-col">
-        <div>
+      <div class="two-col cron-build-fields">
+        <div class="field-cell">
           <label for="dom">Day of month (1-31, * for every)</label>
           <input type="text" id="dom" value="*">
         </div>
-        <div>
+        <div class="field-cell">
           <label for="month">Month (1-12, * for every)</label>
           <input type="text" id="month" value="*">
         </div>
       </div>
+      <div class="field-cell">
       <label for="dow">Day of week (0-6, Sun=0, * for every)</label>
       <div class="input-target">
         <input type="text" id="dow" value="*">
@@ -88,6 +96,8 @@ const jsonLd = JSON.stringify({
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
           </button>
         </InputToolbar>
+      </div>
+      </div>
       </div>
       <div id="buildMsg"></div>
       <div class="output-box">
