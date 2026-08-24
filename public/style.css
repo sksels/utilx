@@ -121,6 +121,26 @@
 :root.popup-mode[data-tool-id="base64-tool"] body { border: 3px solid var(--tool-accent-base64); }
 :root.popup-mode[data-tool-id="color-converter"] body { border: 3px solid var(--tool-accent-color); }
 
+/* Backlog #61: "compact popup windows -- eliminate excess whitespace, center on screen, show
+   all content without scrolling." Raised repeatedly and never actually closed -- #52 only
+   re-tuned the shared window-size constant after "How this works" collapsed, it never touched
+   the page's own vertical padding. header.site/main/footer.site padding below is generous by
+   design for the normal full-page site (breathing room around a page a visitor scrolls), but
+   inside a popup window that's sized to the content, that same padding is pure dead space at
+   the top and bottom -- exactly what this item calls out. Scoped to :root.popup-mode only (the
+   same class BaseLayout already adds via the window.opener check) so the regular in-tab/in-page
+   site is completely unaffected -- this only tightens the popped-out window. Paired with the
+   auto-fit resize/center script in BaseLayout.astro, which measures the *actual* rendered
+   content after this tighter padding is applied and sizes+centers the real window to match --
+   the two changes together are what finally makes "no scrollbar, exactly centered" true
+   regardless of how tall any individual tool's content is, instead of guessing at another
+   static width/height constant the way #52/#61 both tried before. */
+:root.popup-mode header.site { padding: 10px 0; }
+:root.popup-mode main { padding: 8px 0 14px; }
+:root.popup-mode footer.site { padding: 10px 0; }
+:root.popup-mode .card { margin-bottom: 12px; }
+:root.popup-mode h1 { margin-bottom: 6px; }
+
 * { box-sizing: border-box; }
 
 /* CR#8 backlog #59: every page (and every tool popup) used to sit on the flat, textureless
@@ -259,6 +279,14 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
 .info-link svg { width: 14px; height: 14px; flex-shrink: 0; }
 
 .theme-toggle {
+  /* -webkit-appearance/appearance:none, font-family, and line-height are reset explicitly
+     here and on .palette-trigger below -- same fix already applied to .utilx-toast button
+     (see that rule's comment): native <button> chrome can add invisible vertical padding
+     that plain CSS padding doesn't fully override, which is exactly what made the command
+     palette button (added later, in CR#8 #35) sit slightly lower than this already-shipped
+     toggle despite both declaring the same 34px height. */
+  -webkit-appearance: none;
+  appearance: none;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text);
@@ -267,6 +295,8 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
   height: 34px;
   padding: 0;
   margin: 0;
+  font-family: inherit;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -285,6 +315,12 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
    meaningful once public/command-palette.js is lazily loaded on first Cmd/Ctrl+K or click
    (backlog #70), but its CSS ships normally since it's zero-cost until `hidden` is removed. */
 .palette-trigger {
+  /* See .theme-toggle's comment above -- same native-button-chrome fix, needed here too since
+     this button (unlike .theme-toggle, icon-only) also contains a <kbd> text node, which is
+     exactly the kind of content the site's other appearance-reset fix (.utilx-toast button)
+     was written for. */
+  -webkit-appearance: none;
+  appearance: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -293,7 +329,10 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
   color: var(--text-dim);
   border-radius: 8px;
   height: 34px;
+  margin: 0;
   padding: 0 10px;
+  font-family: inherit;
+  line-height: 1;
   cursor: pointer;
   transition: border-color .15s ease, background .15s ease, color .15s ease;
 }
@@ -528,7 +567,18 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
   flex-shrink: 0;
 }
 .tool-card h3 { margin: 0; color: var(--text); font-size: 1.05rem; font-weight: 650; }
-.tool-card p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
+/* Backlog #56 pinned .tool-card-guide's separator to the bottom of its card via margin-top:auto
+   + the grid's default align-items:stretch -- but stretch only equalizes card height *within
+   one grid row*, not across the whole grid. Description text length varies per tool (Password
+   Generator's is one of the longer ones), so whichever row it lands in can wrap to a different
+   line count than other rows -- meaning that row's separator can sit at a different height than
+   rows elsewhere in the grid, exactly the "not aligned with the rest of the tiles" report.
+   Reserving a fixed 3-line-tall box for the description (regardless of tile order, column
+   count, or how many lines any given description actually needs) makes every card's content
+   block the same height everywhere, not just within a row -- so the separator lands on the
+   same Y position across the entire grid, at any viewport width or drag-reorder arrangement,
+   without truncating any tool's description text. */
+.tool-card p { margin: 0; color: var(--text-dim); font-size: 0.9rem; min-height: 4.8em; }
 
 /* CR#8 backlog #58: every tool page's <h1> used to be plain text -- the colored icon chip only
    existed on the homepage tile, so it never appeared once a tool was actually opened (in a

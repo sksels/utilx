@@ -85,6 +85,53 @@ const isHome = canonicalPath === '/';
 // style.css.
 if (window.opener) document.documentElement.classList.add('popup-mode');
 </script>
+{header === 'full' && (
+<script is:inline>
+// Backlog #61 ("compact popup windows -- eliminate excess whitespace, center on screen, show
+// all content without scrolling"), raised more than once and never actually landed. Earlier
+// attempts (#52, and popup-nav.js's own DEFAULT_WIDTH/HEIGHT constants) all guessed at one
+// shared width/height for every tool -- which can only ever be exactly right for one tool and
+// too tall/too short/too narrow for the rest. This instead measures each popup's own real
+// rendered content, once it's actually settled, and resizes+recenters the real window to fit
+// it -- so it's correct per tool, per viewport, and stays correct if a tool's content ever
+// changes height again, with no constant to re-tune next time. Only runs for a window opened
+// via window.open() (window.opener set -- the same signal already used for popup-mode above);
+// window.resizeTo/moveTo are script-callable only on windows the script itself opened, which is
+// exactly this case, so this can't affect a normal tab a visitor opened themselves.
+if (window.opener) {
+  window.addEventListener('load', function () {
+    // One frame + a short delay so layout has fully settled (fonts/images swapping in,
+    // popup-mode's tighter CSS having applied) before measuring -- measuring too early would
+    // capture a not-yet-final content height.
+    setTimeout(function () {
+      try {
+        var doc = document.documentElement;
+        var body = document.body;
+        var contentWidth = Math.max(doc.scrollWidth, body.scrollWidth);
+        var contentHeight = Math.max(doc.scrollHeight, body.scrollHeight);
+        // scrollWidth/scrollHeight measure the inner document; resizeTo sets the OUTER window
+        // size (includes the browser's own title bar / window borders). Adding the delta
+        // already present between outerWidth/innerWidth (and the height equivalent) keeps the
+        // resize accurate instead of clipping content by that same chrome allowance.
+        var chromeWidth = Math.max(0, window.outerWidth - window.innerWidth);
+        var chromeHeight = Math.max(0, window.outerHeight - window.innerHeight);
+        var targetWidth = Math.min(screen.availWidth, contentWidth + chromeWidth);
+        var targetHeight = Math.min(screen.availHeight, contentHeight + chromeHeight);
+        window.resizeTo(targetWidth, targetHeight);
+        var left = Math.max(0, Math.round((screen.width - targetWidth) / 2));
+        var top = Math.max(0, Math.round((screen.height - targetHeight) / 2));
+        window.moveTo(left, top);
+      } catch (e) {
+        // Some browsers/extensions block script resize/move of a window after it's been
+        // focused/interacted with -- fails silently. popup-nav.js's original fixed size (now
+        // tighter, see style.css's popup-mode padding rules) plus scrollbars=yes remains the
+        // safety net either way, so this never leaves content inaccessible, only unresized.
+      }
+    }, 60);
+  });
+}
+</script>
+)}
 {includeAdsAndAnalytics && (
   <script is:inline>
   // Real regression found via Lighthouse CI (Aug 24 2026): this ~260KB Google AdSense loader
