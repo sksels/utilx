@@ -34,14 +34,22 @@ const jsonLd = JSON.stringify({
   jsonLd={jsonLd}
 >
 <Fragment slot="head-extra">
-<script is:inline src="lib/base64.js"></script>
-<script is:inline src="lib/shortcuts.js"></script>
-<script is:inline src="lib/url-state.js"></script>
-<script is:inline src="lib/html-escape.js"></script>
-<script is:inline src="/output-toolbar.js"></script>
-<script is:inline src="/local-state.js"></script>
-<script is:inline src="/debounce.js"></script>
-<script is:inline src="/split-pane.js"></script>
+{/* Lighthouse CI's first-ever run of the staging performance gate (Aug 24 2026) failed here:
+    these 8 libraries were plain blocking <script src> tags in <head>, so the browser had to
+    fetch and execute all of them before it could even start painting <body> -- Lighthouse
+    flagged this directly ("Eliminate render-blocking resources", ~690ms estimated savings) and
+    base64-tool.html's LCP (5.5s on emulated Slow 4G) blew past the 2500ms budget as a result.
+    defer lets the browser parse and paint the page immediately while these download in the
+    background, running only after the document is parsed -- see the matching DOMContentLoaded
+    wrapper below, which is required for this to not silently break the page's onclick handlers. */}
+<script is:inline defer src="lib/base64.js"></script>
+<script is:inline defer src="lib/shortcuts.js"></script>
+<script is:inline defer src="lib/url-state.js"></script>
+<script is:inline defer src="lib/html-escape.js"></script>
+<script is:inline defer src="/output-toolbar.js"></script>
+<script is:inline defer src="/local-state.js"></script>
+<script is:inline defer src="/debounce.js"></script>
+<script is:inline defer src="/split-pane.js"></script>
 </Fragment>
 
 <main>
@@ -144,6 +152,14 @@ const jsonLd = JSON.stringify({
 </main>
 
 <script is:inline>
+// The library scripts above are now `defer` (see the comment there for why), which means they
+// execute after the document has been parsed but haven't necessarily run yet at the point this
+// inline script tag itself is reached during parsing -- so everything that touches Base64Lib /
+// HtmlEscapeLib / etc. has to wait for DOMContentLoaded, which is guaranteed to fire only after
+// all deferred scripts have already executed. Registering this listener itself is free (it
+// doesn't block parsing/painting either way), so this preserves the original behavior exactly,
+// just correctly sequenced against the now-deferred libraries.
+document.addEventListener('DOMContentLoaded', function () {
 // Security note: never insert an Error's .message into innerHTML unescaped. JS engine and
 // library error messages can embed raw, attacker-controllable input verbatim, and this page
 // auto-runs on load from a URL-encoded state (see restoreFromUrl below) -- an unescaped
@@ -273,5 +289,17 @@ SplitPaneLib.init(
   document.getElementById('mainSplitDivider'),
   'utilx-base64-tool-split-ratio'
 );
+
+// The buttons above call these via inline onclick="..." attributes, which only ever resolve
+// against the global (window) scope -- since encode/decode/swap/clearAll/clearJwt/copyShareLink
+// are now declared inside this DOMContentLoaded closure rather than directly in the page's
+// global scope, they need to be re-exposed explicitly or every button would silently no-op.
+window.encode = encode;
+window.decode = decode;
+window.swap = swap;
+window.clearAll = clearAll;
+window.clearJwt = clearJwt;
+window.copyShareLink = copyShareLink;
+});
 </script>
 </BaseLayout>
