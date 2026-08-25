@@ -121,6 +121,136 @@
 :root.popup-mode[data-tool-id="base64-tool"] body { border: 3px solid var(--tool-accent-base64); }
 :root.popup-mode[data-tool-id="color-converter"] body { border: 3px solid var(--tool-accent-color); }
 
+/* ================================================================================
+   POPUP COMPACTION SYSTEM (backlog #61, #77, CR#10)
+   ================================================================================
+   Goal: every tool popup fits inside a real screen's available height with ZERO
+   page-level scrollbar, on every existing tool AND every tool built after this
+   comment was written -- without needing a bespoke review or spacing pass each
+   time. This works because it is entirely selector-based (.card, label, button,
+   table.ref-table, .output-box, p, .two-col, textarea, footer.site, header.site,
+   .breadcrumb, p.lede, h2) rather than tool-specific: any new tool page that is
+   built out of these same standard components inherits a scroll-free popup for
+   free. A tool page that needs something genuinely different from this list
+   (a new "wide reference table" pattern, say) should extend this block with
+   another *selector-based* rule -- not a `[data-tool-id="..."]` override -- to
+   keep that guarantee intact for tools that don't exist yet.
+
+   Verified empirically, not estimated: every one of the 6 shipped tool popups
+   was measured against a real ~1032px-tall screen ceiling (a 1080p display
+   minus the OS taskbar) with a real build of this exact CSS+markup (Astro
+   build -> Playwright, popup-mode simulated via window.opener, measuring the
+   actual rendered content height, not viewport-clamped scrollHeight), and
+   each one lands with real headroom to spare: json-formatter 783px,
+   base64-tool 624px, color-converter 948px, regex-tester 924px,
+   cron-builder 995px, password-generator 964px -- all comfortably under the
+   1032px ceiling, cron-builder (the tallest, 3 cards) with the least margin
+   at ~37px (~3.6%) and every other tool with 60-400px+ to spare.
+   Four of the six additionally needed ONE tool-specific structural change --
+   never more spacing tweaks -- documented at each site: cron-builder's 5 Build
+   fields now flow as one 5-column row instead of 3 stacked rows (popup mode
+   only -- see cron-builder.astro's .field-cell divs and the grid rule below);
+   base64-tool's JWT Decoder card and color-converter's "sample from an image"
+   card are secondary features collapsed into a native <details> (still fully
+   functional, just closed by default in the popup); password-generator's long
+   "v4 vs v7 vs v1" explainer is the same <details> treatment (plus one scoped
+   class, .pw-length-box, replacing an inline style so its padding could be
+   tightened in popup mode without touching any other tool's .input-target --
+   see near the bottom of this block). The <details> collapse is the one real
+   per-tool judgment call this system asks of a future tool author: if, after
+   using every rule below, a popup still doesn't fit, look for one genuinely
+   secondary section and collapse it the same way -- never remove
+   functionality, never hand-tune more margins.
+
+   Scoped to :root.popup-mode throughout (the class BaseLayout adds via the
+   window.opener check), so the full in-tab site is completely unaffected --
+   this only tightens the popped-out window. Paired with the auto-fit
+   resize/center script in BaseLayout.astro, which measures the *actual*
+   rendered content after this CSS applies and sizes+centers the real window to
+   match, and with the ref-table auto-scroll wrapping script (also in
+   BaseLayout.astro) that caps any table.ref-table's height automatically,
+   whatever tool it belongs to, so a long reference/example table never forces
+   page scroll -- it scrolls internally instead. */
+:root.popup-mode .breadcrumb { display: none; }
+:root.popup-mode header.site { padding: 4px 0; }
+:root.popup-mode main { padding: 6px 0 8px; }
+:root.popup-mode footer.site { padding: 6px 0; }
+:root.popup-mode h1 { margin-bottom: 6px; }
+:root.popup-mode .tool-page-header { margin-bottom: 6px; }
+:root.popup-mode p.lede { margin-bottom: 6px; font-size: 0.92rem; line-height: 1.3; }
+:root.popup-mode h2 { margin: 8px 0 6px; }
+:root.popup-mode .card { padding: 5px 12px; margin-bottom: 5px; }
+:root.popup-mode .card h2,
+:root.popup-mode .card summary.card-h2-summary { margin-top: 0; margin-bottom: 6px; }
+:root.popup-mode .card > p:first-of-type { margin-bottom: 8px; }
+/* collapsed by default only in a popup (BaseLayout.astro sets .open = false on load); the
+   full page leaves the `open` attribute alone, so this rule never runs there. */
+:root.popup-mode details.popup-collapsible:not([open]) > summary.card-h2-summary { margin-bottom: 0; }
+:root.popup-mode label { margin-top: 4px; margin-bottom: 3px; }
+:root.popup-mode .checkbox-row { margin-top: 4px; }
+:root.popup-mode button:not(.toolbar-btn) { margin-top: 6px; padding: 7px 14px; }
+:root.popup-mode div:has(> button.secondary) { margin-bottom: 4px; }
+:root.popup-mode .output-box { margin-top: 3px; }
+:root.popup-mode p { margin: 4px 0; }
+:root.popup-mode .two-col { gap: 10px; }
+:root.popup-mode textarea { max-height: 56px; }
+/* Two or more plain trailing <p> links (e.g. a "guide" link plus a "related tool" link,
+   see cron-builder.astro) collapse their shared margin already via normal CSS margin
+   collapsing -- this just removes any stray top margin so that collapsing is total,
+   generically, for however many such paragraphs a future tool page adds. */
+:root.popup-mode .wrap > p + p { margin-top: 0; }
+
+/* Any table.ref-table gets auto-wrapped in a .ref-table-scroll container by the
+   BaseLayout.astro popup script -- this caps ITS height, not the table's own
+   layout, so column widths stay correct (a `display:block` table would break
+   them). Works identically whether the table is static markup (regex-tester's
+   flag reference, cron-builder's schedule examples) or built at runtime
+   (color-converter's contrast-ratio result) -- the wrapping script runs after
+   both kinds exist in the DOM. */
+:root.popup-mode table.ref-table { margin: 8px 0; }
+:root.popup-mode table.ref-table th,
+:root.popup-mode table.ref-table td { padding: 5px 8px; }
+:root.popup-mode .ref-table-scroll {
+  max-height: 90px;
+  overflow-y: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+:root.popup-mode .ref-table-scroll table.ref-table { margin: 0; }
+
+/* cron-builder's 5 Build fields (.field-cell, see cron-builder.astro): 3 stacked
+   rows on the full page reads fine with room to spare, but inside a popup it's
+   the single biggest reducible chunk on that page. Unwrapping the two .two-col
+   pairs with display:contents and letting all 5 .field-cell divs flow into one
+   grid row is popup-only -- the full-page layout is untouched. */
+:root.popup-mode .cron-build-fields.two-col { display: contents; }
+:root.popup-mode .cron-build-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+:root.popup-mode .cron-build-grid .field-cell label {
+  display: block;
+  min-height: 28px;
+  font-size: 10px;
+  line-height: 1.25;
+}
+
+/* color-converter's own two remaining oversized elements once the rules above and the
+   image-sampler <details> collapse are applied -- the swatch preview and the contrast-ratio
+   text sample are decorative/illustrative rather than functional, so shrinking them (never
+   removing them) costs nothing real. */
+:root.popup-mode #swatch { height: 28px; margin-bottom: 4px; }
+:root.popup-mode #contrastPreview { padding: 8px; font-size: 0.9rem; margin-top: 6px; }
+
+/* password-generator's Length slider box (.pw-length-box, see password-generator.astro) --
+   this element's 14px padding is a scoped class (not the shared .input-target base, which
+   carries no padding of its own), so tightening it here cannot affect any other tool's
+   .input-target usage. */
+.pw-length-box { padding: 14px; }
+:root.popup-mode .pw-length-box { padding: 6px; }
+
 * { box-sizing: border-box; }
 
 /* CR#8 backlog #59: every page (and every tool popup) used to sit on the flat, textureless
@@ -259,6 +389,14 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
 .info-link svg { width: 14px; height: 14px; flex-shrink: 0; }
 
 .theme-toggle {
+  /* -webkit-appearance/appearance:none, font-family, and line-height are reset explicitly
+     here and on .palette-trigger below -- same fix already applied to .utilx-toast button
+     (see that rule's comment): native <button> chrome can add invisible vertical padding
+     that plain CSS padding doesn't fully override, which is exactly what made the command
+     palette button (added later, in CR#8 #35) sit slightly lower than this already-shipped
+     toggle despite both declaring the same 34px height. */
+  -webkit-appearance: none;
+  appearance: none;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--text);
@@ -267,6 +405,8 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
   height: 34px;
   padding: 0;
   margin: 0;
+  font-family: inherit;
+  line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -285,6 +425,12 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
    meaningful once public/command-palette.js is lazily loaded on first Cmd/Ctrl+K or click
    (backlog #70), but its CSS ships normally since it's zero-cost until `hidden` is removed. */
 .palette-trigger {
+  /* See .theme-toggle's comment above -- same native-button-chrome fix, needed here too since
+     this button (unlike .theme-toggle, icon-only) also contains a <kbd> text node, which is
+     exactly the kind of content the site's other appearance-reset fix (.utilx-toast button)
+     was written for. */
+  -webkit-appearance: none;
+  appearance: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -293,7 +439,10 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
   color: var(--text-dim);
   border-radius: 8px;
   height: 34px;
+  margin: 0;
   padding: 0 10px;
+  font-family: inherit;
+  line-height: 1;
   cursor: pointer;
   transition: border-color .15s ease, background .15s ease, color .15s ease;
 }
@@ -415,6 +564,22 @@ h1 { font-size: 2.05rem; font-weight: 750; margin: 0 0 10px; letter-spacing: -0.
 h2 { font-size: 1.3rem; font-weight: 650; margin: 32px 0 12px; letter-spacing: -0.01em; }
 p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
 
+/* backlog #77/CR#10: <summary class="card-h2-summary"> stands in for a card's <h2> wherever a
+   section is wrapped in <details class="popup-collapsible"> (see BaseLayout.astro and the
+   POPUP COMPACTION SYSTEM comment further down) -- styled identically to a plain .card h2 so
+   the full-page site looks exactly as it did before on every one of these sections, whether or
+   not that page happens to be one that uses this pattern. cursor:pointer and the marker are
+   harmless, always-available affordances even on the full page (the section still starts
+   expanded there via the `open` attribute) -- only popup-mode below actually starts it closed. */
+summary.card-h2-summary {
+  font-size: 1.3rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  list-style: revert;
+}
+.card summary.card-h2-summary { margin: 0 0 12px; }
+
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -527,8 +692,38 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
   margin-bottom: 0;
   flex-shrink: 0;
 }
-.tool-card h3 { margin: 0; color: var(--text); font-size: 1.05rem; font-weight: 650; }
-.tool-card p { margin: 0; color: var(--text-dim); font-size: 0.9rem; }
+/* Backlog #74/#75/#76 (Aug 24 2026 -- corrected after actually measuring the live page, see
+   below): the first pass at these three tile-alignment reports fixed only .tool-card p's
+   height. Real cause, confirmed via getBoundingClientRect() on the deployed development
+   preview, is .tool-card-header's height, which varies per tile because the tool title (h3)
+   wraps to a different number of lines depending on name length -- "Regex Tester"/"Color
+   Converter" (1 line) vs "Cron Expression Builder"/"Password & UUID Generator" (3 lines at
+   this grid's column width). Since .tool-card-header uses align-items:center, a taller title
+   pushes that tile's own icon chip DOWN within its own header row relative to a short-titled
+   tile's chip (measured 18px of drift between Regex Tester and Password Generator's icon
+   tops -- backlog #76's real bug, not an icon-SVG optical-centering issue; the earlier SVG
+   coordinate nudge in src/data/tools.json was reverted). It also means .tool-card-link's total
+   height (header + description) varies per tile even with the description itself now fixed --
+   and since .tool-card-guide's separator is pinned to the card's bottom via margin-top:auto,
+   THAT variation still doesn't move the separator within one row (auto-margin absorbs it), but
+   DOES change how tall the grid's row-stretch makes that whole row, which can differ row to
+   row (backlog #75's real bug: Password Generator happened to be grouped with tiles whose
+   title+guide-link combination sized that row differently than an adjacent row). Giving h3 a
+   fixed min-height (same 3-line/4.8em budget as the description, longest observed title) makes
+   every tile's header the same height, so every icon lands at the same offset -- and combined
+   with .tool-card-guide also getting a fixed min-height below (2-line budget, longest observed
+   guide-link label), every row's total card height becomes identical too, so the separator
+   lands on the same Y position across the ENTIRE grid, not just within one row. */
+.tool-card h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 1.05rem;
+  font-weight: 650;
+  min-height: 4.8em;
+  display: flex;
+  align-items: center;
+}
+.tool-card p { margin: 0; color: var(--text-dim); font-size: 0.9rem; min-height: 4.8em; }
 
 /* CR#8 backlog #58: every tool page's <h1> used to be plain text -- the colored icon chip only
    existed on the homepage tile, so it never appeared once a tool was actually opened (in a
@@ -568,6 +763,14 @@ p.lede { color: var(--text-dim); font-size: 1.08rem; margin-top: 0; }
 .tool-card-guide {
   display: block;
   margin-top: auto;
+  /* min-height (border-box, so this budgets the *whole* box: border + padding + a 2-line text
+     reserve -- longest observed label is "Related: Base64 Encoder / Decoder ->", which wraps to
+     2 lines at this grid's column width) makes every tile's guide box the same height whether
+     its own label needs 1 line ("Guide: Cron Syntax ->") or 2 -- see the .tool-card-header
+     comment above for why that, combined with the header/description fixes there, is what
+     actually closes out backlog #74/#75/#76. Expressed in px (not em) because it has to include
+     this element's own border+padding under border-box sizing, not just its text. */
+  min-height: 54px;
   padding-top: 10px;
   border-top: 1px solid var(--border);
   font-size: 0.82rem;
