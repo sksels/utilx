@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
 import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
+import InfoLink from '../../components/InfoLink.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -151,8 +152,16 @@ const jsonLd = JSON.stringify({
     </div>
 
 
-    <p>Curious what Base64 is actually for? Read <a href="/guides/understanding-base64.html">Understanding Base64</a>.</p>
-    <p>Related tool: decoded a JWT payload above? Format the resulting JSON with the <a href="/tools/json-formatter.html">JSON Formatter &amp; Validator</a>.</p>
+    <InfoLink
+      text="What is Base64?"
+      href="/guides/understanding-base64.html"
+      summary="Curious what Base64 is actually for? Read the full guide."
+    />
+    <span class="related-tool-line">Related tool: <InfoLink
+      text="JSON Formatter"
+      href="/tools/json-formatter.html"
+      summary="Decoded a JWT payload above? Format the resulting JSON with the JSON Formatter &amp; Validator."
+    /></span>
   </div>
 </main>
 
