@@ -106,7 +106,11 @@ const jsonLd = JSON.stringify({
     </div>
 
     <div class="card">
-      <h2 style="margin-top:0;">JWT Decoder</h2>
+      <!-- backlog #77/CR#10: collapsed by default only inside a popup (see BaseLayout.astro's
+           popup-collapsible script and style.css's "POPUP COMPACTION SYSTEM" comment) --
+           always expanded on the full page via the `open` attribute below. -->
+      <details open class="popup-collapsible">
+      <summary class="card-h2-summary">JWT Decoder</summary>
       <p style="color:var(--text-dim); margin-top:-8px;">JWTs are just Base64url-encoded JSON under the hood — paste one below to see the header and payload decoded. This does not verify the signature (that requires the secret key), it just decodes the readable parts.</p>
       <label for="jwtInput">JWT</label>
       <div class="input-target">
@@ -143,6 +147,7 @@ const jsonLd = JSON.stringify({
           <OutputToolbar targetId="jwtSignature" inline={true} />
         </div>
       </div>
+      </details>
     </div>
 
 
