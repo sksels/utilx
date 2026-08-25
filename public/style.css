@@ -193,7 +193,16 @@
 :root.popup-mode .output-box { margin-top: 3px; }
 :root.popup-mode p { margin: 4px 0; }
 :root.popup-mode .two-col { gap: 10px; }
-:root.popup-mode textarea { max-height: 56px; }
+/* height (not max-height): this is the popup's STARTING size, not a ceiling on it.
+   An earlier version used max-height here, which silently caps resize:vertical's native
+   drag handle at that same pixel value -- the textarea LOOKED resizable but the drag was
+   already maxed out from the moment the popup opened, which read as frozen/broken rather
+   than as a deliberate limit. height sets the same compact starting point (so the
+   zero-scroll-at-rest measurements in this block's header comment still hold) without
+   capping how far the user can drag it open -- dragging past the popup's own height is
+   expected, normal resize behavior at that point, not something this system should
+   prevent. */
+:root.popup-mode textarea { height: 56px; }
 /* Two or more plain trailing <p> links (e.g. a "guide" link plus a "related tool" link,
    see cron-builder.astro) collapse their shared margin already via normal CSS margin
    collapsing -- this just removes any stray top margin so that collapsing is total,
