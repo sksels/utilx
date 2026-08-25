@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
 import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
+import InfoLink from '../../components/InfoLink.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -139,8 +140,16 @@ const jsonLd = JSON.stringify({
       <tr><td><code>m</code></td><td>Multiline — <code>^</code> and <code>$</code> match line boundaries</td></tr>
       <tr><td><code>s</code></td><td>Dot matches newline characters too</td></tr>
     </table>
-    <p>Need a syntax refresher? See the <a href="/guides/regex-cheatsheet.html">regex cheat sheet</a>.</p>
-    <p>Related tool: validating or extracting structured data with your pattern? Check the result with the <a href="/tools/json-formatter.html">JSON Formatter &amp; Validator</a>.</p>
+    <InfoLink
+      text="Regex cheat sheet"
+      href="/guides/regex-cheatsheet.html"
+      summary="Need a syntax refresher? See the full cheat sheet."
+    />
+    <span class="related-tool-line">Related tool: <InfoLink
+      text="JSON Formatter"
+      href="/tools/json-formatter.html"
+      summary="Validating or extracting structured data with your pattern? Check the result with the JSON Formatter &amp; Validator."
+    /></span>
   </div>
 </main>
 

@@ -3,6 +3,7 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import OutputToolbar from '../../components/OutputToolbar.astro';
 import InputToolbar from '../../components/InputToolbar.astro';
 import LocalBadge from '../../components/LocalBadge.astro';
+import InfoLink from '../../components/InfoLink.astro';
 
 const jsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -163,8 +164,16 @@ const jsonLd = JSON.stringify({
     </div>
 
 
-    <p>New to cron syntax? Read the full <a href="/guides/cron-syntax-guide.html">cron syntax guide</a>.</p>
-    <p>Related tool: need to validate a job name or log pattern alongside your schedule? Try the <a href="/tools/regex-tester.html">Regex Tester</a>.</p>
+    <InfoLink
+      text="Cron syntax guide"
+      href="/guides/cron-syntax-guide.html"
+      summary="New to cron syntax? Read the full guide."
+    />
+    <span class="related-tool-line">Related tool: <InfoLink
+      text="Regex Tester"
+      href="/tools/regex-tester.html"
+      summary="Need to validate a job name or log pattern alongside your schedule? Try the Regex Tester."
+    /></span>
   </div>
 </main>
 
