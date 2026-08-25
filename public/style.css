@@ -171,10 +171,26 @@
    BaseLayout.astro) that caps any table.ref-table's height automatically,
    whatever tool it belongs to, so a long reference/example table never forces
    page scroll -- it scrolls internally instead. */
+/* CR#11 backlog: "increase the default length of the text boxes by 25%". Every text box in
+   this popup system is already sized as width:100% of its own container (or 1fr in a
+   .two-col grid, or a user-resizable split-pane) -- there is no slack inside the layout to
+   grow a box into. The only way to make the boxes 25% wider by default, consistently across
+   all 6 tools, is to widen the container they all size themselves against. --max-width feeds
+   .wrap (the shared content column every tool page renders inside), so overriding it here,
+   scoped to popup mode only, is the one change that reaches every tool's boxes. Paired with
+   DEFAULT_WIDTH in popup-nav.js (960 * 1.25 = 1200; 1040 * 1.25 = 1300 -- the popup window
+   itself has to widen to fit the wider content, or it would just start scrolling
+   horizontally). The full in-tab site's --max-width (960px) is untouched. */
+:root.popup-mode { --max-width: 1200px; }
 :root.popup-mode .breadcrumb { display: none; }
 :root.popup-mode header.site { padding: 4px 0; }
 :root.popup-mode main { padding: 6px 0 8px; }
-:root.popup-mode footer.site { padding: 6px 0; }
+/* Cut further than the earlier 6px/0.85rem pass -- there was still visible headroom
+   above/below the "© UtilX / About Privacy Contact" row once everything else in the popup
+   had already been tightened. font-size is scoped here (not left at the sitewide 0.85rem)
+   since this row is link labels, not reading content -- shrinking it doesn't hurt legibility
+   the way shrinking body copy would. */
+:root.popup-mode footer.site { padding: 3px 0; font-size: 0.78rem; }
 :root.popup-mode h1 { margin-bottom: 6px; }
 :root.popup-mode .tool-page-header { margin-bottom: 6px; }
 :root.popup-mode p.lede { margin-bottom: 6px; font-size: 0.92rem; line-height: 1.3; }
@@ -201,8 +217,14 @@
    zero-scroll-at-rest measurements in this block's header comment still hold) without
    capping how far the user can drag it open -- dragging past the popup's own height is
    expected, normal resize behavior at that point, not something this system should
-   prevent. */
-:root.popup-mode textarea { height: 56px; }
+   prevent. min-height is the companion floor: height alone only sets where a textarea
+   STARTS, it does nothing to stop the user's own resize drag going the other direction,
+   below the compact starting point, down toward unusably small. Fields that sit beside a
+   multi-button toolbar (below) already get a taller floor from their own min-height rule,
+   and CSS specificity lets that more specific rule win over this one where both apply --
+   this floor only actually binds on fields with no toolbar, which otherwise had no floor
+   at all. */
+:root.popup-mode textarea { height: 56px; min-height: 56px; }
 /* Two or more plain trailing <p> links (e.g. a "guide" link plus a "related tool" link,
    see cron-builder.astro) collapse their shared margin already via normal CSS margin
    collapsing -- this just removes any stray top margin so that collapsing is total,
@@ -396,6 +418,13 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
   text-decoration: underline;
 }
 .info-link svg { width: 14px; height: 14px; flex-shrink: 0; }
+/* CR#11 backlog: converting trailing "Curious about X? / Related tool:" paragraphs to
+   InfoLink (see tool pages) put two of these, back to back, directly adjacent in the markup
+   for the first time -- previously there was always at most one per page. inline-flex with no
+   margin between them rendered "Related: JSON Formatter" touching the end of "What is
+   Base64?" with zero gap, reading as one run-on link. Only the adjacency (+) needs a gap; a
+   single InfoLink on its own, or one followed by something else, is unaffected. */
+.info-link + .info-link { margin-left: 16px; }
 
 .theme-toggle {
   /* -webkit-appearance/appearance:none, font-family, and line-height are reset explicitly

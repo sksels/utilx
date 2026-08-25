@@ -16,9 +16,16 @@
   }
 })(typeof self !== 'undefined' ? self : this, function () {
 
-  // One shared default size across all 6 tools (960px content width + margin for
+  // One shared default size across all 6 tools (1200px content width + margin for
   // header/nav/footer chrome), rather than a per-tool size.
-  var DEFAULT_WIDTH = 1040;
+  //
+  // CR#11 backlog: "increase the default length of the text boxes by 25%". Was 1040 (960px
+  // content width + chrome). Every text box sizes itself as 100% of the shared .wrap content
+  // column (see style.css's popup-mode --max-width override, now 1200px, up from 960px --
+  // exactly the same 25% bump), so growing this window width is what actually lets those
+  // boxes render 25% wider; leaving this at 1040 while only widening --max-width would just
+  // make the wider content start clipping/scrolling horizontally inside an unchanged window.
+  var DEFAULT_WIDTH = 1300;
   // CR#8 backlog #52: was 800. JSON Formatter and Password Generator each lost a full <h2> +
   // 1-2 paragraphs of "how this works" prose (replaced with InfoLink.astro's one-line hover/
   // link), so this shared height came down too -- otherwise every popup would open with extra
