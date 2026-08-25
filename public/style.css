@@ -96,6 +96,21 @@
    theme. */
 :root.popup-mode {
   --bg: #0a0e18;
+  /* CR#11 backlog: "increase the default length of the text boxes by 25%". Every text box in
+     this popup system is already sized as width:100% of its own container (or 1fr in a
+     .two-col grid, or a user-resizable split-pane) -- there is no slack inside the layout to
+     grow a box into. The only way to make the boxes 25% wider by default, consistently across
+     all 6 tools, is to widen the container they all size themselves against. --max-width feeds
+     .wrap (the shared content column every tool page renders inside), so overriding it here,
+     scoped to popup mode only, is the one change that reaches every tool's boxes. Paired with
+     DEFAULT_WIDTH in popup-nav.js (960 * 1.25 = 1200; 1040 * 1.25 = 1300 -- the popup window
+     itself has to widen to fit the wider content, or it would just start scrolling
+     horizontally). The full in-tab site's --max-width (960px) is untouched.
+     Declared in this block, not a second :root.popup-mode block down in the POPUP COMPACTION
+     SYSTEM section below, because stylelint's no-duplicate-selectors rule (this project's CI
+     lint gate) treats two bare `:root.popup-mode { ... }` blocks as a duplicate selector even
+     with different properties inside -- this repo has exactly one such block, right here. */
+  --max-width: 1200px;
 }
 :root[data-theme="light"].popup-mode {
   --bg: #e9edfa;
@@ -171,17 +186,10 @@
    BaseLayout.astro) that caps any table.ref-table's height automatically,
    whatever tool it belongs to, so a long reference/example table never forces
    page scroll -- it scrolls internally instead. */
-/* CR#11 backlog: "increase the default length of the text boxes by 25%". Every text box in
-   this popup system is already sized as width:100% of its own container (or 1fr in a
-   .two-col grid, or a user-resizable split-pane) -- there is no slack inside the layout to
-   grow a box into. The only way to make the boxes 25% wider by default, consistently across
-   all 6 tools, is to widen the container they all size themselves against. --max-width feeds
-   .wrap (the shared content column every tool page renders inside), so overriding it here,
-   scoped to popup mode only, is the one change that reaches every tool's boxes. Paired with
-   DEFAULT_WIDTH in popup-nav.js (960 * 1.25 = 1200; 1040 * 1.25 = 1300 -- the popup window
-   itself has to widen to fit the wider content, or it would just start scrolling
-   horizontally). The full in-tab site's --max-width (960px) is untouched. */
-:root.popup-mode { --max-width: 1200px; }
+/* CR#11 backlog: the popup's --max-width bump (25% wider text boxes) is declared up in the
+   :root.popup-mode { --bg: ... } block near the top of the file, not here -- see that block's
+   comment for why (stylelint's no-duplicate-selectors rule forbids a second bare
+   :root.popup-mode block in this file). */
 :root.popup-mode .breadcrumb { display: none; }
 :root.popup-mode header.site { padding: 4px 0; }
 :root.popup-mode main { padding: 6px 0 8px; }
