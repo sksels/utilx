@@ -433,6 +433,15 @@ nav.site-nav a:hover { color: var(--text); text-decoration: none; }
    Base64?" with zero gap, reading as one run-on link. Only the adjacency (+) needs a gap; a
    single InfoLink on its own, or one followed by something else, is unaffected. */
 .info-link + .info-link { margin-left: 16px; }
+/* CR#11 backlog: the "Related tool: X" lines keep the literal words "Related tool:" as plain
+   text before the InfoLink (see tests/cross-links.test.js -- it regexes the built HTML for
+   "Related tool:" preceding the link's href, which a bare InfoLink's own label text can't
+   satisfy since href is emitted before any visible label in the markup). Astro's whitespace
+   compression collapses the newline between a preceding "how this works" InfoLink and this
+   plain text down to nothing, same zero-gap problem as the info-link + info-link case above,
+   just with a text node standing in for the second link -- wrapping the text+link pair in
+   .related-tool-line gives the adjacent-sibling rule something to target. */
+.info-link + .related-tool-line { margin-left: 16px; }
 
 .theme-toggle {
   /* -webkit-appearance/appearance:none, font-family, and line-height are reset explicitly
