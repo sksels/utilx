@@ -2,10 +2,21 @@
 # turn on Dependabot's separate security-alert scanning (that's a repo Settings > Code
 # security toggle, not a file, so it needs to be done once in the GitHub UI; see the
 # handoff notes for the exact steps).
+#
+# target-branch: "development" on both ecosystems below -- this repo promotes
+# development -> staging -> main by hand (see RELEASE_PROCESS.md), and Dependabot PRs
+# default to opening against the repo's default branch (main). Left at the default, that
+# meant routine dependency bumps landed directly on main, bypassing the same review/CI
+# path every other change goes through, and sat next to the real promotion PRs in the PR
+# list looking like they were part of that pipeline when they weren't. Pointing Dependabot
+# at development means these PRs flow through the same staging -> main promotion as
+# everything else, and package.json/package-lock.json stay in sync across all three
+# branches instead of main silently drifting ahead on dependency versions.
 version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/"
+    target-branch: "development"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 10
@@ -18,5 +29,6 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "development"
     schedule:
       interval: "weekly"
