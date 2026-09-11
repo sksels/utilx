@@ -18,7 +18,7 @@
     "@axe-core/playwright": "^4.13.0",
     "@lhci/cli": "^0.15.1",
     "@playwright/test": "^1.62.1",
-    "astro": "^7.2.2",
+    "astro": "^7.2.8",
     "stylelint": "^17.14.1",
     "stylelint-config-standard": "^40.0.0",
     "stylelint-declaration-strict-value": "^1.11.1"
